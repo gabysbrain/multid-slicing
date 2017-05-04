@@ -4,9 +4,10 @@ import Prelude hiding (div)
 import App.Data (AppData, fieldNames)
 import App.Events (Event(DataFileChange))
 import App.State (State(..), FileLoadError(..))
+import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.Events (onChange, onSubmit)
-import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li)
+import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
@@ -23,7 +24,7 @@ view (State st) =
 viewDataInfo :: Loadable FileLoadError AppData -> HTML Event
 viewDataInfo Unloaded = div $ text "Nothing yet!"
 viewDataInfo Loading = div $ text "Loading..."
-viewDataInfo (Failed errs) = div $ text "failed :("
+viewDataInfo (Failed errs) = viewFileErrors errs
 viewDataInfo (Loaded ds) = 
   div do
     label do
@@ -39,15 +40,28 @@ viewDataInfo (Loaded ds) =
 viewSlices :: Loadable FileLoadError AppData -> HTML Event
 viewSlices Unloaded = div $ text "Nothing yet!"
 viewSlices Loading = div $ text "Loading..."
-viewSlices (Failed errs) = div $ text "failed :("
+viewSlices (Failed errs) = div $ text ""
 viewSlices (Loaded ds) = div $ text "loaded"
+
+viewFileErrors :: FileLoadError -> HTML Event
+viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
+viewFileErrors (LoadError errs) = 
+  div do
+    p $ text "cannot load file"
+    ul ! className "details" $ do
+      for_ errs $ \e -> do
+        li $ text (show e)
+viewFileErrors (ParseError errs) = 
+  div do
+    p $ text "cannot parse csv file"
+    ul ! className "details" $ do
+      for_ errs $ \e -> do
+        li $ text (show e)
 
 uploadPanel = 
   div do
-    --form ! name "data-upload" #! onSubmit (const RequestData) $ do
     label do
       text "Data file:"
       input ! type' "file" #! onChange DataFileChange
-    --button ! type' "submit" $ text "Load"
     
 

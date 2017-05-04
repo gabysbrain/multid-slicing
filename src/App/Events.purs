@@ -71,11 +71,3 @@ userFile ev = case Null.toMaybe $ item 0 fl of
 parseCsv :: String -> (Except FileLoadError AppData)
 parseCsv = withExcept ParseError <<< fromCsv
 
-transErr :: forall a. Either Error (Except FileLoadError a) -> Except FileLoadError a
-transErr (Left e) = throwError $ UnknownError (show e)
-transErr (Right res) = res
-
---readAsText :: Blob -> FileReader -> (forall eff. Eff (dom :: DOM | eff) Unit)
---result :: forall eff. FileReader -> Eff (dom :: DOM | eff) Foreign
---readString :: Foreign -> F String
-

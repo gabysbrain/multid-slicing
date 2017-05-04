@@ -12,8 +12,7 @@ import Data.List.Types (NonEmptyList)
 import Loadable (Loadable(..))
 
 data FileLoadError
-  = UnknownError String
-  | NoFile
+  = NoFile
   | LoadError MultipleErrors
   | ParseError (NonEmptyList CsvError)
 

@@ -33,6 +33,10 @@ data CsvError
                , col :: Int
                , message :: String
                }
+instance showCsvError :: Show CsvError where
+  show NoHeaderRow = "No header row"
+  show NoDataRows = "No data rows"
+  show (ConvertErr e) = "(row: " <> (show e.row) <> " col: " <> (show e.col) <> ") " <> e.message
 
 type CE = Except (NonEmptyList CsvError)
 
