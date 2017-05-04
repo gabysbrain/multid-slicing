@@ -16,6 +16,12 @@
     "purescript-css": "^2.1.0",
     "purescript-node-fs": "^3.0.0",
     "purescript-aff": "^2.0.2",
-    "purescript-affjax": "^3.0.2"
+    "purescript-affjax": "^3.0.2",
+    "purescript-dataframe": "git@github.com:gabysbrain/purescript-dataframe.git",
+    "Skeleton-Sass": "skeleton-scss#*",
+    "purescript-numbers": "^4.2.0"
+  },
+  "resolutions": {
+    "purescript-maybe": "^2.0.1"
   }
 }

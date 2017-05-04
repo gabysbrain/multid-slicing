@@ -1,6 +1,7 @@
 module App.View.Layout where
 
 import App.View.Homepage as Homepage
+import App.View.Mainpage as Mainpage
 import App.View.NotFound as NotFound
 import App.Routes (Route(NotFound, Home))
 import App.State (State(..))
@@ -47,5 +48,5 @@ view (State st) =
         paddingTop (120.0 #px)
 
     case st.route of
-      (Home) -> Homepage.view (State st)
+      (Home) -> Mainpage.view (State st)
       (NotFound url) -> NotFound.view (State st)
