@@ -4,6 +4,7 @@ import Prelude hiding (div)
 import App.Data (AppData, fieldNames)
 import App.Events (Event(DataFileChange))
 import App.State (State(..), FileLoadError(..))
+import App.View.ParetoSlices as PS
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.Events (onChange, onSubmit)
@@ -41,7 +42,7 @@ viewSlices :: Loadable FileLoadError AppData -> HTML Event
 viewSlices Unloaded = div $ text "Nothing yet!"
 viewSlices Loading = div $ text "Loading..."
 viewSlices (Failed errs) = div $ text ""
-viewSlices (Loaded ds) = div $ text "loaded"
+viewSlices (Loaded ds) = PS.view ds
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
