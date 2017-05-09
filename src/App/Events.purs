@@ -5,6 +5,7 @@ import Loadable (Loadable(..))
 import App.Data (AppData, fromCsv)
 import App.Routes (Route)
 import App.State (State(..), FileLoadError(..))
+import Control.Monad.Aff (Aff(), makeAff)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error)
@@ -29,6 +30,10 @@ data Event
   | ReceiveData (Except FileLoadError AppData)
 
 foreign import targetFileList :: DOMEvent -> FileList
+foreign import readFileAsText :: forall e
+                               . (String -> Eff e Unit)
+                              -> File
+                              -> Eff e Unit
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -41,25 +46,38 @@ foldp (DataFileChange ev) (State st) =
   { state: State (st { dataset = Loading })
   , effects: [ do
       let f = userFile ev :: Except FileLoadError File
-      --raw <- withExcept FileError $ readFile f
-      raw <- liftEff $ readFile' f
+      raw <- readFile' f
+      --raw <- readFile <$> f
       --let ds = (except $ either (Left <<< UnknownError <<< show) id raw) >>= parseCsv
       let ds = raw >>= parseCsv
       pure $ Just $ ReceiveData $ ds
     ]
   }
 
-readFile' :: forall eff. Except FileLoadError File -> Eff (dom :: DOM | eff) (Except FileLoadError String)
-readFile' f = case runExcept f of
-  Left e -> pure $ throwError e
-  Right f' -> readFile f'
+{--readFile' :: forall eff. Except FileLoadError File -> Aff (dom :: DOM | eff) (Except FileLoadError String)--}
+{--readFile' f = case runExcept f of--}
+  {--Left e -> pure $ throwError e--}
+  {--Right f' -> readFile f'--}
 
-readFile :: forall eff. File -> Eff (dom :: DOM | eff) (Except FileLoadError String)
-readFile f = do
-  fr <- fileReader
-  readAsText (fileToBlob f) fr
-  res <- result fr
-  pure $ withExcept LoadError $ readString res
+readFile :: forall eff. File -> Aff eff String
+readFile f = makeAff (\error success -> readFileAsText success f)
+
+readFile' :: forall eff. Except FileLoadError File -> Aff eff (Except FileLoadError String)
+readFile' f = case runExcept f of
+  Left err -> pure $ throwError err
+  Right f' -> readFile'' f'
+
+readFile'' :: forall eff. File -> Aff eff (Except FileLoadError String)
+readFile'' f = do
+  contents <- readFile f
+  pure $ pure contents
+
+{--readFile :: forall eff. File -> Aff (dom :: DOM | eff) (Except FileLoadError String)--}
+{--readFile f = do--}
+  {--fr <- liftEff fileReader--}
+  {--liftEff $ readAsText (fileToBlob f) fr--}
+  {--res <- liftEff $ result fr--}
+  {--pure $ withExcept LoadError $ readString res--}
 
 userFile :: EVT.Event -> Except FileLoadError File
 userFile ev = case Null.toMaybe $ item 0 fl of

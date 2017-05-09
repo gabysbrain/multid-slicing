@@ -19,9 +19,11 @@ import Data.StrMap (StrMap, keys)
 import Data.StrMap as SM
 import Data.Set (Set)
 import Data.Set as S
-import Data.String (Pattern(..), split)
+import Data.String (Pattern(..), split, trim)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for)
+
+import Debug.Trace
 
 type AppDatum = StrMap Number
 type AppData = DataFrame AppDatum
@@ -44,7 +46,7 @@ fieldNames :: AppData -> Set String
 fieldNames = foldMap (S.fromFoldable <<< keys)
 
 fromCsv :: String -> Except (NonEmptyList CsvError) AppData
-fromCsv raw = case L.uncons $ split' (Pattern "\n") raw of
+fromCsv raw = case L.uncons $ splitLines raw of
     Nothing -> throwError $ pure NoHeaderRow
     Just {tail:t} | L.length t == 0 -> throwError $ pure NoDataRows
     Just {head:h,tail:t} -> mapExcept (either Left (Right <<< DF.init)) $ 
@@ -59,6 +61,9 @@ fromCsv' keys lines = mergeErrs $
   mapExceptions i =
     either (\errs -> Left (map (\e -> ConvertErr {row:i,col:fst e,message:snd e}) errs))
            (\vals -> Right (L.singleton $ SM.fromFoldable (L.zip keys vals)))
+
+splitLines :: String -> List String
+splitLines raw = L.filter ((/=) "") $ map trim $ split' (Pattern "\n") raw
 
 procLine :: String -> Except (NonEmptyList (Tuple Int String)) (List Number)
 procLine line = mergeErrs $ 
@@ -75,7 +80,7 @@ convertField :: String -> Except String Number
 convertField val = 
   maybe (throwError $ "cannot convert '" <> val <> "' to double") pure $ fromString val
 
-split' p = L.fromFoldable <<< split p
+split' p = map trim <<< L.fromFoldable <<< split p
 
 mergeErrs :: forall f n e. Semigroup e => Monoid n => Foldable f => 
              f (Except e n) -> Except e n
