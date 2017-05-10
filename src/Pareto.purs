@@ -10,6 +10,7 @@ import Data.Array as A
 import Data.Foldable (sum, or, foldMap)
 import Data.List as L
 import Data.Maybe (maybe, fromJust, fromMaybe)
+import Data.Ordering (invert)
 import Data.StrMap as SM
 import Data.Traversable (for)
 import Partial (crashWith)
@@ -21,6 +22,8 @@ paretoSet :: Query AppData AppData
 paretoSet = DF.init <$> _paretoSet
 
 -- FIXME: not sure why I need this separate function but ok...
+-- TODO: figure out the better way to handle the monad wrt 
+--       why I can't use whileM
 _paretoSet :: Query AppData (L.List AppDatum)
 _paretoSet = do
   nonempty <- nonemptyDF
@@ -33,23 +36,25 @@ _paretoSet = do
      else pure L.Nil
 
 paretoOrder :: AppDatum -> AppDatum -> Ordering
-paretoOrder p1 p2 = 
-  if p1' < p2' then GT
-  else if p1' > p2' then LT
+paretoOrder p1 p2 = invert $
+  if p1' < p2' then LT
+  else if p1' > p2' then GT
   else EQ
   where 
   p1' = sum $ SM.values p1
   p2' = sum $ SM.values p2
 
 -- determine if p1 is comparable to p2
+-- i.e. at least one factor of p2 >= p1
 comparable :: AppDatum -> AppDatum -> Boolean
-comparable p1 p2 = maybe false or $ for (A.union (SM.keys p1) (SM.keys p2)) \k -> do
+comparable p1 p2 = maybe false or $ 
+                   for (A.union (SM.keys p1) (SM.keys p2)) \k -> do
   v1 <- SM.lookup k p1
   v2 <- SM.lookup k p2
-  pure $ v1 < v2
+  pure $ v1 <= v2
 
 pointFilter :: AppDatum -> AppDatum -> Boolean
-pointFilter p1 p2 = (p1 /= p2) && (not $ comparable p1 p2)
+pointFilter p1 p2 = (p1 /= p2) && (comparable p1 p2)
 
 nonemptyDF :: Query AppData Boolean
 nonemptyDF = do
