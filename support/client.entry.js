@@ -2,6 +2,8 @@ const ClientEntry = require('../src/Client.purs');
 
 const initialState = ClientEntry.readState(window.__puxInitialState);
 
+require('../scss/app.scss');
+
 // If hot-reloading, hook into each state change and re-render using the last
 // state.
 if (module.hot) {

@@ -33,8 +33,7 @@ const config = {
     publicPath: '/dist/'
   },
   module: {
-    loaders: [
-      {
+    rules: [{
         test: /\.purs$/,
         loader: 'purs-loader',
         exclude: /node_modules/,
@@ -44,8 +43,16 @@ const config = {
         } : {
           psc: 'psa'
         }
-      }
-    ],
+    }, {
+      test: /\.scss$/,
+      use: [{
+        loader: "style-loader" // style nodes from JS strings
+      }, {
+        loader: "css-loader" // CSS to commonJS
+      }, {
+        loader: "sass-loader" // compile SASS to CSS
+      }]
+    }]
   },
   plugins: plugins,
   resolveLoader: {
