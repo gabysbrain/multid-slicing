@@ -45,6 +45,9 @@ type CE = Except (NonEmptyList CsvError)
 fieldNames :: AppData -> Set String
 fieldNames = foldMap (S.fromFoldable <<< keys)
 
+sortedFieldNames :: AppData -> List String
+sortedFieldNames = L.sort <<< L.fromFoldable <<< fieldNames
+
 fromCsv :: String -> Except (NonEmptyList CsvError) AppData
 fromCsv raw = case L.uncons $ splitLines raw of
     Nothing -> throwError $ pure NoHeaderRow

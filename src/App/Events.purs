@@ -2,6 +2,7 @@ module App.Events where
 
 import Prelude
 import Loadable (Loadable(..))
+import Pareto (paretoSet)
 import App.Data (AppData, fromCsv)
 import App.Routes (Route)
 import App.State (State(..), FileLoadError(..))
@@ -10,6 +11,7 @@ import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Except (Except, throwError, runExcept, withExcept)
+import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foreign (readString)
 import Data.Maybe (Maybe(..))
@@ -26,8 +28,9 @@ import Pux.DOM.Events (DOMEvent)
 data Event 
   = PageView Route
   | DataFileChange DOMEvent
-  -- | RequestData
   | ReceiveData (Except FileLoadError AppData)
+  -- | StartParetoFilter AppData
+  -- | FinishParetoFilter AppData
 
 foreign import targetFileList :: DOMEvent -> FileList
 foreign import readFileAsText :: forall e
@@ -47,10 +50,9 @@ foldp (DataFileChange ev) (State st) =
   , effects: [ do
       let f = userFile ev :: Except FileLoadError File
       raw <- readFile' f
-      --raw <- readFile <$> f
-      --let ds = (except $ either (Left <<< UnknownError <<< show) id raw) >>= parseCsv
+      -- FIXME: maybe do the pareto calculatino in a separate async event
       let ds = raw >>= parseCsv
-      pure $ Just $ ReceiveData $ ds
+      pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
     ]
   }
 

@@ -50,7 +50,12 @@ const config = {
       }, {
         loader: "css-loader" // CSS to commonJS
       }, {
-        loader: "sass-loader" // compile SASS to CSS
+        loader: "sass-loader", // compile SASS to CSS
+        options: {
+          includePaths: [
+            path.resolve(__dirname, './bower_components/')
+          ]
+        }
       }]
     }]
   },
