@@ -42,8 +42,9 @@ _paretoSet dimFilter = do
        --       processing functions
        p <- rowOne <$> DF.sort (paretoOrder dimFilter) `DF.chain` DF.trim 1 
        --DF.filter (not <<< comparable (rowOne p))
-       fds <- DF.filter (pointFilter dimFilter p)
-       pure $ p L.: (DF.runQuery (_paretoSet dimFilter) fds)
+       --fds <- DF.filter (pointFilter dimFilter p)
+       cons p <$> (DF.filter (pointFilter dimFilter p) `DF.chain` _paretoSet dimFilter)
+       --pure $ p L.: (DF.runQuery (_paretoSet dimFilter) fds)
      else pure L.Nil
 
 paretoOrder :: (AppDatum -> AppDatum) -> AppDatum -> AppDatum -> Ordering
@@ -97,4 +98,7 @@ filterDatum2D d1 d2 = SM.fold hasKeys SM.empty
   hasKeys m k v = if k == d1 || k == d2
                    then SM.insert k v m
                    else m
+
+cons :: forall a. a -> L.List a -> L.List a
+cons x xs = x L.: xs
 
