@@ -6,14 +6,15 @@ import App.Data (AppData, AppDatum)
 import Data.DataFrame (Query)
 import Data.DataFrame as DF
 import Data.Array as A
-import Data.Foldable (sum, or, foldMap)
+import Data.Foldable (sum, or, foldMap, notElem)
 import Data.List as L
 import Data.Maybe (Maybe(..), maybe, fromJust)
-import Data.Monoid (mempty)
 import Data.Ordering (invert)
 import Data.StrMap as SM
 import Data.Traversable (for)
 import Partial.Unsafe (unsafePartial)
+
+type ParetoSlabs = DF.DataFrame {slab :: Int, data :: AppData}
 
 paretoSet :: Query AppData AppData
 paretoSet = paretoSubset id
@@ -23,12 +24,29 @@ paretoSubset dimFilter = DF.init <$> _paretoSet dimFilter
 
 pareto2dSlab :: Number -> String -> String -> Query AppData AppData
 pareto2dSlab r d1 d2 = do
+  isNonEmpty <- nonemptyDF
   paretoPts <- paretoSubset (filterDatum2D d1 d2)
-  -- base the radius filter on the farthest point from the origin
-  let distQ = DF.sort pointDistCmp
-      farthestPt = rowOne $ DF.runQuery (distQ `DF.chain` DF.trim 1) paretoPts
-      radiusFilter pt = maybe false ((>) (r*r)) $ pointSqDist farthestPt pt
-  pure $ DF.runQuery (DF.filter radiusFilter) paretoPts
+  if isNonEmpty
+     then do
+       -- base the radius filter on the farthest point from the origin
+       let distQ = DF.sort pointDistCmp
+           farthestPt = rowOne $ DF.runQuery (distQ `DF.chain` DF.trim 1) paretoPts
+           radiusFilter pt = maybe false ((>) (r*r)) $ pointSqDist farthestPt pt
+       pure $ DF.runQuery (DF.filter radiusFilter) paretoPts
+     else pure $ DF.init L.Nil
+
+pareto2dSlabs :: Number -> String -> String -> Query AppData ParetoSlabs
+pareto2dSlabs r d1 d2 = do
+  slabs <- _pareto2dSlabs r d1 d2
+  let slabIds = L.range 1 (L.length slabs)
+  pure $ DF.init $ L.zipWith (\i d -> {slab: i, data: d}) slabIds slabs
+
+_pareto2dSlabs :: Number -> String -> String -> Query AppData (L.List AppData)
+_pareto2dSlabs r d1 d2 = do
+  slab <- pareto2dSlab r d1 d2
+  if DF.rows slab > 0
+     then cons slab <$> ((cleanEntries slab) `DF.chain` (_pareto2dSlabs r d1 d2))
+     else pure L.Nil
 
 -- FIXME: not sure why I need this separate function but ok...
 -- TODO: figure out the better way to handle the monad wrt 
@@ -98,6 +116,9 @@ filterDatum2D d1 d2 = SM.fold hasKeys SM.empty
   hasKeys m k v = if k == d1 || k == d2
                    then SM.insert k v m
                    else m
+
+cleanEntries :: AppData -> Query AppData AppData
+cleanEntries es = DF.filter (flip notElem es)
 
 cons :: forall a. a -> L.List a -> L.List a
 cons x xs = x L.: xs
