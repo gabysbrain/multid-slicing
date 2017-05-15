@@ -14,7 +14,8 @@ import Data.StrMap as SM
 import Data.Traversable (for)
 import Partial.Unsafe (unsafePartial)
 
-type ParetoSlabs = DF.DataFrame {slab :: Int, data :: AppData}
+type ParetoSlab = {slab :: Int, data :: AppData}
+type ParetoSlabs = DF.DataFrame ParetoSlab
 
 paretoSet :: Query AppData AppData
 paretoSet = paretoSubset id
