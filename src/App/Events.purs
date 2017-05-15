@@ -15,6 +15,7 @@ import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foreign (readString)
 import Data.Maybe (Maybe(..))
+import Data.Number as N
 import Data.Nullable as Null
 import DOM (DOM)
 import DOM.Event.Types as EVT
@@ -23,10 +24,11 @@ import DOM.File.FileReader (fileReader, result, readAsText)
 import DOM.File.Types (File, FileList, fileToBlob)
 import Network.HTTP.Affjax (AJAX)
 import Pux (EffModel, noEffects)
-import Pux.DOM.Events (DOMEvent)
+import Pux.DOM.Events (DOMEvent, targetValue)
 
 data Event 
   = PageView Route
+  | ParetoRadiusChange DOMEvent
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError AppData)
   -- | StartParetoFilter AppData
@@ -42,6 +44,10 @@ type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
 foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded = true }
+foldp (ParetoRadiusChange ev) (State st) = noEffects $ 
+  case N.fromString (targetValue ev) of
+    Just r  -> State (st { paretoRadius = r })
+    Nothing -> State st
 foldp (ReceiveData d) (State st) = noEffects $ 
   State st { dataset = either Failed Loaded $ runExcept d }
 -- load the data from the file the user specified

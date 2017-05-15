@@ -21,6 +21,7 @@ data State = State
   , route :: Route
   , loaded :: Boolean
   , dataset :: Loadable FileLoadError AppData
+  , paretoRadius :: Number
   }
 
 instance decodeJsonState :: DecodeJson State where
@@ -29,11 +30,13 @@ instance decodeJsonState :: DecodeJson State where
     title <- obj .? "title"
     url <- obj .? "route"
     loaded <- obj .? "loaded"
+    r <- obj .? "paretoRadius"
     pure $ State
       { title
       , loaded
       , route: match url
       , dataset: Unloaded -- FIXME: need to serialize the data frame
+      , paretoRadius: r
       }
 
 instance encodeJsonState :: EncodeJson State where
@@ -41,6 +44,7 @@ instance encodeJsonState :: EncodeJson State where
        "title" := st.title
     ~> "route" := toURL st.route
     ~> "loaded" := st.loaded
+    ~> "paretoRadius" := st.paretoRadius
     ~> jsonEmptyObject
 
 init :: String -> State
@@ -49,4 +53,5 @@ init url = State
   , route: match url
   , loaded: false
   , dataset: Unloaded
+  , paretoRadius: 1.0
   }

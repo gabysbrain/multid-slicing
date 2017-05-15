@@ -20,17 +20,17 @@ import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 
-view :: AppData -> HTML Event
-view = view' <<< DF.runQuery paretoSet
+view :: Number -> AppData -> HTML Event
+view r = view' r <<< DF.runQuery paretoSet
 
-view' :: AppData -> HTML Event
-view' paretoPts = 
+view' :: Number -> AppData -> HTML Event
+view' r paretoPts = 
   div do
     for_ (splomPairs $ sortedFieldNames paretoPts) $ \sr -> do
       div ! className "splom row" $ do
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ 
-            DF.runQuery (paretoPlot 0.5 (fst plotFields) (snd plotFields)) paretoPts
+            DF.runQuery (paretoPlot r (fst plotFields) (snd plotFields)) paretoPts
 
 paretoPlot :: Number -> String -> String -> Query AppData (HTML Event)
 paretoPlot r d1 d2 = do

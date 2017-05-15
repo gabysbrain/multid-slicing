@@ -3,7 +3,7 @@ module App.View.Mainpage where
 import Prelude hiding (div, max, min)
 import Math (sqrt)
 import App.Data (AppData, fieldNames, sortedFieldNames)
-import App.Events (Event(DataFileChange))
+import App.Events (Event(DataFileChange, ParetoRadiusChange))
 import App.State (State(..), FileLoadError(..))
 import App.View.ParetoSlices as PS
 import Data.Traversable (for_)
@@ -23,7 +23,7 @@ view (State st) =
     div ! className "left-panel" $ do
       uploadPanel ! className "data-upload" 
       viewDataInfo st.dataset ! className "data-info"
-    viewSlices st.dataset ! className "right-panel"
+    viewSlices st.paretoRadius st.dataset ! className "right-panel"
 
 viewDataInfo :: Loadable FileLoadError AppData -> HTML Event
 viewDataInfo Unloaded = div $ text "Nothing yet!"
@@ -40,11 +40,11 @@ viewDataInfo (Loaded ds) =
       for_ (sortedFieldNames ds) $ \fn -> do
         li $ text fn
 
-viewSlices :: Loadable FileLoadError AppData -> HTML Event
-viewSlices Unloaded = div $ text "Nothing yet!"
-viewSlices Loading = div $ text "Loading..."
-viewSlices (Failed errs) = div $ text ""
-viewSlices (Loaded ds) = PS.view ds
+viewSlices :: Number -> Loadable FileLoadError AppData -> HTML Event
+viewSlices _ Unloaded = div $ text "Nothing yet!"
+viewSlices _ Loading = div $ text "Loading..."
+viewSlices _ (Failed errs) = div $ text ""
+viewSlices r (Loaded ds) = PS.view r ds
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
@@ -76,6 +76,7 @@ paretoRangeSlider ds =
           ! min (show 0) 
           ! max (show maxDist) 
           ! step (show $ maxDist / 20.0)
+          #! onChange ParetoRadiusChange
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
 
