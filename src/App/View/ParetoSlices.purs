@@ -25,9 +25,15 @@ view r = view' r <<< DF.runQuery paretoSet
 
 view' :: Number -> AppData -> HTML Event
 view' r paretoPts = 
-  div do
+  div $ div ! className "splom-view" $ do
+    div ! className "splom dims x-axis" $ do
+      div $ pure unit
+      for_ (fromMaybe L.Nil $ L.init $ sortedFieldNames paretoPts) $ \fn -> do
+        label ! className "dim-label" $ text fn
     for_ (splomPairs $ sortedFieldNames paretoPts) $ \sr -> do
       div ! className "splom row" $ do
+        --div ! className "splom dims y-axis" $ 
+        label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ 
             DF.runQuery (paretoPlot r (fst plotFields) (snd plotFields)) paretoPts

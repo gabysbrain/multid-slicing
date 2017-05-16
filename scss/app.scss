@@ -17,3 +17,24 @@
   @extend .columns;
 }
 
+.splom-view {
+  display: table;
+  
+  div.splom.row {
+    display: table-row;
+  }
+  
+  div.splom.subplot {
+    display: table-cell;
+  }
+
+  div.dims {
+    display: table-row;
+  }
+
+  label.dim-label {
+    display: table-cell;
+    vertical-align: middle;
+  }
+}
+
