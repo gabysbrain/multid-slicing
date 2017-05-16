@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
-import Pareto (ParetoSlab, paretoSet, pareto2dSlabs)
+import Pareto (ParetoSlab, ParetoSlabs, paretoSet, pareto2dSlabs)
 import Pux.DOM.HTML (HTML)
 import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
@@ -37,6 +37,7 @@ paretoPlot r d1 d2 = do
   limits' <- DF.summarize (extract2d d1 d2)
   let limits = max2d limits'
   paretoData <- pareto2dSlabs r d1 d2 `DF.chain` 
+                paretoSort d1 d2 `DF.chain`
                 DF.summarize (extractPts d1 d2)
   pure $ PV.paretoVis (fst limits) (snd limits) paretoData
 
@@ -46,8 +47,15 @@ splomPairs xs = case L.uncons xs of
   Just {head:x,tail:xs'} -> (map (Tuple x) xs') L.: (splomPairs xs')
   Nothing -> L.Nil
 
-{--pairs :: forall a. List a -> List (Tuple a a)--}
-{--pairs xs = fromMaybe L.Nil $ L.zip xs <$> (L.tail xs)--}
+-- sort the points so that the line drawing algorithm works correctly
+-- TODO: maybe this should be in the vis component?
+paretoSort :: String -> String -> Query ParetoSlabs ParetoSlabs
+paretoSort d1 d2 = DF.mutate innerSort'
+  where
+  innerSort' {slab:s, data:d} = 
+    { slab: s
+    , data: DF.runQuery (DF.sort (order2d d1 d2)) d
+    }
 
 extractPts :: String -> String -> ParetoSlab -> Array (Array Number)
 extractPts d1 d2 {data:d} = A.catMaybes $ 
@@ -57,6 +65,12 @@ extractPts d1 d2 {data:d} = A.catMaybes $
     v1 <- SM.lookup d1 datum
     v2 <- SM.lookup d2 datum
     pure $ [v1, v2]
+
+order2d :: String -> String -> AppDatum -> AppDatum -> Ordering
+order2d d1 d2 pt1 pt2 = fromMaybe EQ $ do
+  c1 <- compare <$> SM.lookup d1 pt1 <*> SM.lookup d1 pt2
+  c2 <- compare <$> SM.lookup d2 pt1 <*> SM.lookup d2 pt2
+  pure $ if c1 == EQ then c2 else c1
 
 extract2d :: String -> String -> AppDatum -> Maybe (Tuple Number Number)
 extract2d d1 d2 d = do
