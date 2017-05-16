@@ -10,7 +10,7 @@ import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.Events (onChange, onSubmit)
 import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
-import Text.Smolder.HTML.Attributes (className, type', min, max, step)
+import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
 import Data.DataFrame as DF
@@ -22,19 +22,19 @@ view (State st) =
   div do
     div ! className "left-panel" $ do
       uploadPanel ! className "data-upload" 
-      viewDataInfo st.dataset ! className "data-info"
+      viewDataInfo st.dataset st.paretoRadius ! className "data-info"
     viewSlices st.paretoRadius st.dataset ! className "right-panel"
 
-viewDataInfo :: Loadable FileLoadError AppData -> HTML Event
-viewDataInfo Unloaded = div $ text "Nothing yet!"
-viewDataInfo Loading = div $ text "Loading..."
-viewDataInfo (Failed errs) = viewFileErrors errs
-viewDataInfo (Loaded ds) = 
+viewDataInfo :: Loadable FileLoadError AppData -> Number -> HTML Event
+viewDataInfo Unloaded _ = div $ text "Nothing yet!"
+viewDataInfo Loading _ = div $ text "Loading..."
+viewDataInfo (Failed errs) _ = viewFileErrors errs
+viewDataInfo (Loaded ds) r = 
   div do
     label do
       text "Number of rows"
       span $ text $ show $ DF.rows ds
-    paretoRangeSlider ds
+    paretoRangeSlider ds r
     h3 $ text "Dimensions"
     ul ! className "dimension-list" $ do
       for_ (sortedFieldNames ds) $ \fn -> do
@@ -68,15 +68,20 @@ uploadPanel =
       text "Data file:"
       input ! type' "file" #! onChange DataFileChange
 
-paretoRangeSlider :: AppData -> HTML Event
-paretoRangeSlider ds = 
+paretoRangeSlider :: AppData -> Number -> HTML Event
+paretoRangeSlider ds r = 
   label do
-    text "Pareto:"
-    input ! type' "range" 
-          ! min (show 0) 
-          ! max (show maxDist) 
-          ! step (show $ maxDist / 20.0)
-          #! onChange ParetoRadiusChange
+    text "Pareto radius:"
+    div ! className "range-slider" $ do
+      label $ text "0"
+      input ! type' "range" 
+            ! min (show 0) 
+            ! max (show maxDist) 
+            ! value (show r)
+            ! step (show $ maxDist / 20.0)
+            #! onChange ParetoRadiusChange
+      label $ text (show maxDist)
+      label $ text (show r)
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
 
