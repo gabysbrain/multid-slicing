@@ -84,9 +84,13 @@ function drawParetoLines(self, elem, data) {
       .attr('class', 'pareto-front path')
       .attr('stroke', 'black')
       .attr('stroke-width', 1)
+      .attr('fill', 'none')
       .attr('d', function(d) {
         return line(d);
       });
+  lines.attr('d', function(d) {
+    return line(d);
+  });
   lines.exit().remove();
 }
 
