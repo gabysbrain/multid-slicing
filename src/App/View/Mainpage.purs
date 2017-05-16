@@ -77,7 +77,7 @@ paretoRangeSlider ds r =
       input ! type' "range" 
             ! min (show 0) 
             ! max (show maxDist) 
-            ! value (show r)
+            ! value (show r) -- FIXME: why doesn't this work!?!?!
             ! step (show $ maxDist / 20.0)
             #! onChange ParetoRadiusChange
       label $ text (show maxDist)
