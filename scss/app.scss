@@ -1,8 +1,19 @@
 
 //@import "normalize-scss/sass/normalize/import-now";
-//@import "skeleton-sass/skeleton/core/config";
+@import "Skeleton-Sass/scss/skeleton";
 
-div {
+.app div {
   //background-color: green;
+  @extend .row;
+}
+
+.left-panel {
+  @extend .four;
+  @extend .columns;
+}
+
+.right-panel {
+  @extend .eight;
+  @extend .columns;
 }
 
