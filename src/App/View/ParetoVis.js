@@ -92,6 +92,22 @@ function drawParetoLines(self, elem, data) {
     return line(d);
   });
   lines.exit().remove();
+
+  var dataPoints = [];
+  data.forEach(function(d) {
+    dataPoints = dataPoints.concat(d);
+  });
+  var points = elem.selectAll('.pareto-front.point').data(dataPoints);
+  points.enter()
+    .append('circle')
+      .attr('class', 'pareto-front point')
+      .attr('cx', function(d) {return self.state.x(d[0]);})
+      .attr('cy', function(d) {return self.state.y(d[1]);})
+      .attr('r', 3);
+  points
+    .attr('cx', function(d) {return self.state.x(d[0]);})
+    .attr('cy', function(d) {return self.state.y(d[1]);});
+  points.exit().remove();
 }
 
 exports.paretoVisComponent = React.createClass({
