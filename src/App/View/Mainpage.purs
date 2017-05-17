@@ -3,19 +3,23 @@ module App.View.Mainpage where
 import Prelude hiding (div, max, min)
 import Math (sqrt)
 import App.Data (AppData, fieldNames, sortedFieldNames)
-import App.Events (Event(DataFileChange, ParetoRadiusChange))
+import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange))
 import App.State (State(..), FileLoadError(..))
 import App.View.ParetoSlices as PS
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
-import Pux.DOM.Events (onChange, onSubmit)
-import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
+import Pux.DOM.Events (onChange, onSubmit, onClick)
+import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p, a)
 import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
 import Data.DataFrame as DF
 import Data.Int (toNumber)
 import Data.Set as S
+
+-- TODO: load these from disk somehow
+dataFiles :: Array String
+dataFiles = ["2d_small.csv", "3d_small.csv"]
 
 view :: State -> HTML Event
 view (State st) =
@@ -67,6 +71,11 @@ uploadPanel =
     label do
       text "Data file:"
       input ! type' "file" #! onChange DataFileChange
+    ul ! className "static-files" $ do
+      for_ dataFiles $ \fn -> do
+        li $
+          a #! onClick (LoadStaticFile fn) $
+            text fn
 
 paretoRangeSlider :: AppData -> Number -> HTML Event
 paretoRangeSlider ds r = 
