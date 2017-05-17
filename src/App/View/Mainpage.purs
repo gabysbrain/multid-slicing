@@ -47,7 +47,7 @@ viewDataInfo (Loaded ds) r =
 viewSlices :: Number -> Loadable FileLoadError AppData -> HTML Event
 viewSlices _ Unloaded = div $ text "Nothing yet!"
 viewSlices _ Loading = div $ text "Loading..."
-viewSlices _ (Failed errs) = div $ text ""
+viewSlices _ (Failed errs) = div $ pure unit
 viewSlices r (Loaded ds) = PS.view r ds
 
 viewFileErrors :: FileLoadError -> HTML Event
