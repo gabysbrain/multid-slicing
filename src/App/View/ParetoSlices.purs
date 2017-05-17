@@ -1,6 +1,7 @@
 module App.View.ParetoSlices where
 
 import Prelude hiding (div)
+import Math (atan)
 import App.Data (AppData, AppDatum, sortedFieldNames)
 import App.Events (Event)
 import App.View.ParetoVis as PV
@@ -73,10 +74,14 @@ extractPts d1 d2 {data:d} = A.catMaybes $
     pure $ [v1, v2]
 
 order2d :: String -> String -> AppDatum -> AppDatum -> Ordering
-order2d d1 d2 pt1 pt2 = fromMaybe EQ $ do
-  c1 <- compare <$> SM.lookup d1 pt1 <*> SM.lookup d1 pt2
-  c2 <- compare <$> SM.lookup d2 pt1 <*> SM.lookup d2 pt2
-  pure $ if c1 == EQ then c2 else c1
+order2d d1 d2 pt1 pt2 = 
+  fromMaybe EQ $ compare <$> (pt2theta d1 d2 pt1) <*> (pt2theta d1 d2 pt2)
+
+pt2theta :: String -> String -> AppDatum -> Maybe Number
+pt2theta d1 d2 pt = do
+  x <- SM.lookup d1 pt
+  y <- SM.lookup d2 pt
+  pure $ atan (y/x)
 
 extract2d :: String -> String -> AppDatum -> Maybe (Tuple Number Number)
 extract2d d1 d2 d = do
