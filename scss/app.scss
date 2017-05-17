@@ -2,9 +2,10 @@
 //@import "normalize-scss/sass/normalize/import-now";
 @import "Skeleton-Sass/scss/skeleton";
 
-.app div {
+.app > div {
   //background-color: green;
   @extend .row;
+  @extend .columns;
 }
 
 .left-panel {
@@ -36,5 +37,9 @@
     display: table-cell;
     vertical-align: middle;
   }
+}
+
+.data-upload {
+  border: 1px solid grey;
 }
 

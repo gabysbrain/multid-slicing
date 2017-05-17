@@ -36,13 +36,14 @@ viewDataInfo (Failed errs) _ = viewFileErrors errs
 viewDataInfo (Loaded ds) r = 
   div do
     label do
-      text "Number of rows"
+      text "Number of rows: "
       span $ text $ show $ DF.rows ds
     paretoRangeSlider ds r
-    h3 $ text "Dimensions"
-    ul ! className "dimension-list" $ do
-      for_ (sortedFieldNames ds) $ \fn -> do
-        li $ text fn
+    label do
+      text "Dimensions"
+      ul ! className "dimension-list" $ do
+        for_ (sortedFieldNames ds) $ \fn -> do
+          li $ text fn
 
 viewSlices :: Number -> Loadable FileLoadError AppData -> HTML Event
 viewSlices _ Unloaded = div $ text "Nothing yet!"
@@ -68,14 +69,17 @@ viewFileErrors (ParseError errs) =
 uploadPanel :: HTML Event
 uploadPanel = 
   div do
+    h2 $ text "Import data"
     label do
-      text "Data file:"
+      text "Upload data"
       input ! type' "file" #! onChange DataFileChange
-    ul ! className "static-files" $ do
-      for_ dataFiles $ \fn -> do
-        li $
-          a #! onClick (LoadStaticFile fn) $
-            text fn
+    label do
+      text "Demo data"
+      ul ! className "static-files" $ do
+        for_ dataFiles $ \fn -> do
+          li $
+            a #! onClick (LoadStaticFile fn) $
+              text fn
 
 paretoRangeSlider :: AppData -> Number -> HTML Event
 paretoRangeSlider ds r = 
