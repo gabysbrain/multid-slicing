@@ -28,10 +28,11 @@ view' :: Number -> AppData -> HTML Event
 view' r paretoPts = 
   div $ div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
-      div $ pure unit
+      -- labels for x-axes
+      div $ pure unit -- empty cell to offset the axis labels
       for_ (fromMaybe L.Nil $ L.init $ sortedFieldNames paretoPts) $ \fn -> do
         label ! className "dim-label" $ text fn
-    for_ (splomPairs $ sortedFieldNames paretoPts) $ \sr -> do
+    for_ (L.transpose $ map L.reverse $ splomPairs $ sortedFieldNames paretoPts) $ \sr -> do
       div ! className "splom row" $ do
         --div ! className "splom dims y-axis" $ 
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
@@ -46,7 +47,10 @@ paretoPlot r d1 d2 = do
   paretoData <- pareto2dSlabs r d1 d2 `DF.chain` 
                 paretoSort d1 d2 `DF.chain`
                 DF.summarize (extractPts d1 d2)
-  pure $ PV.paretoVis (fst limits) (snd limits) paretoData
+  pure $ div do
+    --span $ text d1
+    --span $ text d2
+    PV.paretoVis (fst limits) (snd limits) paretoData
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = case L.uncons xs of
