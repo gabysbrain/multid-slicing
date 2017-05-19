@@ -49,7 +49,8 @@ function updateChart(self) {
   var visWidth = self.state.width - self.state.margin.left - self.state.margin.right;
   var visHeight = self.state.height - self.state.margin.top - self.state.margin.bottom;
 
-  var paretoGroups = self.props['data-paretopaths'];
+  var paretoPoints = self.props['data-paretopoints'];
+  var paretoLines = self.props['data-paretopaths'];
   var maxX = self.props['data-maxX'];
   var maxY = self.props['data-maxY'];
   
@@ -66,7 +67,8 @@ function updateChart(self) {
   yAxis.call(self.state.yAxis);
 
   var chartContainer = svg.select('g.container');
-  drawParetoLines(self, chartContainer, paretoGroups);
+  drawParetoPoints(self, chartContainer, paretoPoints);
+  drawParetoLines(self, chartContainer, paretoLines);
 }
 
 function drawParetoLines(self, elem, data) {
@@ -92,12 +94,10 @@ function drawParetoLines(self, elem, data) {
     return line(d);
   });
   lines.exit().remove();
+}
 
-  var dataPoints = [];
-  data.forEach(function(d) {
-    dataPoints = dataPoints.concat(d);
-  });
-  var points = elem.selectAll('.pareto-front.point').data(dataPoints);
+function drawParetoPoints(self, elem, data) {
+  var points = elem.selectAll('.pareto-front.point').data(data);
   points.enter()
     .append('circle')
       .attr('class', 'pareto-front point')

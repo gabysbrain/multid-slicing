@@ -7,13 +7,17 @@ import React (ReactClass)
 
 foreign import paretoVisComponent :: forall props. ReactClass props
 
-type ParetoData = Array (Array (Array Number))
+type PointData = Array (Array Number)
+type LineData = Array (Array (Array Number))
 
-paretoVis :: forall event. Number -> Number -> ParetoData -> HTML event
-paretoVis maxX maxY pts = _paretoVis 
+paretoVis :: forall event. Number -> Number 
+                        -> PointData -> LineData 
+                        -> HTML event
+paretoVis maxX maxY pts lines = _paretoVis 
   { "data-maxX": maxX
   , "data-maxY": maxY
-  , "data-paretopaths": pts
+  , "data-paretopoints": pts
+  , "data-paretopaths": lines
   }
 
 _paretoVis :: forall event props. props -> HTML event
