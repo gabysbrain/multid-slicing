@@ -6,6 +6,7 @@ import App.Data (AppData, fieldNames, sortedFieldNames)
 import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange))
 import App.State (State(..), FileLoadError(..))
 import App.View.ParetoSlices as PS
+import Data.Set (Set)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.Events (onChange, onSubmit, onClick)
@@ -27,7 +28,7 @@ view (State st) =
     div ! className "left-panel" $ do
       uploadPanel ! className "data-upload" 
       viewDataInfo st.dataset st.paretoRadius ! className "data-info"
-    viewSlices st.paretoRadius st.dataset ! className "right-panel"
+    viewSlices st.paretoRadius st.selectedPoints st.dataset ! className "right-panel"
 
 viewDataInfo :: Loadable FileLoadError AppData -> Number -> HTML Event
 viewDataInfo Unloaded _ = div $ text "Nothing yet!"
@@ -45,11 +46,11 @@ viewDataInfo (Loaded ds) r =
         for_ (sortedFieldNames ds) $ \fn -> do
           li $ text fn
 
-viewSlices :: Number -> Loadable FileLoadError AppData -> HTML Event
-viewSlices _ Unloaded = div $ text "Nothing yet!"
-viewSlices _ Loading = div $ text "Loading..."
-viewSlices _ (Failed errs) = div $ pure unit
-viewSlices r (Loaded ds) = PS.view r ds
+viewSlices :: Number -> Set Int -> Loadable FileLoadError AppData -> HTML Event
+viewSlices _ _  Unloaded = div $ text "Nothing yet!"
+viewSlices _ _  Loading = div $ text "Loading..."
+viewSlices _ _  (Failed errs) = div $ pure unit
+viewSlices r sp (Loaded ds) = PS.view r sp ds
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty

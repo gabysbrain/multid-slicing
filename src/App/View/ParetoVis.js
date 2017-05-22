@@ -119,10 +119,13 @@ function drawParetoPoints(self, elem, data) {
       .attr('class', 'pareto-front point')
       .attr('cx', function(d) {return self.state.x(d.x);})
       .attr('cy', function(d) {return self.state.y(d.y);})
-      .attr('r', 3);
+      .attr('r', function(d) {return d.selected ? 5 : 3;})
+      .attr('fill', function(d) {return d.selected ? 'red' : 'black';});
   points
     .attr('cx', function(d) {return self.state.x(d.x);})
-    .attr('cy', function(d) {return self.state.y(d.y);});
+    .attr('cy', function(d) {return self.state.y(d.y);})
+    .attr('r', function(d) {return d.selected ? 5 : 3;})
+    .attr('fill', function(d) {return d.selected ? 'red' : 'black';});
   points.exit().remove();
 }
 

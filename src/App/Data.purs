@@ -29,7 +29,7 @@ type AppDatum = {rowId :: Int, point :: StrMap Number}
 type AppData = DataFrame AppDatum
 
 -- Used for low-level visualization
-type PointData = {rowId :: Int, x :: Number, y :: Number}
+type PointData = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
 type LineData = {groupId :: Int, points :: Array PointData}
 
 data CsvError 

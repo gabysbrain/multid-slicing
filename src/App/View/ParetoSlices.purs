@@ -4,6 +4,7 @@ import Prelude hiding (div)
 import Math (atan)
 import App.Data (AppData, AppDatum, PointData, LineData, sortedFieldNames)
 import App.Events (Event)
+import App.State (State(..))
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
@@ -12,6 +13,8 @@ import Data.Foldable (foldl, foldMap)
 import Data.List (List)
 import Data.List as L
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
@@ -21,8 +24,8 @@ import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 
-view :: Number -> AppData -> HTML Event
-view r paretoPts = 
+view :: Number -> Set Int -> AppData -> HTML Event
+view r highlightPts paretoPts = 
   div $ div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
@@ -35,18 +38,23 @@ view r paretoPts =
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ 
-            DF.runQuery (paretoPlot r (fst plotFields) (snd plotFields)) paretoPts
+            DF.runQuery (paretoPlot r highlightPts (fst plotFields) (snd plotFields)) paretoPts
 
-paretoPlot :: Number -> String -> String -> Query AppData (HTML Event)
-paretoPlot r d1 d2 = do
+paretoPlot :: Number -> Set Int -> String -> String -> Query AppData (HTML Event)
+paretoPlot r highlightPts d1 d2 = do
   limits' <- DF.summarize (extract2d d1 d2)
   let limits = max2d limits'
-  paretoPoints <- A.catMaybes <$> DF.summarize (extract2dPt d1 d2)
+  paretoPoints <- map (setHighlight highlightPts) <$>
+                  A.catMaybes <$> 
+                  DF.summarize (extract2dPt d1 d2)
   paretoPaths <- pareto2dSlabs r d1 d2 `DF.chain` 
                  paretoSort d1 d2 `DF.chain`
                  DF.summarize (extractPath d1 d2)
   pure $ div do
     PV.paretoVis (fst limits) (snd limits) paretoPoints paretoPaths
+
+setHighlight :: Set Int -> PointData -> PointData
+setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = case L.uncons xs of
@@ -74,7 +82,7 @@ extract2dPt :: String -> String -> AppDatum -> Maybe PointData
 extract2dPt d1 d2 datum = do
   v1 <- SM.lookup d1 datum.point
   v2 <- SM.lookup d2 datum.point
-  pure $ {rowId:datum.rowId, x:v1, y:v2}
+  pure $ {rowId:datum.rowId, x:v1, y:v2, selected: false}
 
 order2d :: String -> String -> AppDatum -> AppDatum -> Ordering
 order2d d1 d2 pt1 pt2 = 

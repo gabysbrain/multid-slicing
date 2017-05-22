@@ -6,9 +6,12 @@ import App.Routes (Route, match, toURL)
 import Control.Applicative (pure)
 import Control.Bind (bind)
 import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, jsonEmptyObject, (.?), (:=), (~>))
+import Data.Array as A
 import Data.Foreign (MultipleErrors)
 import Data.Function (($))
 import Data.List.Types (NonEmptyList)
+import Data.Set (Set)
+import Data.Set as Set
 import Loadable (Loadable(..))
 
 data FileLoadError
@@ -21,6 +24,7 @@ data State = State
   , route :: Route
   , loaded :: Boolean
   , dataset :: Loadable FileLoadError AppData
+  , selectedPoints :: Set Int -- rowIds
   , paretoRadius :: Number
   }
 
@@ -30,12 +34,14 @@ instance decodeJsonState :: DecodeJson State where
     title <- obj .? "title"
     url <- obj .? "route"
     loaded <- obj .? "loaded"
+    sp :: Array Int <- obj .? "selectedPoints"
     r <- obj .? "paretoRadius"
     pure $ State
       { title
       , loaded
       , route: match url
       , dataset: Unloaded -- FIXME: need to serialize the data frame
+      , selectedPoints: Set.fromFoldable sp
       , paretoRadius: r
       }
 
@@ -44,6 +50,7 @@ instance encodeJsonState :: EncodeJson State where
        "title" := st.title
     ~> "route" := toURL st.route
     ~> "loaded" := st.loaded
+    ~> "selectedPoints" := A.fromFoldable st.selectedPoints
     ~> "paretoRadius" := st.paretoRadius
     ~> jsonEmptyObject
 
@@ -53,5 +60,6 @@ init url = State
   , route: match url
   , loaded: false
   , dataset: Unloaded
+  , selectedPoints: Set.empty
   , paretoRadius: 1.0
   }

@@ -13,12 +13,14 @@ import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Except (Except, except, throwError, runExcept, withExcept)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
+import Data.Foldable (foldMap)
 import Data.Foreign (ForeignError(ForeignError), readString)
 import Data.HTTP.Method (Method(GET))
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..))
 import Data.Number as N
 import Data.Nullable as Null
+import Data.Set as Set
 import DOM (DOM)
 import DOM.Event.Types as EVT
 import DOM.File.FileList (item)
@@ -78,8 +80,9 @@ foldp (DataFileChange ev) (State st) =
       pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
     ]
   }
-foldp (HoverParetoFront pf) state = noEffects state
-foldp (HoverParetoPoint pt) state = noEffects state
+foldp (HoverParetoFront pfs) state = noEffects state
+foldp (HoverParetoPoint pts) (State st) = noEffects $
+  State st {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}  
 
 readFile :: forall eff. File -> Aff eff String
 readFile f = makeAff (\error success -> readFileAsText success f)
