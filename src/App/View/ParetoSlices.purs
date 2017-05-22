@@ -18,7 +18,8 @@ import Data.Set as Set
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
-import Pareto (ParetoSlab, ParetoSlabs, paretoSet, pareto2dSlabs)
+import Pareto (ParetoSlab, ParetoSlabs)
+import App.NearestNeighbor (radialNN)
 import Pux.DOM.HTML (HTML)
 import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
@@ -47,7 +48,8 @@ paretoPlot r highlightPts d1 d2 = do
   paretoPoints <- map (setHighlight highlightPts) <$>
                   A.catMaybes <$> 
                   DF.summarize (extract2dPt d1 d2)
-  paretoPaths <- pareto2dSlabs r d1 d2 `DF.chain` 
+  paretoPaths <- rnn r `DF.chain`
+  --pareto2dSlabs r d1 d2 `DF.chain` 
                  paretoSort d1 d2 `DF.chain`
                  DF.summarize (extractPath d1 d2)
   pure $ div do
@@ -55,6 +57,9 @@ paretoPlot r highlightPts d1 d2 = do
 
 setHighlight :: Set Int -> PointData -> PointData
 setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
+
+rnn :: Number -> Query AppData ParetoSlabs
+rnn r = radialNN r <$> DF.reset
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = case L.uncons xs of
