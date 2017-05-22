@@ -22,10 +22,7 @@ import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 
 view :: Number -> AppData -> HTML Event
-view r = view' r <<< DF.runQuery paretoSet
-
-view' :: Number -> AppData -> HTML Event
-view' r paretoPts = 
+view r paretoPts = 
   div $ div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
