@@ -25,6 +25,7 @@ data State = State
   , loaded :: Boolean
   , dataset :: Loadable FileLoadError AppData
   , selectedPoints :: Set Int -- rowIds
+  , selectedFronts :: Set Int -- slabIds
   , paretoRadius :: Number
   }
 
@@ -35,6 +36,7 @@ instance decodeJsonState :: DecodeJson State where
     url <- obj .? "route"
     loaded <- obj .? "loaded"
     sp :: Array Int <- obj .? "selectedPoints"
+    sf :: Array Int <- obj .? "selectedFronts"
     r <- obj .? "paretoRadius"
     pure $ State
       { title
@@ -42,6 +44,7 @@ instance decodeJsonState :: DecodeJson State where
       , route: match url
       , dataset: Unloaded -- FIXME: need to serialize the data frame
       , selectedPoints: Set.fromFoldable sp
+      , selectedFronts: Set.fromFoldable sf
       , paretoRadius: r
       }
 
@@ -51,6 +54,7 @@ instance encodeJsonState :: EncodeJson State where
     ~> "route" := toURL st.route
     ~> "loaded" := st.loaded
     ~> "selectedPoints" := A.fromFoldable st.selectedPoints
+    ~> "selectedFronts" := A.fromFoldable st.selectedFronts
     ~> "paretoRadius" := st.paretoRadius
     ~> jsonEmptyObject
 
@@ -61,5 +65,6 @@ init url = State
   , loaded: false
   , dataset: Unloaded
   , selectedPoints: Set.empty
+  , selectedFronts: Set.empty
   , paretoRadius: 1.0
   }

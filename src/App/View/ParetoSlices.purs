@@ -75,6 +75,7 @@ paretoSort d1 d2 = DF.mutate innerSort'
 extractPath :: String -> String -> ParetoSlab -> LineData
 extractPath d1 d2 {slab:g, data:d} = 
   { groupId: g
+  , selected: false
   , points: A.catMaybes $ DF.runQuery (DF.summarize (extract2dPt d1 d2)) d
   }
 

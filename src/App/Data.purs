@@ -30,7 +30,7 @@ type AppData = DataFrame AppDatum
 
 -- Used for low-level visualization
 type PointData = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
-type LineData = {groupId :: Int, points :: Array PointData}
+type LineData = {groupId :: Int, selected :: Boolean, points :: Array PointData}
 
 data CsvError 
   = NoHeaderRow

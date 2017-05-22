@@ -92,15 +92,17 @@ function drawParetoLines(self, elem, data) {
         handleHover([]);
       })
       .attr('class', 'pareto-front path')
-      .attr('stroke', 'black')
       .attr('stroke-width', 1)
       .attr('fill', 'none')
+      .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
       .attr('d', function(d) {
         return line(d.points);
       });
-  lines.attr('d', function(d) {
-    return line(d.points);
-  });
+  lines
+    .attr('d', function(d) {
+      return line(d.points);
+    })
+    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';});
   lines.exit().remove();
 }
 

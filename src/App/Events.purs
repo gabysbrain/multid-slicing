@@ -80,7 +80,8 @@ foldp (DataFileChange ev) (State st) =
       pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
     ]
   }
-foldp (HoverParetoFront pfs) state = noEffects state
+foldp (HoverParetoFront pfs) (State st) = noEffects $
+  State st {selectedFronts=foldMap (\g -> Set.singleton g.groupId) pfs}
 foldp (HoverParetoPoint pts) (State st) = noEffects $
   State st {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}  
 
