@@ -3,7 +3,7 @@ module App.Events where
 import Prelude
 import Loadable (Loadable(..))
 import Pareto (paretoSet)
-import App.Data (AppData, fromCsv)
+import App.Data (AppData, PointData, LineData, fromCsv)
 import App.Routes (Route)
 import App.State (State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), makeAff, attempt)
@@ -34,6 +34,8 @@ data Event
   | LoadStaticFile String DOMEvent
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError AppData)
+  | HoverParetoFront (Array LineData)
+  | HoverParetoPoint (Array PointData)
   -- | StartParetoFilter AppData
   -- | FinishParetoFilter AppData
 
@@ -76,6 +78,8 @@ foldp (DataFileChange ev) (State st) =
       pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
     ]
   }
+foldp (HoverParetoFront pf) state = noEffects state
+foldp (HoverParetoPoint pt) state = noEffects state
 
 readFile :: forall eff. File -> Aff eff String
 readFile f = makeAff (\error success -> readFileAsText success f)

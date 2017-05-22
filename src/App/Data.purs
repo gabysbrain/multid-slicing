@@ -25,8 +25,12 @@ import Data.Traversable (for)
 
 import Debug.Trace
 
-type AppDatum = StrMap Number
+type AppDatum = {rowId :: Int, point :: StrMap Number}
 type AppData = DataFrame AppDatum
+
+-- Used for low-level visualization
+type PointData = {rowId :: Int, x :: Number, y :: Number}
+type LineData = {groupId :: Int, points :: Array PointData}
 
 data CsvError 
   = NoHeaderRow
@@ -43,7 +47,7 @@ instance showCsvError :: Show CsvError where
 type CE = Except (NonEmptyList CsvError)
 
 fieldNames :: AppData -> Set String
-fieldNames = foldMap (S.fromFoldable <<< keys)
+fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)
 
 sortedFieldNames :: AppData -> List String
 sortedFieldNames = L.sort <<< L.fromFoldable <<< fieldNames
@@ -53,6 +57,7 @@ fromCsv raw = case L.uncons $ splitLines raw of
     Nothing -> throwError $ pure NoHeaderRow
     Just {tail:t} | L.length t == 0 -> throwError $ pure NoDataRows
     Just {head:h,tail:t} -> mapExcept (either Left (Right <<< DF.init)) $ 
+                              withRowIds <$>
                               fromCsv' (split' (Pattern ",") h) t
 
 fromCsv' :: List String -> List String -> CE (List (StrMap Number))
@@ -64,6 +69,9 @@ fromCsv' keys lines = mergeErrs $
   mapExceptions i =
     either (\errs -> Left (map (\e -> ConvertErr {row:i,col:fst e,message:snd e}) errs))
            (\vals -> Right (L.singleton $ SM.fromFoldable (L.zip keys vals)))
+
+withRowIds :: List (StrMap Number) -> List AppDatum
+withRowIds = L.mapWithIndex (\p i -> {rowId:i, point:p})
 
 splitLines :: String -> List String
 splitLines raw = L.filter ((/=) "") $ map trim $ split' (Pattern "\n") raw

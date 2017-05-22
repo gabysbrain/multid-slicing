@@ -2,7 +2,7 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import Math (atan)
-import App.Data (AppData, AppDatum, sortedFieldNames)
+import App.Data (AppData, AppDatum, PointData, LineData, sortedFieldNames)
 import App.Events (Event)
 import App.View.ParetoVis as PV
 import Data.Array as A
@@ -47,7 +47,7 @@ paretoPlot r d1 d2 = do
   paretoPoints <- A.catMaybes <$> DF.summarize (extract2dPt d1 d2)
   paretoPaths <- pareto2dSlabs r d1 d2 `DF.chain` 
                  paretoSort d1 d2 `DF.chain`
-                 DF.summarize (extractPts d1 d2)
+                 DF.summarize (extractPath d1 d2)
   pure $ div do
     PV.paretoVis (fst limits) (snd limits) paretoPoints paretoPaths
 
@@ -67,27 +67,30 @@ paretoSort d1 d2 = DF.mutate innerSort'
     , data: DF.runQuery (DF.sort (order2d d1 d2)) d
     }
 
-extractPts :: String -> String -> ParetoSlab -> Array (Array Number)
-extractPts d1 d2 {data:d} = A.catMaybes $ 
-                            DF.runQuery (DF.summarize (extract2dPt d1 d2)) d
+extractPath :: String -> String -> ParetoSlab -> LineData
+extractPath d1 d2 {slab:g, data:d} = 
+  { groupId: g
+  , points: A.catMaybes $ DF.runQuery (DF.summarize (extract2dPt d1 d2)) d
+  }
 
-extract2dPt :: String -> String -> AppDatum -> Maybe (Array Number)
+extract2dPt :: String -> String -> AppDatum -> Maybe PointData
 extract2dPt d1 d2 datum = do
-  pt <- extract2d d1 d2 datum
-  pure $ [fst pt, snd pt]
+  v1 <- SM.lookup d1 datum.point
+  v2 <- SM.lookup d2 datum.point
+  pure $ {rowId:datum.rowId, x:v1, y:v2}
 
 order2d :: String -> String -> AppDatum -> AppDatum -> Ordering
 order2d d1 d2 pt1 pt2 = 
   fromMaybe EQ $ compare <$> (pt2theta d1 d2 pt1) <*> (pt2theta d1 d2 pt2)
 
 pt2theta :: String -> String -> AppDatum -> Maybe Number
-pt2theta d1 d2 pt = do
+pt2theta d1 d2 {point:pt} = do
   x <- SM.lookup d1 pt
   y <- SM.lookup d2 pt
   pure $ atan (y/x)
 
 extract2d :: String -> String -> AppDatum -> Maybe (Tuple Number Number)
-extract2d d1 d2 d = do
+extract2d d1 d2 {point:d} = do
   v1 <- SM.lookup d1 d
   v2 <- SM.lookup d2 d
   pure $ Tuple v1 v2

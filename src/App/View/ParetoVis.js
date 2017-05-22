@@ -72,41 +72,57 @@ function updateChart(self) {
 }
 
 function drawParetoLines(self, elem, data) {
+  var handleHover = self.props.onFrontHover;
+
   var line = d3.line()
     .x(function(d) {
-      return self.state.x(d[0])
+      return self.state.x(d.x);
     })
     .y(function(d) {
-      return self.state.y(d[1])
+      return self.state.y(d.y);
     });
 
   var lines = elem.selectAll('.pareto-front.path').data(data);
   lines.enter()
     .append('path')
+      .on('mouseover', function() {
+        handleHover(d3.select(this).data());
+      })
+      .on('mouseout', function() {
+        handleHover([]);
+      })
       .attr('class', 'pareto-front path')
       .attr('stroke', 'black')
       .attr('stroke-width', 1)
       .attr('fill', 'none')
       .attr('d', function(d) {
-        return line(d);
+        return line(d.points);
       });
   lines.attr('d', function(d) {
-    return line(d);
+    return line(d.points);
   });
   lines.exit().remove();
 }
 
 function drawParetoPoints(self, elem, data) {
+  var handleHover = self.props.onPointHover;
+
   var points = elem.selectAll('.pareto-front.point').data(data);
   points.enter()
     .append('circle')
+      .on('mouseover', function() {
+        handleHover(d3.select(this).data());
+      })
+      .on('mouseout', function() {
+        handleHover([]);
+      })
       .attr('class', 'pareto-front point')
-      .attr('cx', function(d) {return self.state.x(d[0]);})
-      .attr('cy', function(d) {return self.state.y(d[1]);})
+      .attr('cx', function(d) {return self.state.x(d.x);})
+      .attr('cy', function(d) {return self.state.y(d.y);})
       .attr('r', 3);
   points
-    .attr('cx', function(d) {return self.state.x(d[0]);})
-    .attr('cy', function(d) {return self.state.y(d[1]);});
+    .attr('cx', function(d) {return self.state.x(d.x);})
+    .attr('cy', function(d) {return self.state.y(d.y);});
   points.exit().remove();
 }
 

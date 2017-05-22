@@ -6,7 +6,7 @@ import App.Data (AppData, AppDatum)
 import Data.DataFrame (Query)
 import Data.DataFrame as DF
 import Data.Array as A
-import Data.Foldable (sum, or, foldMap, notElem)
+import Data.Foldable (class Foldable, sum, or, foldMap, any)
 import Data.List as L
 import Data.Maybe (Maybe(..), maybe, fromJust)
 import Data.Ordering (invert)
@@ -72,32 +72,33 @@ paretoOrder dimFilter p1 p2 = invert $
   else if p1' > p2' then GT
   else EQ
   where 
-  p1' = sum $ SM.values (dimFilter p1)
-  p2' = sum $ SM.values (dimFilter p2)
+  p1' = sum $ SM.values (dimFilter p1).point
+  p2' = sum $ SM.values (dimFilter p2).point
 
 -- determine if p1 is comparable to p2
 -- i.e. at least one factor of p2 >= p1
 comparable :: AppDatum -> AppDatum -> Boolean
-comparable p1 p2 = maybe false or $ 
+comparable {point:p1} {point:p2} = maybe false or $ 
                    for (A.union (SM.keys p1) (SM.keys p2)) \k -> do
   v1 <- SM.lookup k p1
   v2 <- SM.lookup k p2
   pure $ v1 <= v2
 
 pointSqDist :: AppDatum -> AppDatum -> Maybe Number
-pointSqDist p1 p2 = sum <$> for (A.union (SM.keys p1) (SM.keys p2)) \k -> do
-  v1 <- SM.lookup k p1
-  v2 <- SM.lookup k p2
-  pure $ (v1-v2)*(v1-v2)
+pointSqDist {point:p1} {point:p2} = 
+  sum <$> for (A.union (SM.keys p1) (SM.keys p2)) \k -> do
+    v1 <- SM.lookup k p1
+    v2 <- SM.lookup k p2
+    pure $ (v1-v2)*(v1-v2)
 
 pointDistCmp :: AppDatum -> AppDatum -> Ordering
-pointDistCmp p1 p2 = invert $ compare d1 d2
+pointDistCmp {point:p1} {point:p2} = invert $ compare d1 d2
   where 
   d1 = sum $ map (\x -> x*x) $ SM.values p1
   d2 = sum $ map (\x -> x*x) $ SM.values p2
 
 pointFilter :: (AppDatum -> AppDatum) -> AppDatum -> AppDatum -> Boolean
-pointFilter dimFilter p1 p2 = (p1 /= p2) && (comparable p1' p2')
+pointFilter dimFilter p1 p2 = (p1.rowId /= p2.rowId) && (comparable p1' p2')
   where
   p1' = dimFilter p1
   p2' = dimFilter p2
@@ -112,14 +113,22 @@ rowOne = unsafePartial $ fromJust <<< L.head <<< foldMap L.singleton
 --rowOne = fromMaybe SM.empty <<< L.head <<< foldMap L.singleton
 
 filterDatum2D :: String -> String -> AppDatum -> AppDatum
-filterDatum2D d1 d2 = SM.fold hasKeys SM.empty
+filterDatum2D d1 d2 datum = datum {point=SM.fold hasKeys SM.empty datum.point}
   where
   hasKeys m k v = if k == d1 || k == d2
                    then SM.insert k v m
                    else m
 
 cleanEntries :: AppData -> Query AppData AppData
-cleanEntries es = DF.filter (flip notElem es)
+cleanEntries es = DF.filter (flip (notElemBy cmp_) es)
+  where
+  cmp_ d1 d2 = d1.rowId == d2.rowId
+
+notElemBy :: forall a f. Foldable f => (a -> a -> Boolean) -> a -> f a -> Boolean
+notElemBy f x = not <<< (elemBy f x)
+
+elemBy :: forall a f. Foldable f => (a -> a -> Boolean) -> a -> f a -> Boolean
+elemBy f = any <<< f
 
 cons :: forall a. a -> L.List a -> L.List a
 cons x xs = x L.: xs
