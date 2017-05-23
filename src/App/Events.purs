@@ -81,7 +81,7 @@ foldp (DataFileChange ev) (State st) =
     ]
   }
 foldp (HoverParetoFront pfs) (State st) = noEffects $
-  State st {selectedFronts=foldMap (\g -> Set.singleton g.groupId) pfs}
+  State st {selectedFronts=foldMap (\g -> Set.singleton g.slabId) pfs}
 foldp (HoverParetoPoint pts) (State st) = noEffects $
   State st {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}  
 

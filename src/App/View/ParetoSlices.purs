@@ -25,8 +25,8 @@ import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 
-view :: Number -> Set Int -> AppData -> HTML Event
-view r highlightPts paretoPts = 
+view :: Number -> Set Int -> Set Int -> AppData -> HTML Event
+view r highlightPts highlightFronts paretoPts = 
   div $ div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
@@ -39,19 +39,19 @@ view r highlightPts paretoPts =
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ 
-            DF.runQuery (paretoPlot r highlightPts (fst plotFields) (snd plotFields)) paretoPts
+            DF.runQuery (paretoPlot r highlightPts highlightFronts
+                                    (fst plotFields) (snd plotFields)) paretoPts
 
-paretoPlot :: Number -> Set Int -> String -> String -> Query AppData (HTML Event)
-paretoPlot r highlightPts d1 d2 = do
+paretoPlot :: Number -> Set Int -> Set Int -> String -> String -> Query AppData (HTML Event)
+paretoPlot r highlightPts highlightFronts d1 d2 = do
   limits' <- DF.summarize (extract2d d1 d2)
   let limits = max2d limits'
   paretoPoints <- map (setHighlight highlightPts) <$>
                   A.catMaybes <$> 
                   DF.summarize (extract2dPt d1 d2)
   paretoPaths <- rnn r `DF.chain`
-  --pareto2dSlabs r d1 d2 `DF.chain` 
                  paretoSort d1 d2 `DF.chain`
-                 DF.summarize (extractPath d1 d2)
+                 DF.summarize (extractPath highlightFronts d1 d2)
   pure $ div do
     PV.paretoVis (fst limits) (snd limits) paretoPoints paretoPaths
 
@@ -77,10 +77,10 @@ paretoSort d1 d2 = DF.mutate innerSort'
     , data: DF.runQuery (DF.sort (order2d d1 d2)) d
     }
 
-extractPath :: String -> String -> ParetoSlab -> LineData
-extractPath d1 d2 {slab:g, data:d} = 
-  { groupId: g
-  , selected: false
+extractPath :: Set Int -> String -> String -> ParetoSlab -> LineData
+extractPath selIds d1 d2 {slab:g, data:d} = 
+  { slabId: g
+  , selected: Set.member g selIds
   , points: A.catMaybes $ DF.runQuery (DF.summarize (extract2dPt d1 d2)) d
   }
 

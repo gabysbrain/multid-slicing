@@ -28,7 +28,7 @@ view (State st) =
     div ! className "left-panel" $ do
       uploadPanel ! className "data-upload" 
       viewDataInfo st.dataset st.paretoRadius ! className "data-info"
-    viewSlices st.paretoRadius st.selectedPoints st.dataset ! className "right-panel"
+    viewSlices st.paretoRadius st.selectedPoints st.selectedFronts st.dataset ! className "right-panel"
 
 viewDataInfo :: Loadable FileLoadError AppData -> Number -> HTML Event
 viewDataInfo Unloaded _ = div $ text "Nothing yet!"
@@ -46,11 +46,11 @@ viewDataInfo (Loaded ds) r =
         for_ (sortedFieldNames ds) $ \fn -> do
           li $ text fn
 
-viewSlices :: Number -> Set Int -> Loadable FileLoadError AppData -> HTML Event
-viewSlices _ _  Unloaded = div $ text "Nothing yet!"
-viewSlices _ _  Loading = div $ text "Loading..."
-viewSlices _ _  (Failed errs) = div $ pure unit
-viewSlices r sp (Loaded ds) = PS.view r sp ds
+viewSlices :: Number -> Set Int -> Set Int -> Loadable FileLoadError AppData -> HTML Event
+viewSlices _ _  _  Unloaded = div $ text "Nothing yet!"
+viewSlices _ _  _  Loading = div $ text "Loading..."
+viewSlices _ _  _  (Failed errs) = div $ pure unit
+viewSlices r sp sf (Loaded ds) = PS.view r sp sf ds
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty

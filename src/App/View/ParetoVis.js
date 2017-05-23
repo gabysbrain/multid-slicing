@@ -86,13 +86,21 @@ function drawParetoLines(self, elem, data) {
   lines.enter()
     .append('path')
       .on('mouseover', function() {
-        handleHover(d3.select(this).data());
+        // FIXME: hack to handle bug in pux
+        // see 
+        var evtData = new Object();
+        evtData.nativeEvent = d3.select(this).data();
+        handleHover(evtData);
       })
       .on('mouseout', function() {
-        handleHover([]);
+        // FIXME: hack to handle bug in pux
+        // see 
+        var evtData = new Object();
+        evtData.nativeEvent = [];
+        handleHover(evtData);
       })
       .attr('class', 'pareto-front path')
-      .attr('stroke-width', 1)
+      .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
       .attr('fill', 'none')
       .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
       .attr('d', function(d) {
@@ -102,6 +110,7 @@ function drawParetoLines(self, elem, data) {
     .attr('d', function(d) {
       return line(d.points);
     })
+    .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
     .attr('stroke', function(d) {return d.selected ? 'red' : 'black';});
   lines.exit().remove();
 }
