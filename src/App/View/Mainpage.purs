@@ -20,7 +20,7 @@ import Data.Set as S
 
 -- TODO: load these from disk somehow
 dataFiles :: Array String
-dataFiles = ["2d_small.csv", "3d_small.csv"]
+dataFiles = ["2d_small.csv", "3d_small.csv", "whiskies.csv"]
 
 view :: State -> HTML Event
 view (State st) =
