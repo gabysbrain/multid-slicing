@@ -87,14 +87,14 @@ function drawParetoLines(self, elem, data) {
     .append('path')
       .on('mouseover', function() {
         // FIXME: hack to handle bug in pux
-        // see 
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
         var evtData = new Object();
         evtData.nativeEvent = d3.select(this).data();
         handleHover(evtData);
       })
       .on('mouseout', function() {
         // FIXME: hack to handle bug in pux
-        // see 
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
         var evtData = new Object();
         evtData.nativeEvent = [];
         handleHover(evtData);
@@ -123,14 +123,14 @@ function drawParetoPoints(self, elem, data) {
     .append('circle')
       .on('mouseover', function() {
         // FIXME: hack to handle bug in pux
-        // see 
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
         var evtData = new Object();
         evtData.nativeEvent = d3.select(this).data();
         handleHover(evtData);
       })
       .on('mouseout', function() {
         // FIXME: hack to handle bug in pux
-        // see 
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
         var evtData = new Object();
         evtData.nativeEvent = [];
         handleHover(evtData);
