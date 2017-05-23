@@ -113,10 +113,18 @@ function drawParetoPoints(self, elem, data) {
   points.enter()
     .append('circle')
       .on('mouseover', function() {
-        handleHover(d3.select(this).data());
+        // FIXME: hack to handle bug in pux
+        // see 
+        var evtData = new Object();
+        evtData.nativeEvent = d3.select(this).data();
+        handleHover(evtData);
       })
       .on('mouseout', function() {
-        handleHover([]);
+        // FIXME: hack to handle bug in pux
+        // see 
+        var evtData = new Object();
+        evtData.nativeEvent = [];
+        handleHover(evtData);
       })
       .attr('class', 'pareto-front point')
       .attr('cx', function(d) {return self.state.x(d.x);})
