@@ -18,8 +18,9 @@ foreign import paretoVisComponent :: forall props. ReactClass props
 paretoVis :: Number -> Number 
           -> Array PointData -> Array LineData 
           -> HTML Event
-paretoVis maxX maxY pts lines = _paretoVis props #! onPointHover HoverParetoPoint
-                                                 #! onFrontHover HoverParetoFront
+paretoVis maxX maxY pts lines = _paretoVis props 
+                                  #! onPointHover HoverParetoPoint
+                                  #! onFrontHover HoverParetoFront
   where 
   props =
     { "data-maxX": maxX

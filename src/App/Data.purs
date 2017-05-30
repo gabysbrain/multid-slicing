@@ -1,29 +1,23 @@
 module App.Data where
 
 import Prelude 
-import Control.Monad.Except (Except, except, runExcept, withExcept, mapExcept, throwError)
-import Control.Monad.Except.Trans (ExceptT, mapExceptT, withExceptT)
-import Data.DataFrame (DataFrame)
+import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
+import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldMap, foldr)
 import Data.List (List)
 import Data.List as L
 import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Number (fromString)
-import Data.NonEmpty as NEL
-import Data.Foldable (foldMap, foldr)
 import Data.StrMap (StrMap, keys)
 import Data.StrMap as SM
 import Data.Set (Set)
 import Data.Set as S
 import Data.String (Pattern(..), split, trim)
 import Data.Tuple (Tuple(..), fst, snd)
-import Data.Traversable (for)
-
-import Debug.Trace
 
 type AppDatum = {rowId :: Int, point :: StrMap Number}
 type AppData = DataFrame AppDatum
@@ -31,6 +25,11 @@ type AppData = DataFrame AppDatum
 -- Used for low-level visualization
 type PointData = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
 type LineData = {slabId :: Int, selected :: Boolean, points :: Array PointData}
+
+-- Used for the neighborhood graph
+type Node = AppDatum
+type Link = {linkId :: Int, src :: Node, tgt :: Node}
+type NeighborGraph = {nodes :: DataFrame Node, links :: DataFrame Link}
 
 data CsvError 
   = NoHeaderRow
@@ -45,6 +44,17 @@ instance showCsvError :: Show CsvError where
   show (ConvertErr e) = "(row: " <> (show e.row) <> " col: " <> (show e.col) <> ") " <> e.message
 
 type CE = Except (NonEmptyList CsvError)
+
+-- TODO: move these to a query module
+graphLinks :: Query NeighborGraph (DataFrame Link)
+graphLinks = do -- FIXME: why doesn't map work here?
+  g <- DF.reset
+  pure g.links
+
+graphNodes :: Query NeighborGraph (DataFrame Node)
+graphNodes = do
+  g <- DF.reset
+  pure g.nodes
 
 fieldNames :: AppData -> Set String
 fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)

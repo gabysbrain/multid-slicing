@@ -2,7 +2,7 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import Math (atan)
-import App.Data (AppData, AppDatum, PointData, LineData, sortedFieldNames)
+import App.Data (AppData, AppDatum, PointData, LineData, NeighborGraph, graphNodes, graphLinks, sortedFieldNames)
 import App.Events (Event)
 import App.State (State(..))
 import App.View.ParetoVis as PV
@@ -18,7 +18,7 @@ import Data.Set as Set
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
-import Pareto (ParetoSlab, ParetoSlabs)
+import Pareto (ParetoSlab, ParetoSlabs, pareto2dSlabs)
 import App.NearestNeighbor (radialNN)
 import Pux.DOM.HTML (HTML)
 import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
@@ -38,28 +38,38 @@ view r highlightPts highlightFronts paretoPts =
         --div ! className "splom dims y-axis" $ 
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
-          div ! className "splom subplot" $ 
-            DF.runQuery (paretoPlot r highlightPts highlightFronts
-                                    (fst plotFields) (snd plotFields)) paretoPts
+          div ! className "splom subplot" $ do
+            let nbrQ = nbrs r
+                plotQ = paretoPlot r highlightPts highlightFronts 
+                                   (fst plotFields) (snd plotFields)
+            DF.runQuery (nbrQ `DF.chain` plotQ) paretoPts
 
-paretoPlot :: Number -> Set Int -> Set Int -> String -> String -> Query AppData (HTML Event)
+paretoPlot :: Number -> Set Int -> Set Int 
+           -> String -> String 
+           -> Query NeighborGraph (HTML Event)
 paretoPlot r highlightPts highlightFronts d1 d2 = do
-  limits' <- DF.summarize (extract2d d1 d2)
+  limits' <- graphNodes `DF.chain` DF.summarize (extract2d d1 d2)
   let limits = max2d limits'
-  paretoPoints <- map (setHighlight highlightPts) <$>
-                  A.catMaybes <$> 
+  paretoPoints <- graphNodes `DF.chain`
                   DF.summarize (extract2dPt d1 d2)
-  paretoPaths <- rnn r `DF.chain`
-                 paretoSort d1 d2 `DF.chain`
-                 DF.summarize (extractPath highlightFronts d1 d2)
+  let plotPoints = map (setHighlight highlightPts) $
+                   A.catMaybes 
+                   paretoPoints
+  plotPaths <- graphLinks `DF.chain`
+               pareto2dSlabs r d1 d2 `DF.chain`
+               --paretoSort d1 d2 `DF.chain`
+               DF.summarize (extractPath highlightFronts d1 d2)
   pure $ div do
-    PV.paretoVis (fst limits) (snd limits) paretoPoints paretoPaths
+    PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths
 
 setHighlight :: Set Int -> PointData -> PointData
 setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
 
-rnn :: Number -> Query AppData ParetoSlabs
-rnn r = radialNN r <$> DF.reset
+nbrs :: Number -> Query AppData NeighborGraph
+nbrs r = do
+  nodes <- DF.reset
+  let links = DF.init $ radialNN r nodes
+  pure $ {nodes:nodes, links:links}
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = case L.uncons xs of
@@ -69,19 +79,19 @@ splomPairs xs = case L.uncons xs of
 
 -- sort the points so that the line drawing algorithm works correctly
 -- TODO: maybe this should be in the vis component?
-paretoSort :: String -> String -> Query ParetoSlabs ParetoSlabs
-paretoSort d1 d2 = DF.mutate innerSort'
-  where
-  innerSort' {slab:s, data:d} = 
-    { slab: s
-    , data: DF.runQuery (DF.sort (order2d d1 d2)) d
-    }
+{--paretoSort :: String -> String -> Query ParetoSlabs ParetoSlabs--}
+{--paretoSort d1 d2 = DF.mutate innerSort'--}
+  {--where--}
+  {--innerSort' {slab:s, data:d} = --}
+    {--{ slab: s--}
+    {--, data: DF.runQuery (DF.sort (order2d d1 d2)) d--}
+    {--}--}
 
 extractPath :: Set Int -> String -> String -> ParetoSlab -> LineData
-extractPath selIds d1 d2 {slab:g, data:d} = 
+extractPath selIds d1 d2 {slab:g, p1:p1, p2:p2} = 
   { slabId: g
   , selected: Set.member g selIds
-  , points: A.catMaybes $ DF.runQuery (DF.summarize (extract2dPt d1 d2)) d
+  , points: A.catMaybes $ [extract2dPt d1 d2 p1, extract2dPt d1 d2 p2]
   }
 
 extract2dPt :: String -> String -> AppDatum -> Maybe PointData
