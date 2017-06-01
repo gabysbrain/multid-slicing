@@ -37,10 +37,11 @@ view r highlightPts highlightFronts paretoPts =
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ do
-            let nbrQ = nbrs r
-                plotQ = paretoPlot r highlightPts highlightFronts 
+            let plotQ = paretoPlot r highlightPts highlightFronts 
                                    (fst plotFields) (snd plotFields)
-            DF.runQuery (nbrQ `DF.chain` plotQ) paretoPts
+            DF.runQuery plotQ nbrGraph
+  where 
+  nbrGraph = DF.runQuery (nbrs r) paretoPts
 
 paretoPlot :: Number -> Set Int -> Set Int 
            -> String -> String 
