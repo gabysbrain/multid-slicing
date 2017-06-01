@@ -1,6 +1,5 @@
 module App.View.Layout where
 
-import App.View.Homepage as Homepage
 import App.View.Mainpage as Mainpage
 import App.View.NotFound as NotFound
 import App.Routes (Route(NotFound, Home))

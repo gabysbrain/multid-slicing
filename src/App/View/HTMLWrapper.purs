@@ -12,6 +12,8 @@ import Text.Smolder.HTML (body, div, head, html, link, meta, script, title)
 import Text.Smolder.HTML.Attributes (charset, content, href, id, name, rel, src, type')
 import Text.Smolder.Markup (text, (!))
 
+-- TODO: remove this and add this stuff to the static html page
+
 bodyStyle :: CSS
 bodyStyle = do
   margin (0.0 #px) (0.0 #px) (0.0 #px) (0.0 #px)
