@@ -2,7 +2,7 @@ module App.Data where
 
 import Prelude 
 import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
-import Data.DataFrame (DataFrame, Query)
+import Data.DataFrame (DataFrame)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foldable (class Foldable, foldMap, foldr)
@@ -44,17 +44,6 @@ instance showCsvError :: Show CsvError where
   show (ConvertErr e) = "(row: " <> (show e.row) <> " col: " <> (show e.col) <> ") " <> e.message
 
 type CE = Except (NonEmptyList CsvError)
-
--- TODO: move these to a query module
-graphLinks :: Query NeighborGraph (DataFrame Link)
-graphLinks = do -- FIXME: why doesn't map work here?
-  g <- DF.reset
-  pure g.links
-
-graphNodes :: Query NeighborGraph (DataFrame Node)
-graphNodes = do
-  g <- DF.reset
-  pure g.nodes
 
 fieldNames :: AppData -> Set String
 fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)
