@@ -24,11 +24,17 @@ type AppData = DataFrame AppDatum
 
 -- Used for low-level visualization
 type PointData = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
-type LineData = {slabId :: Int, selected :: Boolean, points :: Array PointData}
+type LineData = 
+  { slabId :: Int
+  , selected :: Boolean
+  , cosTheta :: Number
+  , points :: Array PointData
+  }
 
 -- Used for the neighborhood graph
 type Node = AppDatum
 type Link = {linkId :: Int, src :: Node, tgt :: Node}
+type AngleLink = {linkId :: Int, cosTheta :: Number, src :: Node, tgt :: Node}
 type NeighborGraph = {nodes :: DataFrame Node, links :: DataFrame Link}
 
 data CsvError 

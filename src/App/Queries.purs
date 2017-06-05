@@ -1,7 +1,7 @@
 module App.Queries where
 
 import Prelude
-import App.Data (AppData, AppDatum, Link, Node, NeighborGraph, PointData, LineData)
+import App.Data (AppData, AppDatum, Link, AngleLink, Node, NeighborGraph, PointData, LineData)
 import App.NearestNeighbor (radialNN)
 import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
@@ -12,8 +12,9 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.StrMap as SM
 import Data.Tuple (Tuple(..))
-import Math (atan)
+import Math (atan, sqrt)
 import Pareto (ParetoSlab, ParetoSlabs, pareto2dSlabs)
+import Util (joinWith)
 
 ----------------------------------
 -- All the queries the app uses --
@@ -47,12 +48,22 @@ scatterplotPoints highlightPts d1 d2 =
   A.catMaybes <$>
   DF.summarize (extract2dPt d1 d2)
 
-
 paretoPlotPaths :: Number -> Set Int -> String -> String
                 -> Query (DataFrame Link) (Array LineData)
 paretoPlotPaths r highlightFronts d1 d2 =
-  pareto2dSlabs r d1 d2 `DF.chain`
-  DF.summarize (extractPath highlightFronts d1 d2)
+  --pareto2dSlabs r d1 d2 `DF.chain`
+  linkAngle2d d1 d2 `DF.chain`
+  DF.summarize (extractPath' highlightFronts d1 d2)
+
+linkAngle2d :: String -> String -> Query (DataFrame Link) (DataFrame AngleLink)
+linkAngle2d d1 d2 = DF.mutate angleLink
+  where
+  angleLink l = 
+    { cosTheta: cosTheta2d d1 d2 l
+    , src: l.src
+    , tgt: l.tgt
+    , linkId: l.linkId
+    }
 
 -- sort the points so that the line drawing algorithm works correctly
 {--paretoSort :: String -> String -> Query ParetoSlabs ParetoSlabs--}
@@ -85,6 +96,15 @@ extractPath selIds d1 d2 {slab:g, p1:p1, p2:p2} =
   { slabId: g
   , selected: Set.member g selIds
   , points: A.catMaybes $ [extract2dPt d1 d2 p1, extract2dPt d1 d2 p2]
+  , cosTheta: 1.0
+  }
+
+extractPath' :: Set Int -> String -> String -> AngleLink -> LineData
+extractPath' selIds d1 d2 link =
+  { slabId: link.linkId
+  , selected: Set.member link.linkId selIds
+  , points: A.catMaybes $ [extract2dPt d1 d2 link.src, extract2dPt d1 d2 link.tgt]
+  , cosTheta: link.cosTheta
   }
 
 extract2dPt :: String -> String -> AppDatum -> Maybe PointData
@@ -95,6 +115,14 @@ extract2dPt d1 d2 datum = do
 
 setHighlight :: Set Int -> PointData -> PointData
 setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
+
+cosTheta2d :: String -> String -> Link -> Number
+cosTheta2d d1 d2 {src:{point:p1},tgt:{point:p2}} = sqrt (sqLen' / sqLen)
+  where
+  p = joinWith ((-)) p1 p2
+  p' = SM.delete d1 $ SM.delete d2 p -- projected line
+  sqLen = foldl (\s v -> s + v*v) 0.0 $ SM.values p
+  sqLen' = foldl (\s v -> s + v*v) 0.0 $ SM.values p'
 
 {--order2d :: String -> String -> AppDatum -> AppDatum -> Ordering--}
 {--order2d d1 d2 pt1 pt2 = --}
