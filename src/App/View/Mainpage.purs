@@ -4,7 +4,7 @@ import Prelude hiding (div, max, min)
 import Math (sqrt)
 import App.Data (AppData, fieldNames, sortedFieldNames, formatNum)
 import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange))
-import App.State (State(..), FileLoadError(..))
+import App.State (State(..), DataInfo, FileLoadError(..))
 import App.View.ParetoSlices as PS
 import Data.Set (Set)
 import Data.Traversable (for_)
@@ -27,30 +27,31 @@ view (State st) =
   div do
     div ! className "left-panel" $ do
       uploadPanel ! className "data-upload" 
-      viewDataInfo st.dataset st.paretoRadius ! className "data-info"
-    viewSlices st.paretoRadius st.selectedPoints st.selectedFronts st.dataset ! className "right-panel"
+      viewDataInfo st.dataset ! className "data-info"
+    viewSlices st.dataset ! className "right-panel"
 
-viewDataInfo :: Loadable FileLoadError AppData -> Number -> HTML Event
-viewDataInfo Unloaded _ = div $ text "Nothing yet!"
-viewDataInfo Loading _ = div $ text "Loading..."
-viewDataInfo (Failed errs) _ = viewFileErrors errs
-viewDataInfo (Loaded ds) r = 
+viewDataInfo :: Loadable FileLoadError DataInfo -> HTML Event
+viewDataInfo Unloaded = div $ text "Nothing yet!"
+viewDataInfo Loading = div $ text "Loading..."
+viewDataInfo (Failed errs) = viewFileErrors errs
+viewDataInfo (Loaded dsi) =
   div do
     label do
       text "Number of rows: "
-      span $ text $ show $ DF.rows ds
-    paretoRangeSlider ds r
+      span $ text $ show $ DF.rows dsi.paretoPoints
+    paretoRangeSlider dsi.paretoPoints dsi.paretoRadius
+    angleThreshSlider dsi.cosThetaThresh
     label do
       text "Dimensions"
       ul ! className "dimension-list" $ do
-        for_ (sortedFieldNames ds) $ \fn -> do
+        for_ (sortedFieldNames dsi.paretoPoints) $ \fn -> do
           li $ text fn
 
-viewSlices :: Number -> Set Int -> Set Int -> Loadable FileLoadError AppData -> HTML Event
-viewSlices _ _  _  Unloaded = div $ text "Nothing yet!"
-viewSlices _ _  _  Loading = div $ text "Loading..."
-viewSlices _ _  _  (Failed errs) = div $ pure unit
-viewSlices r sp sf (Loaded ds) = PS.view r sp sf ds
+viewSlices :: Loadable FileLoadError DataInfo -> HTML Event
+viewSlices Unloaded = div $ text "Nothing yet!"
+viewSlices Loading = div $ text "Loading..."
+viewSlices (Failed errs) = div $ pure unit
+viewSlices (Loaded dsi) = PS.view dsi
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
@@ -88,6 +89,11 @@ paretoRangeSlider ds r =
     #! onChange ParetoRadiusChange
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
+
+angleThreshSlider :: Number -> HTML Event
+angleThreshSlider theta = 
+  rangeSlider "cos theta threshold:" 0.0 1.0 theta
+  -- #! onChange ParetoRadiusChange
 
 rangeSlider :: String -> Number -> Number -> Number -> HTML Event
 rangeSlider name minv maxv curv =

@@ -3,7 +3,7 @@ module App.View.ParetoSlices where
 import Prelude hiding (div)
 import App.Data (AppData, AppDatum, PointData, LineData, NeighborGraph, sortedFieldNames)
 import App.Events (Event)
-import App.State (State(..))
+import App.State (State(..), DataInfo)
 import App.Queries (graphNodes, graphLinks, limits2d, nbrs, scatterplotPoints, paretoPlotPaths)
 import App.View.ParetoVis as PV
 import Data.Array as A
@@ -23,33 +23,31 @@ import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p)
 import Text.Smolder.HTML.Attributes (className, type')
 import Text.Smolder.Markup ((!), (#!), text)
 
-view :: Number -> Set Int -> Set Int -> AppData -> HTML Event
-view r highlightPts highlightFronts paretoPts = 
-  div $ div ! className "splom-view" $ do
+view :: DataInfo -> HTML Event
+view dsi = div $ 
+  div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
       div $ pure unit -- empty cell to offset the axis labels
-      for_ (fromMaybe L.Nil $ L.init $ sortedFieldNames paretoPts) $ \fn -> do
+      for_ (fromMaybe L.Nil $ L.init $ sortedFieldNames dsi.paretoPoints) $ \fn -> do
         label ! className "dim-label" $ text fn
-    for_ (L.transpose $ map L.reverse $ splomPairs $ sortedFieldNames paretoPts) $ \sr -> do
+    for_ (L.transpose $ map L.reverse $ splomPairs $ sortedFieldNames dsi.paretoPoints) $ \sr -> do
       div ! className "splom row" $ do
         --div ! className "splom dims y-axis" $ 
         label ! className "dim-label" $ text $ fromMaybe "" $ snd <$> (L.head sr)
         for_ sr $ \plotFields -> do
           div ! className "splom subplot" $ do
-            let plotQ = paretoPlot r highlightPts highlightFronts 
-                                   (fst plotFields) (snd plotFields)
+            let plotQ = paretoPlot dsi (fst plotFields) (snd plotFields)
             DF.runQuery plotQ nbrGraph
   where 
-  nbrGraph = DF.runQuery (nbrs r) paretoPts
+  nbrGraph = DF.runQuery (nbrs dsi.paretoRadius) dsi.paretoPoints
 
-paretoPlot :: Number -> Set Int -> Set Int 
-           -> String -> String 
+paretoPlot :: DataInfo -> String -> String 
            -> Query NeighborGraph (HTML Event)
-paretoPlot r highlightPts highlightFronts d1 d2 = do
+paretoPlot dsi d1 d2 = do
   limits <- graphNodes `DF.chain` limits2d d1 d2
-  plotPoints <- graphNodes `DF.chain` scatterplotPoints highlightPts d1 d2
-  plotPaths <- graphLinks `DF.chain` paretoPlotPaths r highlightFronts d1 d2
+  plotPoints <- graphNodes `DF.chain` scatterplotPoints dsi.selectedPoints d1 d2
+  plotPaths <- graphLinks `DF.chain` paretoPlotPaths dsi.paretoRadius dsi.selectedFronts d1 d2
   pure $ div do
     PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths
 

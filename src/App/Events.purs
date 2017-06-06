@@ -5,7 +5,7 @@ import Loadable (Loadable(..))
 import Pareto (paretoSet)
 import App.Data (AppData, PointData, LineData, fromCsv)
 import App.Routes (Route)
-import App.State (State(..), FileLoadError(..))
+import App.State (DataInfo, State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), makeAff, attempt)
 import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Class (liftEff)
@@ -53,10 +53,10 @@ foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded = true }
 foldp (ParetoRadiusChange ev) (State st) = noEffects $ 
   case N.fromString (targetValue ev) of
-    Just r  -> State (st { paretoRadius = r })
+    Just r  -> updateRadius r (State st)
     Nothing -> State st
 foldp (ReceiveData d) (State st) = noEffects $ 
-  State st { dataset = either Failed Loaded $ runExcept d }
+  State st { dataset = either Failed (Loaded <<< newDatasetState) $ runExcept d }
 foldp (LoadStaticFile fn _) (State st) =
   { state: State (st { dataset = Loading })
   , effects: [ do
@@ -80,10 +80,26 @@ foldp (DataFileChange ev) (State st) =
       pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
     ]
   }
-foldp (HoverParetoFront pfs) (State st) = noEffects $
-  State st {selectedFronts=foldMap (\g -> Set.singleton g.slabId) pfs}
-foldp (HoverParetoPoint pts) (State st) = noEffects $
-  State st {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}  
+foldp (HoverParetoFront pfs) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectedFronts=foldMap (\g -> Set.singleton g.slabId) pfs}}
+foldp (HoverParetoFront _) st = noEffects st
+foldp (HoverParetoPoint pts) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}}
+foldp (HoverParetoPoint _) st = noEffects st
+
+newDatasetState :: AppData -> DataInfo
+newDatasetState ds =
+  { paretoPoints: ds
+  , selectedPoints: Set.empty
+  , selectedFronts: Set.empty
+  , paretoRadius: 1.0
+  , cosThetaThresh: 1.0
+  }
+
+updateRadius :: Number -> State -> State
+updateRadius r (State st) = case st.dataset of
+  Loaded dsi -> State $ st {dataset=Loaded (dsi {paretoRadius=r})}
+  _ -> State st
 
 readFile :: forall eff. File -> Aff eff String
 readFile f = makeAff (\error success -> readFileAsText success f)

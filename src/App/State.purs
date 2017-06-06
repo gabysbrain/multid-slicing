@@ -19,14 +19,19 @@ data FileLoadError
   | LoadError MultipleErrors
   | ParseError (NonEmptyList CsvError)
 
+type DataInfo =
+  { paretoPoints :: AppData
+  , selectedPoints :: Set Int
+  , selectedFronts :: Set Int
+  , paretoRadius :: Number
+  , cosThetaThresh ::Number
+  }
+
 data State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
-  , dataset :: Loadable FileLoadError AppData
-  , selectedPoints :: Set Int -- rowIds
-  , selectedFronts :: Set Int -- slabIds
-  , paretoRadius :: Number
+  , dataset :: Loadable FileLoadError DataInfo
   }
 
 instance decodeJsonState :: DecodeJson State where
@@ -35,17 +40,11 @@ instance decodeJsonState :: DecodeJson State where
     title <- obj .? "title"
     url <- obj .? "route"
     loaded <- obj .? "loaded"
-    sp :: Array Int <- obj .? "selectedPoints"
-    sf :: Array Int <- obj .? "selectedFronts"
-    r <- obj .? "paretoRadius"
     pure $ State
       { title
       , loaded
       , route: match url
       , dataset: Unloaded -- FIXME: need to serialize the data frame
-      , selectedPoints: Set.fromFoldable sp
-      , selectedFronts: Set.fromFoldable sf
-      , paretoRadius: r
       }
 
 instance encodeJsonState :: EncodeJson State where
@@ -53,9 +52,6 @@ instance encodeJsonState :: EncodeJson State where
        "title" := st.title
     ~> "route" := toURL st.route
     ~> "loaded" := st.loaded
-    ~> "selectedPoints" := A.fromFoldable st.selectedPoints
-    ~> "selectedFronts" := A.fromFoldable st.selectedFronts
-    ~> "paretoRadius" := st.paretoRadius
     ~> jsonEmptyObject
 
 init :: String -> State
@@ -64,7 +60,4 @@ init url = State
   , route: match url
   , loaded: false
   , dataset: Unloaded
-  , selectedPoints: Set.empty
-  , selectedFronts: Set.empty
-  , paretoRadius: 1.0
   }
