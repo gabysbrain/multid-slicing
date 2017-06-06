@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.StrMap as SM
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), uncurry)
 import Math (atan, sqrt)
 import Pareto (ParetoSlab, ParetoSlabs, pareto2dSlabs)
 import Util (joinWith)
@@ -116,13 +116,18 @@ extract2dPt d1 d2 datum = do
 setHighlight :: Set Int -> PointData -> PointData
 setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
 
+tmp d1 d2 p = do
+  v1 <- SM.lookup d1 p
+  v2 <- SM.lookup d2 p
+  pure $ Tuple v1 v2
+
 cosTheta2d :: String -> String -> Link -> Number
 cosTheta2d d1 d2 {src:{point:p1},tgt:{point:p2}} = sqrt (sqLen' / sqLen)
   where
   p = joinWith ((-)) p1 p2
-  p' = SM.delete d1 $ SM.delete d2 p -- projected line
+  p' = fromMaybe (Tuple 0.0 0.0) $ tmp d1 d2 p -- projected line
   sqLen = foldl (\s v -> s + v*v) 0.0 $ SM.values p
-  sqLen' = foldl (\s v -> s + v*v) 0.0 $ SM.values p'
+  sqLen' = uncurry (\x1 x2 -> x1*x1 + x2*x2) p'
 
 {--order2d :: String -> String -> AppDatum -> AppDatum -> Ordering--}
 {--order2d d1 d2 pt1 pt2 = --}

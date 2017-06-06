@@ -104,6 +104,7 @@ function drawParetoLines(self, elem, data) {
       .attr('fill', 'none')
       .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
       .attr('stroke-opacity', function(d) {return d.cosTheta;})
+      //.attr('stroke-opacity', function(d) {return d.cosTheta > 0.99 ? 1.0 : 0.0;})
       .attr('d', function(d) {
         return line(d.points);
       });
