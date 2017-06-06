@@ -2,7 +2,7 @@ module App.View.Mainpage where
 
 import Prelude hiding (div, max, min)
 import Math (sqrt)
-import App.Data (AppData, fieldNames, sortedFieldNames)
+import App.Data (AppData, fieldNames, sortedFieldNames, formatNum)
 import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange))
 import App.State (State(..), FileLoadError(..))
 import App.View.ParetoSlices as PS
@@ -94,8 +94,8 @@ paretoRangeSlider ds r =
             ! value (show r) -- FIXME: why doesn't this work!?!?!
             ! step (show $ maxDist / 20.0)
             #! onChange ParetoRadiusChange
-      label $ text (show maxDist)
-      label $ text (show r)
+      label $ text (formatNum maxDist)
+      label $ text (formatNum r)
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
 

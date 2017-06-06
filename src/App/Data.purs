@@ -18,6 +18,7 @@ import Data.Set (Set)
 import Data.Set as S
 import Data.String (Pattern(..), split, trim)
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.Formatter.Number (format)
 
 type AppDatum = {rowId :: Int, point :: StrMap Number}
 type AppData = DataFrame AppDatum
@@ -36,6 +37,10 @@ type Node = AppDatum
 type Link = {linkId :: Int, src :: Node, tgt :: Node}
 type AngleLink = {linkId :: Int, cosTheta :: Number, src :: Node, tgt :: Node}
 type NeighborGraph = {nodes :: DataFrame Node, links :: DataFrame Link}
+
+-- Universal number formatter
+formatNum :: Number -> String
+formatNum = format {comma: false, before: 0, after: 3, abbreviations: false, sign: false}
 
 data CsvError 
   = NoHeaderRow

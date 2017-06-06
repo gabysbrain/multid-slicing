@@ -21,13 +21,15 @@
     "Skeleton-Sass": "skeleton-scss#*",
     "purescript-numbers": "^4.2.0",
     "purescript-monad-loops": "^0.4.0",
-    "purescript-debug": "^3.0.0"
+    "purescript-debug": "^3.0.0",
+    "purescript-formatters": "^0.4.0"
   },
   "resolutions": {
     "purescript-maybe": "^2.0.1",
     "purescript-foldable-traversable": "^2.0.0",
     "purescript-bifunctors": "^2.0.0",
     "purescript-control": "^2.0.0",
-    "purescript-newtype": "^1.0.0"
+    "purescript-newtype": "^1.0.0",
+    "purescript-prelude": "^3.0.0"
   }
 }
