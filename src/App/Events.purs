@@ -33,6 +33,7 @@ import Pux.DOM.Events (DOMEvent, targetValue)
 data Event 
   = PageView Route
   | ParetoRadiusChange DOMEvent
+  | AngleThreshChange DOMEvent
   | LoadStaticFile String DOMEvent
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError AppData)
@@ -54,6 +55,10 @@ foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded
 foldp (ParetoRadiusChange ev) (State st) = noEffects $ 
   case N.fromString (targetValue ev) of
     Just r  -> updateRadius r (State st)
+    Nothing -> State st
+foldp (AngleThreshChange ev) (State st) = noEffects $ 
+  case N.fromString (targetValue ev) of
+    Just t  -> updateAngleThresh t (State st)
     Nothing -> State st
 foldp (ReceiveData d) (State st) = noEffects $ 
   State st { dataset = either Failed (Loaded <<< newDatasetState) $ runExcept d }
@@ -99,6 +104,11 @@ newDatasetState ds =
 updateRadius :: Number -> State -> State
 updateRadius r (State st) = case st.dataset of
   Loaded dsi -> State $ st {dataset=Loaded (dsi {paretoRadius=r})}
+  _ -> State st
+
+updateAngleThresh :: Number -> State -> State
+updateAngleThresh t (State st) = case st.dataset of
+  Loaded dsi -> State $ st {dataset=Loaded (dsi {cosThetaThresh=t})}
   _ -> State st
 
 readFile :: forall eff. File -> Aff eff String

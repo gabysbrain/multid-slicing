@@ -49,7 +49,7 @@ paretoPlot dsi d1 d2 = do
   plotPoints <- graphNodes `DF.chain` scatterplotPoints dsi.selectedPoints d1 d2
   plotPaths <- graphLinks `DF.chain` paretoPlotPaths dsi.paretoRadius dsi.selectedFronts d1 d2
   pure $ div do
-    PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths
+    PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths dsi.cosThetaThresh
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = case L.uncons xs of

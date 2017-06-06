@@ -3,13 +3,13 @@ module App.View.Mainpage where
 import Prelude hiding (div, max, min)
 import Math (sqrt)
 import App.Data (AppData, fieldNames, sortedFieldNames, formatNum)
-import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange))
+import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange, AngleThreshChange))
 import App.State (State(..), DataInfo, FileLoadError(..))
 import App.View.ParetoSlices as PS
 import Data.Set (Set)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
-import Pux.DOM.Events (onChange, onSubmit, onClick)
+import Pux.DOM.Events (DOMEvent, onChange, onSubmit, onClick)
 import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p, a)
 import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
 import Text.Smolder.Markup ((!), (#!), text)
@@ -85,18 +85,17 @@ uploadPanel =
 
 paretoRangeSlider :: AppData -> Number -> HTML Event
 paretoRangeSlider ds r = 
-    rangeSlider "Pareto radius:" 0.0 maxDist r
-    #! onChange ParetoRadiusChange
+    rangeSlider "Pareto radius:" ParetoRadiusChange 0.0 maxDist r
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
 
 angleThreshSlider :: Number -> HTML Event
 angleThreshSlider theta = 
-  rangeSlider "cos theta threshold:" 0.0 1.0 theta
+  rangeSlider "cos theta threshold:" AngleThreshChange 0.0 1.0 theta
   -- #! onChange ParetoRadiusChange
 
-rangeSlider :: String -> Number -> Number -> Number -> HTML Event
-rangeSlider name minv maxv curv =
+rangeSlider :: String -> (DOMEvent -> Event) -> Number -> Number -> Number -> HTML Event
+rangeSlider name changeEvt minv maxv curv =
   label do
     text name
     div ! className "range-slider" $ do
@@ -106,6 +105,7 @@ rangeSlider name minv maxv curv =
             ! max (show maxv) 
             ! value (show curv) -- FIXME: why doesn't this work!?!?!
             ! step (show $ maxv / 20.0)
+            #! onChange changeEvt
       label $ text (formatNum maxv)
       label $ text (formatNum curv)
 

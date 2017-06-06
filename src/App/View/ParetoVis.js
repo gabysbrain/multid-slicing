@@ -73,6 +73,7 @@ function updateChart(self) {
 
 function drawParetoLines(self, elem, data) {
   var handleHover = self.props.onFrontHover;
+  var angleThresh = self.props['data-cosThetaThreshold'];
 
   var line = d3.line()
     .x(function(d) {
@@ -104,7 +105,7 @@ function drawParetoLines(self, elem, data) {
       .attr('fill', 'none')
       .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
       //.attr('stroke-opacity', function(d) {return d.cosTheta;})
-      .attr('stroke-opacity', function(d) {return d.cosTheta > 0.95 ? 1.0 : 0.0;})
+      .attr('stroke-opacity', function(d) {return d.cosTheta >= angleThresh ? 1.0 : 0.0;})
       .attr('d', function(d) {
         return line(d.points);
       });
@@ -113,7 +114,8 @@ function drawParetoLines(self, elem, data) {
       return line(d.points);
     })
     .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
-    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';});
+    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
+    .attr('stroke-opacity', function(d) {return d.cosTheta >= angleThresh ? 1.0 : 0.0;});
   lines.exit().remove();
 }
 

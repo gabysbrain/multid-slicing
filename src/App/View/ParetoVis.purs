@@ -15,18 +15,20 @@ import Unsafe.Coerce (unsafeCoerce)
 
 foreign import paretoVisComponent :: forall props. ReactClass props
 
-paretoVis :: Number -> Number 
+paretoVis :: Number -> Number
           -> Array PointData -> Array LineData 
+          -> Number
           -> HTML Event
-paretoVis maxX maxY pts lines = _paretoVis props 
-                                  #! onPointHover HoverParetoPoint
-                                  #! onFrontHover HoverParetoFront
+paretoVis maxX maxY pts lines cosTheta = _paretoVis props 
+                                           #! onPointHover HoverParetoPoint
+                                           #! onFrontHover HoverParetoFront
   where 
   props =
     { "data-maxX": maxX
     , "data-maxY": maxY
     , "data-paretopoints": pts
     , "data-paretopaths": lines
+    , "data-cosThetaThreshold": cosTheta
     --, "onFrontHover": onFrontHover HoverParetoFront
     --, "onPointHover": onPointHover HoverParetoPoint
     }
