@@ -84,18 +84,22 @@ uploadPanel =
 
 paretoRangeSlider :: AppData -> Number -> HTML Event
 paretoRangeSlider ds r = 
-  label do
-    text "Pareto radius:"
-    div ! className "range-slider" $ do
-      label $ text "0"
-      input ! type' "range" 
-            ! min (show 0) 
-            ! max (show maxDist) 
-            ! value (show r) -- FIXME: why doesn't this work!?!?!
-            ! step (show $ maxDist / 20.0)
-            #! onChange ParetoRadiusChange
-      label $ text (formatNum maxDist)
-      label $ text (formatNum r)
+    rangeSlider "Pareto radius:" 0.0 maxDist r
+    #! onChange ParetoRadiusChange
   where
   maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
+
+rangeSlider :: String -> Number -> Number -> Number -> HTML Event
+rangeSlider name minv maxv curv =
+  label do
+    text name
+    div ! className "range-slider" $ do
+      label $ text (formatNum minv)
+      input ! type' "range" 
+            ! min (show minv) 
+            ! max (show maxv) 
+            ! value (show curv) -- FIXME: why doesn't this work!?!?!
+            ! step (show $ maxv / 20.0)
+      label $ text (formatNum maxv)
+      label $ text (formatNum curv)
 
