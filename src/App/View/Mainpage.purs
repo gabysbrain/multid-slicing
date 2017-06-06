@@ -104,7 +104,7 @@ rangeSlider name changeEvt minv maxv curv =
             ! min (show minv) 
             ! max (show maxv) 
             ! value (show curv) -- FIXME: why doesn't this work!?!?!
-            ! step (show $ maxv / 20.0)
+            ! step (show $ maxv / 50.0)
             #! onChange changeEvt
       label $ text (formatNum maxv)
       label $ text (formatNum curv)
