@@ -5,7 +5,6 @@ import App.Data (AppData, CsvError)
 import App.Routes (Route, match, toURL)
 import Control.Applicative (pure)
 import Control.Bind (bind)
-import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, jsonEmptyObject, (.?), (:=), (~>))
 import Data.Array as A
 import Data.Foreign (MultipleErrors)
 import Data.Function (($))
@@ -33,26 +32,6 @@ data State = State
   , loaded :: Boolean
   , dataset :: Loadable FileLoadError DataInfo
   }
-
-instance decodeJsonState :: DecodeJson State where
-  decodeJson json = do
-    obj <- decodeJson json
-    title <- obj .? "title"
-    url <- obj .? "route"
-    loaded <- obj .? "loaded"
-    pure $ State
-      { title
-      , loaded
-      , route: match url
-      , dataset: Unloaded -- FIXME: need to serialize the data frame
-      }
-
-instance encodeJsonState :: EncodeJson State where
-  encodeJson (State st) =
-       "title" := st.title
-    ~> "route" := toURL st.route
-    ~> "loaded" := st.loaded
-    ~> jsonEmptyObject
 
 init :: String -> State
 init url = State

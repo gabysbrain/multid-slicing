@@ -19,7 +19,7 @@ _radialNN :: Number
           -> List {src::AppDatum,tgt::AppDatum}
           -> List Link
 _radialNN r df accum = case L.uncons df of
-  Nothing -> L.mapWithIndex (\ns i -> {linkId:i,src:ns.src,tgt:ns.tgt}) accum
+  Nothing -> L.mapWithIndex (\i ns -> {linkId:i,src:ns.src,tgt:ns.tgt}) accum
   Just {head:pt,tail:pts} -> _radialNN r pts (accum <> createNbrs r pt pts)
 
 -- find the set of neighbors a certain distance around a point (pt)

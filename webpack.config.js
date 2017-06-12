@@ -1,13 +1,14 @@
+const appConfig = require('./src/App/Config.js').config
 const path = require('path')
 const webpack = require('webpack')
 const isProd = process.env.NODE_ENV === 'production'
 
-const entries = [path.join(__dirname, 'support/client.entry.js')]
+const entries = [path.join(__dirname, 'support/entry.js')]
 
 const plugins = [
   new webpack.DefinePlugin({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-  }),
+  })
 ]
 
 if (isProd) {
@@ -17,23 +18,20 @@ if (isProd) {
       debug: false
     })
   )
-} else {
-  entries.unshift('webpack-hot-middleware/client?reload=true');
-  plugins.push(
-    new webpack.HotModuleReplacementPlugin(),
-    new webpack.NoEmitOnErrorsPlugin()
-  )
 }
 
-const config = {
+module.exports = {
   entry: entries,
+  context: __dirname,
+  target: 'web',
   output: {
     path: path.join(__dirname, 'static', 'dist'),
     filename: 'bundle.js',
-    publicPath: '/dist/'
+    publicPath: appConfig.public_path
   },
   module: {
-    rules: [{
+    loaders: [
+      {
         test: /\.purs$/,
         loader: 'purs-loader',
         exclude: /node_modules/,
@@ -41,9 +39,10 @@ const config = {
           bundle: true,
           bundleOutput: 'static/dist/bundle.js'
         } : {
-          psc: 'psa'
+          psc: 'psa',
+          pscIde: true
         }
-    }, {
+      }, {
       test: /\.scss$/,
       use: [{
         loader: "style-loader" // style nodes from JS strings
@@ -90,42 +89,4 @@ const config = {
     modules: false,
     chunkModules: false
   }
-}
-
-// If this file is directly run with node, start the development server
-// instead of exporting the webpack config.
-if (require.main === module) {
-  const compiler = webpack(config)
-  const serverCompiler = webpack(require('./webpack.config.server.js'))
-
-  console.log('Compiling...')
-
-  serverCompiler.run((err) => {
-    if (err) return console.error(err)
-
-    const server = require('./dist/server.js')
-
-    server([
-      require('connect-history-api-fallback')(),
-      require("webpack-dev-middleware")(compiler, {
-        publicPath: config.output.publicPath,
-        stats: {
-          assets: false,
-          cached: false,
-          cachedAssets: false,
-          children: false,
-          chunks: false,
-          chunkModules: false,
-          chunkOrigins: false,
-          hash: false,
-          performance: false,
-          timing: false,
-          version: false
-        }
-      }),
-      require("webpack-hot-middleware")(compiler)
-    ])()
-  })
-} else {
-  module.exports = config
 }

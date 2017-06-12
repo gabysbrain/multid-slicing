@@ -125,7 +125,7 @@ readFile'' f = do
   pure $ pure contents
 
 userFile :: EVT.Event -> Except FileLoadError File
-userFile ev = case Null.toMaybe $ item 0 fl of
+userFile ev = case item 0 fl of
     Nothing -> throwError NoFile
     Just f -> pure f
   where

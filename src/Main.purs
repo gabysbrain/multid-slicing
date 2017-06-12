@@ -1,18 +1,14 @@
-module Client where
+module Main where
 
+import Prelude
 import App.Events (AppEffects, Event(..), foldp)
 import App.Routes (match)
 import App.State (State, init)
 import App.View.Layout (view)
-import Control.Applicative (pure)
-import Control.Bind ((=<<), bind)
 import Control.Monad.Eff (Eff)
 import DOM (DOM)
 import DOM.HTML (window)
 import DOM.HTML.Types (HISTORY)
-import Data.Argonaut (Json, decodeJson)
-import Data.Either (either)
-import Data.Function (id, ($))
 import Pux (CoreEffects, App, start)
 import Pux.DOM.Events (DOMEvent)
 import Pux.DOM.History (sampleURL)
@@ -23,7 +19,7 @@ type WebApp = App (DOMEvent -> Event) Event State
 
 type ClientEffects = CoreEffects (AppEffects (history :: HISTORY, dom :: DOM))
 
---main :: String -> State -> Eff ClientEffects WebApp
+main :: String -> State -> Eff ClientEffects WebApp
 main url state = do
   -- | Create a signal of URL changes.
   urlSignal <- sampleURL =<< window
@@ -44,6 +40,5 @@ main url state = do
   -- | Return app to be used for hot reloading logic in support/client.entry.js
   pure app
 
--- | Used to serialize State from JSON in support/client.entry.js
-readState :: Json -> State
-readState json = either (\_ -> init "/") id $ decodeJson json
+initialState :: State
+initialState = init "/"

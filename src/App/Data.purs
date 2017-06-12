@@ -81,7 +81,7 @@ fromCsv' keys lines = mergeErrs $
            (\vals -> Right (L.singleton $ SM.fromFoldable (L.zip keys vals)))
 
 withRowIds :: List (StrMap Number) -> List AppDatum
-withRowIds = L.mapWithIndex (\p i -> {rowId:i, point:p})
+withRowIds = L.mapWithIndex (\i p -> {rowId:i, point:p})
 
 splitLines :: String -> List String
 splitLines raw = L.filter ((/=) "") $ map trim $ split' (Pattern "\n") raw
