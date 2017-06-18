@@ -6,10 +6,11 @@ import Data.DataFrame (DataFrame)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foldable (class Foldable, foldMap, foldr)
+import Data.Array as A
 import Data.List (List)
 import Data.List as L
 import Data.List.Types (NonEmptyList)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Number (fromString)
 import Data.StrMap (StrMap, keys)
@@ -19,24 +20,28 @@ import Data.Set as S
 import Data.String (Pattern(..), split, trim)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Formatter.Number (format)
+import Data.Geom.Point (Point)
+import Data.Geom.Point as P
 
-type AppDatum = {rowId :: Int, point :: StrMap Number}
-type AppData = DataFrame AppDatum
+type DataPoint d = {rowId :: Int, point :: Point d}
+type FieldNames d = Array String
+type RawPoints d = DataFrame (DataPoint d)
+type ParetoPoints d = DataFrame (DataPoint d)
 
 -- Used for low-level visualization
-type PointData = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
-type LineData = 
+type PointData2D = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
+type LineData2D = 
   { slabId :: Int
   , selected :: Boolean
   , cosTheta :: Number
-  , points :: Array PointData
+  , points :: Array PointData2D
   }
 
 -- Used for the neighborhood graph
-type Node = AppDatum
-type Link = {linkId :: Int, src :: Node, tgt :: Node}
-type AngleLink = {linkId :: Int, cosTheta :: Number, src :: Node, tgt :: Node}
-type NeighborGraph = {nodes :: DataFrame Node, links :: DataFrame Link}
+type Node d = DataPoint d
+type Link d = {linkId :: Int, src :: Node d, tgt :: Node d}
+type AngleLink d = {linkId :: Int, cosTheta :: Number, src :: Node d, tgt :: Node d}
+type NeighborGraph d = {nodes :: DataFrame (Node d), links :: DataFrame (Link d)}
 
 -- Universal number formatter
 formatNum :: Number -> String
@@ -45,6 +50,8 @@ formatNum = format {comma: false, before: 0, after: 3, abbreviations: false, sig
 data CsvError 
   = NoHeaderRow
   | NoDataRows
+  | InvalidHeaderFieldCount
+  | InvalidFieldCount {row :: Int, actual :: Int}
   | ConvertErr { row :: Int
                , col :: Int
                , message :: String
@@ -52,36 +59,62 @@ data CsvError
 instance showCsvError :: Show CsvError where
   show NoHeaderRow = "No header row"
   show NoDataRows = "No data rows"
-  show (ConvertErr e) = "(row: " <> (show e.row) <> " col: " <> (show e.col) <> ") " <> e.message
+  show InvalidHeaderFieldCount = "Wrong number of header fields"
+  show (InvalidFieldCount e) = 
+       "(row: " <> (show e.row) <> ") " 
+    <> "incorrect length"
+    -- <> (if e.expected < e.actual then "row too long" else "row too short") 
+    -- <> " expected: " <> (show e.expected) 
+    <> " actual: " <> (show e.actual)
+  show (ConvertErr e) = "(row: " <> (show e.row) 
+                     <> " col: " <> (show e.col) <> ") " 
+                     <> e.message
 
 type CE = Except (NonEmptyList CsvError)
 
-fieldNames :: AppData -> Set String
-fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)
+{--fieldNames :: AppData -> Set String--}
+{--fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)--}
 
-sortedFieldNames :: AppData -> List String
-sortedFieldNames = L.sort <<< L.fromFoldable <<< fieldNames
+{--sortedFieldNames :: AppData -> List String--}
+{--sortedFieldNames = L.sort <<< L.fromFoldable <<< fieldNames--}
 
-fromCsv :: String -> Except (NonEmptyList CsvError) AppData
+fromCsv :: forall d. String -> CE (Tuple (FieldNames d) (RawPoints d))
 fromCsv raw = case L.uncons $ splitLines raw of
     Nothing -> throwError $ pure NoHeaderRow
     Just {tail:t} | L.length t == 0 -> throwError $ pure NoDataRows
-    Just {head:h,tail:t} -> mapExcept (either Left (Right <<< DF.init)) $ 
-                              withRowIds <$>
-                              fromCsv' (split' (Pattern ",") h) t
+    Just {head:h,tail:t} -> do
+      fields <- parseFieldNames' h
+      dataRows <- withRowIds <$> fromCsv' t
+      pure $ Tuple fields (DF.init dataRows)
+                 -- mapExcept (either Left (Right <<< Tuple (parseFieldNames' h) <<< DF.init)) $ 
+                              -- withRowIds <$>
+                              -- fromCsv' t
+                              --fromCsv' (split' (Pattern ",") h) t
 
-fromCsv' :: List String -> List String -> CE (List (StrMap Number))
-fromCsv' keys lines = mergeErrs $
-  L.zipWith (\i l -> mapExcept (mapExceptions i) $ procLine l)
+-- TODO: I can put the header length here to force all the parsing to normalize
+fromCsv' :: forall d. List String -> CE (List (Point d))
+fromCsv' lines = mergeErrs $
+  L.zipWith (\i l -> mapExcept (mapPts i) $ procLine l)
             (L.range 1 (L.length lines))
             lines
   where
-  mapExceptions i =
+  mapPts i =
     either (\errs -> Left (map (\e -> ConvertErr {row:i,col:fst e,message:snd e}) errs))
-           (\vals -> Right (L.singleton $ SM.fromFoldable (L.zip keys vals)))
+           (\vals -> maybe (Left (pure (InvalidFieldCount {row:i,actual:L.length vals})))
+                           (Right <<< pure) $
+                           toPoint vals)
 
-withRowIds :: List (StrMap Number) -> List AppDatum
+parseFieldNames' :: forall d. String -> CE (FieldNames d)
+parseFieldNames' = parseFieldNames <<< split' (Pattern ",")
+
+withRowIds :: forall d. List (Point d) -> List (DataPoint d)
 withRowIds = L.mapWithIndex (\i p -> {rowId:i, point:p})
+
+parseFieldNames :: forall d. List String -> CE (FieldNames d)
+parseFieldNames = pure <<< A.fromFoldable
+  -- version for sized vectors
+  --maybe (throwError $ pure InvalidHeaderFieldCount)
+        --pure <<< V.fromArray <<< A.fromFoldable 
 
 splitLines :: String -> List String
 splitLines raw = L.filter ((/=) "") $ map trim $ split' (Pattern "\n") raw
@@ -107,6 +140,9 @@ mergeErrs :: forall f n e. Semigroup e => Monoid n => Foldable f =>
              f (Except e n) -> Except e n
 mergeErrs = foldr (\e1 e2 -> except $ merge' (runExcept e1) (runExcept e2))
                   (pure mempty)
+
+toPoint :: forall d. List Number -> Maybe (Point d)
+toPoint = P.fromArray <<< A.fromFoldable
 
 merge' :: forall m n. Semigroup m => Semigroup n => Either m n -> Either m n -> Either m n
 merge' (Left e1) (Left e2) = Left $ e1 <> e2

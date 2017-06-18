@@ -3,7 +3,7 @@ module App.Events where
 import Prelude
 import Loadable (Loadable(..))
 import Pareto (paretoSet)
-import App.Data (AppData, PointData, LineData, fromCsv)
+import App.Data (RawPoints, ParetoPoints, FieldNames, PointData2D, LineData2D, fromCsv)
 import App.Routes (Route)
 import App.State (DataInfo, State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), makeAff, attempt)
@@ -25,10 +25,11 @@ import DOM (DOM)
 import DOM.Event.Types as EVT
 import DOM.File.FileList (item)
 import DOM.File.FileReader (fileReader, result, readAsText)
-import DOM.File.Types (File, FileList, fileToBlob)
+import DOM.File.Types (File, FileList)
 import Network.HTTP.Affjax (AJAX, get)
 import Pux (EffModel, noEffects)
 import Pux.DOM.Events (DOMEvent, targetValue)
+import Data.Tuple (Tuple, fst, snd)
 
 data Event 
   = PageView Route
@@ -36,9 +37,9 @@ data Event
   | AngleThreshChange DOMEvent
   | LoadStaticFile String DOMEvent
   | DataFileChange DOMEvent
-  | ReceiveData (Except FileLoadError AppData)
-  | HoverParetoFront (Array LineData)
-  | HoverParetoPoint (Array PointData)
+  | ReceiveData (Except FileLoadError (Tuple (FieldNames Int) (RawPoints Int))) -- FIXME: wrong, should be RawPoints d
+  | HoverParetoFront (Array LineData2D)
+  | HoverParetoPoint (Array PointData2D)
   -- | StartParetoFilter AppData
   -- | FinishParetoFilter AppData
 
@@ -71,7 +72,7 @@ foldp (LoadStaticFile fn _) (State st) =
                       (\r -> parseCsv r.response) res
           --either (Left <<< LoadError) (\r -> parseCsv r.response) res
           --res.response >>= parseCsv
-      pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
+      pure $ Just $ ReceiveData (paretoQuery <$> ds)
     ]
   }
 -- load the data from the file the user specified
@@ -82,7 +83,7 @@ foldp (DataFileChange ev) (State st) =
       raw <- readFile' f
       -- FIXME: maybe do the pareto calculatino in a separate async event
       let ds = raw >>= parseCsv
-      pure $ Just $ ReceiveData $ DF.runQuery paretoSet <$> ds
+      pure $ Just $ ReceiveData (paretoQuery <$> ds)
     ]
   }
 foldp (HoverParetoFront pfs) (State st@{dataset:Loaded dsi}) = noEffects $
@@ -92,14 +93,20 @@ foldp (HoverParetoPoint pts) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded dsi {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}}
 foldp (HoverParetoPoint _) st = noEffects st
 
-newDatasetState :: AppData -> DataInfo
+newDatasetState :: forall d. Tuple (FieldNames d) (ParetoPoints d) -> DataInfo d
 newDatasetState ds =
-  { paretoPoints: ds
+  { paretoPoints: snd ds
+  , fieldNames: fst ds
   , selectedPoints: Set.empty
   , selectedFronts: Set.empty
   , paretoRadius: 1.0
   , cosThetaThresh: 1.0
   }
+
+paretoQuery :: forall d
+             . Tuple (FieldNames d) (RawPoints d) 
+            -> Tuple (FieldNames d) (ParetoPoints d)
+paretoQuery = map (DF.runQuery paretoSet)
 
 updateRadius :: Number -> State -> State
 updateRadius r (State st) = case st.dataset of
@@ -131,6 +138,6 @@ userFile ev = case item 0 fl of
   where
   fl = targetFileList ev -- FIXME: replace with readFileList
 
-parseCsv :: String -> (Except FileLoadError AppData)
+parseCsv :: forall d. String -> Except FileLoadError (Tuple (FieldNames d) (RawPoints d))
 parseCsv = withExcept ParseError <<< fromCsv
 

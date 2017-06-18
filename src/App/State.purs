@@ -1,7 +1,7 @@
 module App.State where
 
 import App.Config (config)
-import App.Data (AppData, CsvError)
+import App.Data (ParetoPoints, FieldNames, CsvError)
 import App.Routes (Route, match, toURL)
 import Control.Applicative (pure)
 import Control.Bind (bind)
@@ -18,8 +18,9 @@ data FileLoadError
   | LoadError MultipleErrors
   | ParseError (NonEmptyList CsvError)
 
-type DataInfo =
-  { paretoPoints :: AppData
+type DataInfo d =
+  { paretoPoints :: ParetoPoints d
+  , fieldNames :: FieldNames d
   , selectedPoints :: Set Int
   , selectedFronts :: Set Int
   , paretoRadius :: Number
@@ -30,7 +31,7 @@ data State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
-  , dataset :: Loadable FileLoadError DataInfo
+  , dataset :: Loadable FileLoadError (DataInfo Int) -- FIXME: this is wrong. it should be the size
   }
 
 init :: String -> State

@@ -2,21 +2,20 @@ module App.View.Mainpage where
 
 import Prelude hiding (div, max, min)
 import Math (sqrt)
-import App.Data (AppData, fieldNames, sortedFieldNames, formatNum)
+import App.Data (FieldNames, formatNum)
 import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange, AngleThreshChange))
 import App.State (State(..), DataInfo, FileLoadError(..))
 import App.View.ParetoSlices as PS
-import Data.Set (Set)
+import Data.Array as A
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
-import Pux.DOM.Events (DOMEvent, onChange, onSubmit, onClick)
-import Text.Smolder.HTML (div, label, h2, h3, button, input, span, ul, li, p, a)
+import Pux.DOM.Events (DOMEvent, onChange, onClick)
+import Text.Smolder.HTML (div, label, h2, input, span, ul, li, p, a)
 import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
 import Data.DataFrame as DF
 import Data.Int (toNumber)
-import Data.Set as S
 
 -- TODO: load these from disk somehow
 dataFiles :: Array String
@@ -30,7 +29,7 @@ view (State st) =
       viewDataInfo st.dataset ! className "data-info"
     viewSlices st.dataset ! className "right-panel"
 
-viewDataInfo :: Loadable FileLoadError DataInfo -> HTML Event
+viewDataInfo :: forall d. Loadable FileLoadError (DataInfo d) -> HTML Event
 viewDataInfo Unloaded = div $ text "Nothing yet!"
 viewDataInfo Loading = div $ text "Loading..."
 viewDataInfo (Failed errs) = viewFileErrors errs
@@ -39,15 +38,15 @@ viewDataInfo (Loaded dsi) =
     label do
       text "Number of rows: "
       span $ text $ show $ DF.rows dsi.paretoPoints
-    paretoRangeSlider dsi.paretoPoints dsi.paretoRadius
+    paretoRangeSlider dsi.fieldNames dsi.paretoRadius
     angleThreshSlider dsi.cosThetaThresh
     label do
       text "Dimensions"
       ul ! className "dimension-list" $ do
-        for_ (sortedFieldNames dsi.paretoPoints) $ \fn -> do
+        for_ (A.sort dsi.fieldNames) $ \fn -> do
           li $ text fn
 
-viewSlices :: Loadable FileLoadError DataInfo -> HTML Event
+viewSlices :: forall d. Loadable FileLoadError (DataInfo d) -> HTML Event
 viewSlices Unloaded = div $ text "Nothing yet!"
 viewSlices Loading = div $ text "Loading..."
 viewSlices (Failed errs) = div $ pure unit
@@ -83,11 +82,11 @@ uploadPanel =
             a #! onClick (LoadStaticFile fn) $
               text fn
 
-paretoRangeSlider :: AppData -> Number -> HTML Event
-paretoRangeSlider ds r = 
+paretoRangeSlider :: forall d. FieldNames d -> Number -> HTML Event
+paretoRangeSlider fns r = 
     rangeSlider "Pareto radius:" ParetoRadiusChange 0.0 maxDist r
   where
-  maxDist = sqrt $ toNumber $ S.size $ fieldNames ds
+  maxDist = sqrt $ toNumber $ A.length fns
 
 angleThreshSlider :: Number -> HTML Event
 angleThreshSlider theta = 
