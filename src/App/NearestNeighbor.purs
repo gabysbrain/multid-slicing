@@ -21,13 +21,13 @@ _radialNN :: forall d
           -> List (Link d)
 _radialNN r df accum = case L.uncons df of
   Nothing -> L.mapWithIndex (\i ns -> {linkId:i,src:ns.src,tgt:ns.tgt}) accum
-  Just {head:pt,tail:pts} -> _radialNN r pts (accum <> createNbrs r pt pts)
+  Just {head:pt,tail:pts} -> _radialNN r pts (accum <> createNbrsR r pt pts)
 
 -- find the set of neighbors a certain distance around a point (pt)
-createNbrs :: forall d
-            . Number -> DataPoint d -> List (DataPoint d) 
-           -> List {src::DataPoint d,tgt::DataPoint d}
-createNbrs r pt = foldMap (mkNbr pt)
+createNbrsR :: forall d
+             . Number -> DataPoint d -> List (DataPoint d) 
+            -> List {src::DataPoint d,tgt::DataPoint d}
+createNbrsR r pt = foldMap (mkNbr pt)
   where
   mkNbr p1 p2 = if r*r > P.sqDist p1.point p2.point
                    then L.singleton {src:p1, tgt:p2}

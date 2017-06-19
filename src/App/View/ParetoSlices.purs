@@ -1,21 +1,17 @@
 module App.View.ParetoSlices where
 
 import Prelude hiding (div)
-import App.Data (ParetoPoints, FieldNames, PointData2D, LineData2D, NeighborGraph)
+import App.Data (FieldNames, NeighborGraph)
 import App.Events (Event)
-import App.State (State(..), DataInfo)
+import App.State (DataInfo)
 import App.Queries (graphNodes, graphLinks, limits2d, nbrs, scatterplotPoints, paretoPlotPaths)
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
 import Data.DataFrame (Query)
-import Data.Foldable (class Foldable, foldl, foldMap)
 import Data.List (List)
 import Data.List as L
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Set (Set)
-import Data.Set as Set
-import Data.StrMap as SM
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
