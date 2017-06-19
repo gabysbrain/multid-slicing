@@ -6,9 +6,9 @@ import App.Data (DataPoint, RawPoints, ParetoPoints, Link)
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Array as A
-import Data.Foldable (class Foldable, sum, or, foldMap, any)
+import Data.Foldable (class Foldable, or, foldMap, any)
 import Data.List as L
-import Data.Maybe (Maybe(..), maybe, fromJust)
+import Data.Maybe (fromJust)
 import Data.Ordering (invert)
 import Partial.Unsafe (unsafePartial)
 import Data.Geom.Point as P
@@ -99,7 +99,7 @@ rowOne = unsafePartial $ fromJust <<< L.head <<< foldMap L.singleton
 
 filterNotDatum2D :: forall d d'
                   . Int -> Int -> DataPoint d -> DataPoint d'
-filterNotDatum2D d1 d2 datum = datum {point=P.project' d1 d2 datum.point}
+filterNotDatum2D d1 d2 datum = datum {point=P.projectNot d1 d2 datum.point}
 
 -- Filter a point to 2D
 filterDatum2D :: forall d d'. Int -> Int -> DataPoint d -> DataPoint d'

@@ -35,8 +35,8 @@ project :: forall d d'. Int -> Int -> Point d -> Point d'
 project d1 d2 p = Point $ [p !!! d1, p !!! d2]
 
 -- project a point into everything but the 2 given dimensions
-project' :: forall d d'. Int -> Int -> Point d -> Point d'
-project' d1 d2 p = del p
+projectNot :: forall d d'. Int -> Int -> Point d -> Point d'
+projectNot d1 d2 p = del p
   where
   del = if d1 < d2 
            then delAt d1 <<< delAt d2
