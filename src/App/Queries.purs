@@ -3,17 +3,14 @@ module App.Queries where
 import Prelude
 import App.Data (ParetoPoints, DataPoint, Link, AngleLink, Node, NeighborGraph, PointData2D, LineData2D, rowId, rowVal)
 import App.NearestNeighbor (radialNN)
-import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Foldable (foldl)
-import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set (Set)
 import Data.Set as Set
-import Data.StrMap as SM
-import Data.Tuple (Tuple(..), uncurry)
-import Math (atan, sqrt)
-import Pareto (ParetoSlab, ParetoSlabs, pareto2dSlabs)
+import Data.Tuple (Tuple(..))
+import Math (sqrt)
+import Pareto (ParetoSlab)
 import Data.Geom.Point ((!!!))
 import Data.Geom.Point as P
 import Data.Geom.Vector as V
