@@ -20,6 +20,9 @@ fromArray = Just <<< Point
 zerosLike :: forall d. Point d -> Point d
 zerosLike = Point <<< mapDims (const 0.0)
 
+dims :: forall d. Point d -> Int
+dims (Point p) = A.length p
+
 sqDist :: forall d. Point d -> Point d -> Number
 sqDist (Point p1) (Point p2) = sum $ A.zipWith ((*)) p1 p2
 --sqDist (Point p1) (Point p2) = sum $ V.zipWith ((*)) p1 p2
@@ -31,17 +34,23 @@ fold :: forall a d. (a -> Number -> a) -> a -> Point d -> a
 fold f init (Point v) = foldl f init v
 
 -- project a point into 2D
-project :: forall d d'. Int -> Int -> Point d -> Point d'
-project d1 d2 p = Point $ [p !!! d1, p !!! d2]
+project2D :: forall d d'. Int -> Int -> Point d -> Point d'
+project2D d1 d2 p = Point $ [p !!! d1, p !!! d2]
 
 -- project a point into everything but the 2 given dimensions
-projectNot :: forall d d'. Int -> Int -> Point d -> Point d'
-projectNot d1 d2 p = del p
+projectNot2D :: forall d d'. Int -> Int -> Point d -> Point d'
+projectNot2D d1 d2 p = del p
   where
   del = if d1 < d2 
            then delAt d1 <<< delAt d2
            else delAt d2 <<< delAt d1
 --project' d1 d2 (Point p) = Point $ delAt d1 $ delAt d2 p
+
+projectNot :: forall d d'. Int -> Point d -> Point d'
+projectNot d1 p = delAt d1 p
+
+projectUp :: forall d d'. (Array Number -> Array Number) -> Point d -> Point d'
+projectUp f (Point p) = Point $ p <> f p
 
 mapDims :: forall a d
          . (Number -> a) -> Point d -> Array a

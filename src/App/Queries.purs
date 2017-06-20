@@ -1,7 +1,7 @@
 module App.Queries where
 
 import Prelude
-import App.Data (ParetoPoints, DataPoint, Link, AngleLink, Node, NeighborGraph, PointData2D, LineData2D)
+import App.Data (ParetoPoints, DataPoint, Link, AngleLink, Node, NeighborGraph, PointData2D, LineData2D, rowId, rowVal)
 import App.NearestNeighbor (radialNN)
 import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
@@ -87,7 +87,7 @@ linkAngle2d d1 d2 = DF.mutate angleLink
 -------------------------------------------
 extract2d :: forall d
            . Int -> Int -> DataPoint d -> Tuple Number Number
-extract2d d1 d2 {point:d} = Tuple (d !!! d1) (d !!! d2)
+extract2d d1 d2 p = rowVal $ map (\p' -> Tuple (p' !!! d1) (p' !!! d2)) p
 
 max2d :: Array (Tuple Number Number) -> Tuple Number Number
 max2d = foldl max' (Tuple 0.0 0.0)
@@ -112,9 +112,9 @@ extractPath' selIds d1 d2 link =
 
 extract2dPt :: forall d. Int -> Int -> DataPoint d -> PointData2D
 extract2dPt d1 d2 datum = 
-  { rowId: datum.rowId
-  , x: datum.point !!! d1
-  , y: datum.point !!! d2
+  { rowId: rowId datum
+  , x: rowVal datum !!! d1
+  , y: rowVal datum !!! d2
   , selected: false
   }
 
@@ -122,10 +122,10 @@ setHighlight :: Set Int -> PointData2D -> PointData2D
 setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
 
 cosTheta2d :: forall d. Int -> Int -> Link d -> Number
-cosTheta2d d1 d2 {src:{point:p1},tgt:{point:p2}} = sqrt (V.sqLen v' / V.sqLen v)
+cosTheta2d d1 d2 {src:p1,tgt:p2} = sqrt (V.sqLen v' / V.sqLen v)
   where
-  v = V.fromPoints p1 p2
-  v' = V.fromPoints (P.project d1 d2 p1) (P.project d1 d2 p2)
+  v = rowVal $ V.fromPoints <$> p1 <*> p2
+  v' = rowVal $ V.fromPoints <$> (P.project2D d1 d2 <$> p1) <*> (P.project2D d1 d2 <$> p2)
 
 {--order2d :: String -> String -> AppDatum -> AppDatum -> Ordering--}
 {--order2d d1 d2 pt1 pt2 = --}

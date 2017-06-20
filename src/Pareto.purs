@@ -2,7 +2,7 @@ module Pareto where
 
 import Prelude
 
-import App.Data (DataPoint, RawPoints, ParetoPoints, Link)
+import App.Data (DataPoint, RawPoints, ParetoPoints, Link, rowId, rowVal)
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Array as A
@@ -64,15 +64,15 @@ paretoOrder dimFilter p1 p2 = invert $
   p2' = sumPt $ dimFilter p2
 
 sumPt :: forall d. DataPoint d -> Number
-sumPt pt = P.fold ((+)) 0.0 pt.point
+sumPt pt = rowVal $ P.fold ((+)) 0.0 <$> pt
 
 -- determine if p1 is comparable to p2
 -- i.e. at least one factor of p2 >= p1
 comparable :: forall d. DataPoint d -> DataPoint d -> Boolean
-comparable {point:p1} {point:p2} = or $ P.zipDimsWith ((<=)) p1 p2
+comparable p1 p2 = or $ rowVal $ P.zipDimsWith ((<=)) <$> p1 <*> p2
 
 pointSqDist :: forall d. DataPoint d -> DataPoint d -> Number
-pointSqDist {point:p1} {point:p2} = P.sqDist p1 p2
+pointSqDist p1 p2 = rowVal $ P.sqDist <$> p1 <*> p2
 
 pointDistCmp :: forall d. DataPoint d -> DataPoint d -> Ordering
 pointDistCmp p1 p2 = invert $ compare d1 d2
@@ -83,7 +83,7 @@ pointDistCmp p1 p2 = invert $ compare d1 d2
 pointFilter :: forall d
              . (DataPoint d -> DataPoint d) 
             -> DataPoint d -> DataPoint d -> Boolean
-pointFilter dimFilter p1 p2 = (p1.rowId /= p2.rowId) && (comparable p1' p2')
+pointFilter dimFilter p1 p2 = (rowId p1 /= rowId p2) && (comparable p1' p2')
   where
   p1' = dimFilter p1
   p2' = dimFilter p2
@@ -99,11 +99,11 @@ rowOne = unsafePartial $ fromJust <<< L.head <<< foldMap L.singleton
 
 filterNotDatum2D :: forall d d'
                   . Int -> Int -> DataPoint d -> DataPoint d'
-filterNotDatum2D d1 d2 datum = datum {point=P.projectNot d1 d2 datum.point}
+filterNotDatum2D d1 d2 datum = P.projectNot2D d1 d2 <$> datum
 
 -- Filter a point to 2D
 filterDatum2D :: forall d d'. Int -> Int -> DataPoint d -> DataPoint d'
-filterDatum2D d1 d2 datum = datum {point=P.project d1 d2 datum.point}
+filterDatum2D d1 d2 datum = P.project2D d1 d2 <$> datum
 
 notElemBy :: forall a f. Foldable f => (a -> a -> Boolean) -> a -> f a -> Boolean
 notElemBy f x = not <<< (elemBy f x)

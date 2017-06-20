@@ -13,20 +13,29 @@ import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Number (fromString)
-import Data.StrMap (StrMap, keys)
-import Data.StrMap as SM
-import Data.Set (Set)
-import Data.Set as S
 import Data.String (Pattern(..), split, trim)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Formatter.Number (format)
 import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 
-type DataPoint d = {rowId :: Int, point :: Point d}
+newtype DataRow a = DataRow {rowId :: Int, row :: a}
+type DataPoint d = DataRow (Point d)
 type FieldNames d = Array String
 type RawPoints d = DataFrame (DataPoint d)
 type ParetoPoints d = DataFrame (DataPoint d)
+
+instance functorDataRow :: Functor DataRow where
+  map f (DataRow r) = DataRow $ r {row = f r.row}
+
+instance applyDataRow :: Apply DataRow where
+  apply (DataRow f) (DataRow r) = DataRow $ f {row = f.row r.row}
+
+rowVal :: forall a. DataRow a -> a
+rowVal (DataRow r) = r.row
+
+rowId :: forall a. DataRow a -> Int
+rowId (DataRow r) = r.rowId
 
 -- Used for low-level visualization
 type PointData2D = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
@@ -72,12 +81,6 @@ instance showCsvError :: Show CsvError where
 
 type CE = Except (NonEmptyList CsvError)
 
-{--fieldNames :: AppData -> Set String--}
-{--fieldNames = foldMap (\d -> S.fromFoldable $ keys d.point)--}
-
-{--sortedFieldNames :: AppData -> List String--}
-{--sortedFieldNames = L.sort <<< L.fromFoldable <<< fieldNames--}
-
 fromCsv :: forall d. String -> CE (Tuple (FieldNames d) (RawPoints d))
 fromCsv raw = case L.uncons $ splitLines raw of
     Nothing -> throwError $ pure NoHeaderRow
@@ -108,7 +111,7 @@ parseFieldNames' :: forall d. String -> CE (FieldNames d)
 parseFieldNames' = parseFieldNames <<< split' (Pattern ",")
 
 withRowIds :: forall d. List (Point d) -> List (DataPoint d)
-withRowIds = L.mapWithIndex (\i p -> {rowId:i, point:p})
+withRowIds = L.mapWithIndex (\i p -> DataRow {rowId:i, row:p})
 
 parseFieldNames :: forall d. List String -> CE (FieldNames d)
 parseFieldNames = pure <<< A.fromFoldable
