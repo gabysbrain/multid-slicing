@@ -14,6 +14,7 @@ import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 import Data.Geom.Point ((!!!))
 import Data.Geom.Vector as V
+import Data.Geom.Line as Line
 import Partial.Unsafe (unsafePartial)
 
 type HullSegment d = Tuple (Point d) (Point d)
@@ -104,8 +105,8 @@ _findHull :: forall d
 _findHull lp1 lp2 pts = findHull lp2 maxPt split.init 
                      <> findHull maxPt lp1 split.rest
   where
-  v = V.fromPoints lp1 lp2
-  maxPt = unsafeMaxBy (\p1 p2 -> compare (V.dist2pt lp1 lp2 p1) (V.dist2pt lp1 lp2 p2)) pts
+  l = Line.fromPoints lp1 lp2
+  maxPt = unsafeMaxBy (\p1 p2 -> compare (Line.dist2pt l p1) (Line.dist2pt l p2)) pts
   split = splitPts maxPt lp2 pts
 
 rhsPts :: forall d. Point d -> Point d -> Point d -> Boolean
