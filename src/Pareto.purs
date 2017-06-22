@@ -23,15 +23,15 @@ paretoSubset :: forall d. (DataPoint d -> DataPoint d)
              -> Query (RawPoints d) (ParetoPoints d)
 paretoSubset dimFilter = DF.init <$> _paretoSet dimFilter
 
-pareto2dSlabs :: forall d. Number -> Int -> Int 
-              -> Query (DataFrame (Link d)) (ParetoSlabs d)
-pareto2dSlabs r d1 d2 = 
-    DF.filter (\l -> radiusFilter l.src l.tgt) `DF.chain`
-    DF.mutate link2slab
-  where
-  radiusFilter p1 p2 = (r*r) < (pointSqDist (filterNotDatum2D d1 d2 p1) 
-                                            (filterNotDatum2D d1 d2 p2))
-  link2slab l = {slab:l.linkId, p1:l.src, p2: l.tgt}
+{--pareto2dSlabs :: forall d. Number -> Int -> Int --}
+              {---> Query (DataFrame (Link d)) (ParetoSlabs d)--}
+{--pareto2dSlabs r d1 d2 = --}
+    {--DF.filter (\l -> radiusFilter l.src l.tgt) `DF.chain`--}
+    {--DF.mutate link2slab--}
+  {--where--}
+  {--radiusFilter p1 p2 = (r*r) < (pointSqDist (filterNotDatum2D d1 d2 p1) --}
+                                            {--(filterNotDatum2D d1 d2 p2))--}
+  {--link2slab l = {slab:l.linkId, p1:l.src, p2: l.tgt}--}
   
 -- FIXME: not sure why I need this separate function but ok...
 -- TODO: figure out the better way to handle the monad wrt 

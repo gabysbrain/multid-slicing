@@ -51,7 +51,7 @@ createNbrsR :: forall d
             -> List {src::DataPoint d,tgt::DataPoint d}
 createNbrsR r pt = foldMap (mkNbr pt)
   where
-  mkNbr p1 p2 = if r*r > rowVal (P.sqDist <$> p1 <*> p2)
+  mkNbr p1 p2 = if rowVal (P.sqDist <$> p1 <*> p2) <= r*r
                    then L.singleton {src:p1, tgt:p2}
                    else L.Nil
 

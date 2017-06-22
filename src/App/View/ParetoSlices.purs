@@ -48,7 +48,9 @@ paretoPlot :: forall d
 paretoPlot dsi d1 d2 = do
   limits <- graphNodes `DF.chain` limits2d d1 d2
   plotPoints <- graphNodes `DF.chain` scatterplotPoints dsi.selectedPoints d1 d2
-  plotPaths <- graphLinks `DF.chain` paretoPlotPaths dsi.paretoRadius dsi.selectedFronts d1 d2
+  plotPaths <- graphLinks 
+    `DF.chain` paretoPlotPaths dsi.paretoRadius dsi.selectedFronts d1 d2
+  let pps' = A.filter (\l -> l.cosTheta >= dsi.cosThetaThresh) plotPaths
   pure $ div do
     PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths dsi.cosThetaThresh
 
