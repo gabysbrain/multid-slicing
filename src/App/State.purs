@@ -1,7 +1,7 @@
 module App.State where
 
 import App.Config (config)
-import App.Data (ParetoPoints, FieldNames, CsvError)
+import App.Data (ParetoPoints, NeighborGraph, FieldNames, CsvError)
 import App.Routes (Route, match, toURL)
 import Control.Applicative (pure)
 import Control.Bind (bind)
@@ -25,6 +25,7 @@ type DataInfo d =
   , selectedFronts :: Set Int
   , paretoRadius :: Number
   , cosThetaThresh ::Number
+  , neighborGraph :: NeighborGraph d
   }
 
 data State = State

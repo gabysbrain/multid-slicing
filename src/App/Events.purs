@@ -4,6 +4,7 @@ import Prelude
 import Loadable (Loadable(..))
 import Pareto (paretoSet)
 import App.Data (RawPoints, ParetoPoints, FieldNames, PointData2D, LineData2D, fromCsv)
+import App.Queries (nbrs)
 import App.Routes (Route)
 import App.State (DataInfo, State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), makeAff, attempt)
@@ -101,6 +102,7 @@ newDatasetState ds =
   , selectedFronts: Set.empty
   , paretoRadius: 1.0
   , cosThetaThresh: 1.0
+  , neighborGraph: DF.runQuery (nbrs 1.0) $ snd ds
   }
 
 paretoQuery :: forall d
@@ -110,7 +112,10 @@ paretoQuery = map (DF.runQuery paretoSet)
 
 updateRadius :: Number -> State -> State
 updateRadius r (State st) = case st.dataset of
-  Loaded dsi -> State $ st {dataset=Loaded (dsi {paretoRadius=r})}
+  Loaded dsi -> State $ st {dataset=Loaded (
+    dsi { paretoRadius = r
+        , neighborGraph = DF.runQuery (nbrs r) dsi.paretoPoints
+        })}
   _ -> State st
 
 updateAngleThresh :: Number -> State -> State

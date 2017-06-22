@@ -4,7 +4,7 @@ import Prelude hiding (div)
 import App.Data (FieldNames, NeighborGraph)
 import App.Events (Event)
 import App.State (DataInfo)
-import App.Queries (graphNodes, graphLinks, limits2d, nbrs, scatterplotPoints, paretoPlotPaths)
+import App.Queries (graphNodes, graphLinks, limits2d, scatterplotPoints, paretoPlotPaths)
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
@@ -37,9 +37,8 @@ view dsi = div $
               d2 = fst $ snd plotFields
           div ! className "splom subplot" $ do
             let plotQ = paretoPlot dsi d1 d2
-            DF.runQuery plotQ nbrGraph
+            DF.runQuery plotQ dsi.neighborGraph
   where 
-  nbrGraph = DF.runQuery (nbrs dsi.paretoRadius) dsi.paretoPoints
   sortedNames = L.sort $ fldIdxs dsi.fieldNames
 
 paretoPlot :: forall d
