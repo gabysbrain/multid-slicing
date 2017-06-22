@@ -83,7 +83,7 @@ convexHull :: forall d. List (Point d) -> List (HullSegment d)
 convexHull = quickhull
 
 quickhull :: forall d. List (Point d) -> List (HullSegment d)
-quickhull pts | L.length pts < 2 = L.Nil
+quickhull pts | L.length pts < 2 = L.Nil -- one point does not a hull make
 quickhull (L.Cons p1 (L.Cons p2 L.Nil)) = pure $ HullSegment $ Tuple p1 p2
 quickhull pts = (findHull left right splits.init)
              <> (findHull right left splits.rest)
@@ -106,18 +106,9 @@ findHull :: forall d
           . Point d -> Point d 
          -> List (Point d)
          -> List (HullSegment d)
-findHull lp1 lp2 pts = 
-  if L.null pts
-     then pure $ HullSegment $ Tuple lp1 lp2 -- done!
-     else _findHull lp1 lp2 pts
-
--- helper for above
-_findHull :: forall d
-           . Point d -> Point d 
-          -> List (Point d) 
-          -> List (HullSegment d)
-_findHull lp1 lp2 pts = findHull lp2 maxPt split.init 
-                     <> findHull maxPt lp1 split.rest
+findHull lp1 lp2 L.Nil = pure $ HullSegment $ Tuple lp1 lp2 -- done!
+findHull lp1 lp2 pts = findHull lp2 maxPt split.init 
+                    <> findHull maxPt lp1 split.rest
   where
   l = Line.fromPoints lp1 lp2
   maxPt = unsafeMaxBy (\p1 p2 -> compare (Line.dist2pt l p1) (Line.dist2pt l p2)) pts
