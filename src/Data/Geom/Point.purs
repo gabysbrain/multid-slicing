@@ -30,8 +30,7 @@ dims :: forall d. Point d -> Int
 dims (Point p) = A.length p
 
 sqDist :: forall d. Point d -> Point d -> Number
-sqDist (Point p1) (Point p2) = sum $ A.zipWith ((*)) p1 p2
---sqDist (Point p1) (Point p2) = sum $ V.zipWith ((*)) p1 p2
+sqDist (Point p1) (Point p2) = sum $ A.zipWith (\x1 x2 -> (x1-x2)*(x1-x2)) p1 p2
 
 dist :: forall d. Point d -> Point d -> Number
 dist p1 p2 = sqrt $ sqDist p1 p2
