@@ -17,7 +17,7 @@
     "watch": "npm run clean && webpack-dev-server --content-base static/ --hot --inline --config webpack.config.js",
     "serve": "npm run build && serve static",
     "start": "npm run watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pulp test"
   },
   "repository": {
     "type": "git",
@@ -45,6 +45,7 @@
   "devDependencies": {
     "css-loader": "^0.28.1",
     "node-sass": "^4.5.2",
+    "pulp": "^11.0.0",
     "sass-loader": "^6.0.3",
     "style-loader": "^0.17.0"
   }
