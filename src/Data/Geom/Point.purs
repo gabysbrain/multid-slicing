@@ -10,6 +10,12 @@ import Math (sqrt)
 
 newtype Point d = Point (Array Number)
 
+instance eqPoint :: Eq (Point d) where
+  eq (Point p1) (Point p2) = p1 == p2
+
+instance showPoint :: Show (Point d) where
+  show (Point p) = show p
+
 fromArray :: forall d. Array Number -> Maybe (Point d)
 fromArray = Just <<< Point
 

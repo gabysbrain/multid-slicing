@@ -1,6 +1,7 @@
 module App.NearestNeighbor 
-  ( radialNN
-  ) where
+  where
+  --( radialNN
+  --) where
 
 import Prelude
 import App.Data (DataPoint, Link, rowVal)
@@ -9,7 +10,7 @@ import Data.List (List)
 import Data.List as L
 import Data.Foldable (class Foldable, foldl, foldMap, maximumBy, minimumBy)
 import Data.Maybe (Maybe(..), fromJust)
-import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple (Tuple(..), fst, snd, swap)
 import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 import Data.Geom.Point ((!!!))
@@ -17,7 +18,17 @@ import Data.Geom.Vector as V
 import Data.Geom.Line as Line
 import Partial.Unsafe (unsafePartial)
 
-type HullSegment d = Tuple (Point d) (Point d)
+newtype HullSegment d = HullSegment (Tuple (Point d) (Point d))
+
+instance showHullSegment :: Show (HullSegment d) where
+  show (HullSegment hs) = show hs
+
+-- equality is equal in both directions. we might need to fix this later...
+instance eqHullSegment :: Eq (HullSegment d) where
+  eq (HullSegment hs1) (HullSegment hs2) = (hs1 == hs2) || (swap hs1 == hs2)
+
+mapPts :: forall d d'. (Point d -> Point d') -> HullSegment d -> HullSegment d'
+mapPts f (HullSegment hs) = HullSegment $ bimap f f hs
 
 -- TODO: move the data types around to unify them...
 -- | neighborhood based on radius
@@ -51,7 +62,7 @@ delauny :: forall f d. Foldable f
 delauny = projectUp >>> convexHull >>> L.filter lowerLink >>> projectDown
   where
   projectUp = foldMap (pure <<< addDistDim)
-  projectDown = map (bimap rmDistDim rmDistDim)
+  projectDown = map (mapPts rmDistDim)
 
 addDistDim :: forall d d'. Point d -> Point d'
 addDistDim = P.projectUp (pure <<< distFun)
@@ -63,7 +74,8 @@ rmDistDim p = P.projectNot (P.dims p - 1) p
 
 -- determine if a link is part of the "lower" hull
 lowerLink :: forall d. HullSegment d -> Boolean
-lowerLink link = (fst link !!! lastidx) - (snd link !!! lastidx) /= 0.0
+lowerLink (HullSegment link) = 
+    (fst link !!! lastidx) - (snd link !!! lastidx) /= 0.0
   where
   lastidx = P.dims $ fst link
 
@@ -71,6 +83,8 @@ convexHull :: forall d. List (Point d) -> List (HullSegment d)
 convexHull = quickhull
 
 quickhull :: forall d. List (Point d) -> List (HullSegment d)
+quickhull pts | L.length pts < 2 = L.Nil
+quickhull (L.Cons p1 (L.Cons p2 L.Nil)) = pure $ HullSegment $ Tuple p1 p2
 quickhull pts = (findHull left right splits.init)
              <> (findHull right left splits.rest)
   where
@@ -83,7 +97,10 @@ splitPts :: forall d
           . Point d -> Point d 
          -> List (Point d)
          -> {init :: List (Point d), rest :: List (Point d)}
-splitPts lp1 lp2 = L.span (rhsPts lp1 lp2)
+splitPts lp1 lp2 = split <<< rmPts
+  where
+  split = L.span (rhsPts lp1 lp2)
+  rmPts = L.filter (\p -> p /= lp1 && p /= lp2)
 
 findHull :: forall d
           . Point d -> Point d 
@@ -91,7 +108,7 @@ findHull :: forall d
          -> List (HullSegment d)
 findHull lp1 lp2 pts = 
   if L.null pts
-     then pure $ Tuple lp1 lp2 -- done!
+     then pure $ HullSegment $ Tuple lp1 lp2 -- done!
      else _findHull lp1 lp2 pts
 
 -- helper for above
