@@ -69,9 +69,6 @@ lowerLink link = (fst link !!! lastidx) - (snd link !!! lastidx) /= 0.0
 
 convexHull :: forall d. List (Point d) -> List (HullSegment d)
 convexHull = quickhull
-  --L.mapWithIndex (\i h -> {linkId:i, src:fst h, tgt:snd h}) hullLinks
-  --where
-  --hullLinks = quickhull pts
 
 quickhull :: forall d. List (Point d) -> List (HullSegment d)
 quickhull pts = (findHull left right splits.init)

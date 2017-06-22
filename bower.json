@@ -17,5 +17,12 @@
     "purescript-sets": "^3.0.0",
     "purescript-numbers": "^5.0.0",
     "purescript-formatters": "^1.0.1"
+  },
+  "devDependencies": {
+    "purescript-spec": "^1.0.0",
+    "purescript-spec-discovery": "^0.6.0"
+  },
+  "resolutions": {
+    "purescript-spec": "^1.0.0"
   }
 }
