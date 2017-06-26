@@ -7,7 +7,7 @@ import Data.Array as A
 import Data.List (List)
 import Data.List as L
 import Data.Either (fromRight)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 import Data.Geom.Vector (Vector, NormVector)
@@ -50,11 +50,12 @@ facet interiorPt = fixFacetNormal interiorPt <<< _facet
 
 _facet :: forall d. List (Point d) -> Facet d
 _facet pts = Facet
-  { points: pts
-  --, offset: center pts
-  , offset: 0.0 -- FIXME: wrong!
-  , normal: facetNormal pts
-  }
+    { points: pts
+    , offset: maybe 0.0 ((*) (-1.0) <<< V.ptDist norm) $ L.head pts
+    , normal: facetNormal pts
+    }
+  where 
+  norm = facetNormal pts
 
 ridges :: forall d. Facet d -> List (Tuple (Point d) (Point d))
 ridges (Facet f) = map toTpl' $ combinations 2 f.points
@@ -93,5 +94,8 @@ fixFacetNormal interiorPoint face@(Facet f) =
   Facet $ f { normal = if facetDist face interiorPoint > 0.0 
                           then V.mapDims ((*) (-1.0)) f.normal
                           else f.normal
+            , offset = if facetDist face interiorPoint > 0.0
+                          then (-1.0) * f.offset
+                          else f.offset
             }
 
