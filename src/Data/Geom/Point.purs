@@ -3,6 +3,9 @@ module Data.Geom.Point where
 import Prelude
 import Data.Array ((!!))
 import Data.Array as A
+import Data.Int (toNumber)
+import Data.List (List)
+import Data.List as L
 import Data.Maybe (Maybe(Just), fromJust)
 import Partial.Unsafe (unsafePartial)
 import Data.Foldable (sum, foldl)
@@ -56,6 +59,13 @@ projectNot d1 p = delAt d1 p
 
 projectUp :: forall d d'. (Array Number -> Array Number) -> Point d -> Point d'
 projectUp f (Point p) = Point $ p <> f p
+
+centroid :: forall d. List (Point d) -> Point d
+centroid L.Nil = Point $ [0.0]
+centroid pts@(L.Cons pt _) = Point $ mapDims (\x -> x / len) ttl
+  where
+  ttl = foldl (\s p -> Point $ zipDimsWith ((+)) s p) (zerosLike pt) pts
+  len = toNumber $ L.length pts
 
 mapDims :: forall a d
          . (Number -> a) -> Point d -> Array a

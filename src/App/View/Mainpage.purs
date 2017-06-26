@@ -84,13 +84,13 @@ uploadPanel =
 
 paretoRangeSlider :: forall d. FieldNames d -> Number -> HTML Event
 paretoRangeSlider fns r = 
-    rangeSlider "Pareto radius:" ParetoRadiusChange 0.0 maxDist r
+    rangeSlider "Neighbor radius:" ParetoRadiusChange 0.0 maxDist r
   where
   maxDist = sqrt $ toNumber $ A.length fns
 
 angleThreshSlider :: Number -> HTML Event
 angleThreshSlider theta = 
-  rangeSlider "cos theta threshold:" AngleThreshChange 0.0 1.0 theta
+  rangeSlider "cos theta threshold:" AngleThreshChange 0.8 1.0 theta
   -- #! onChange ParetoRadiusChange
 
 rangeSlider :: String -> (DOMEvent -> Event) -> Number -> Number -> Number -> HTML Event

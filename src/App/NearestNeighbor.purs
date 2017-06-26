@@ -9,13 +9,15 @@ import Data.Bifunctor (bimap)
 import Data.List (List)
 import Data.List as L
 import Data.Foldable (class Foldable, foldl, foldMap, maximumBy, minimumBy)
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..), fromJust, maybe)
 import Data.Tuple (Tuple(..), fst, snd, swap)
 import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 import Data.Geom.Point ((!!!))
 import Data.Geom.Vector as V
 import Data.Geom.Line as Line
+import Data.Geom.Simplex (Facet, Simplex)
+import Data.Geom.Simplex as S
 import Partial.Unsafe (unsafePartial)
 
 newtype HullSegment d = HullSegment (Tuple (Point d) (Point d))
@@ -59,7 +61,7 @@ createNbrsR r pt = foldMap (mkNbr pt)
 delauny :: forall f d. Foldable f
         => f (Point d) -> List (HullSegment d)
 --      => f (DataPoint d) -> List (HullSegment d)
-delauny = projectUp >>> convexHull >>> L.filter lowerLink >>> projectDown
+delauny = projectUp >>> convexHull >>> extractSegments >>> L.filter lowerLink >>> projectDown
   where
   projectUp = foldMap (pure <<< addDistDim)
   projectDown = map (mapPts rmDistDim)
@@ -79,46 +81,41 @@ lowerLink (HullSegment link) =
   where
   lastidx = P.dims $ fst link
 
-convexHull :: forall d. List (Point d) -> List (HullSegment d)
+extractSegments :: forall d. List (Facet d) -> List (HullSegment d)
+extractSegments = map HullSegment <<< L.nub <<< foldMap S.ridges
+
+convexHull :: forall d. List (Point d) -> List (Facet d)
 convexHull = quickhull
 
-quickhull :: forall d. List (Point d) -> List (HullSegment d)
-quickhull pts | L.length pts < 2 = L.Nil -- one point does not a hull make
-quickhull (L.Cons p1 (L.Cons p2 L.Nil)) = pure $ HullSegment $ Tuple p1 p2
-quickhull pts = (findHull left right splits.init)
-             <> (findHull right left splits.rest)
+quickhull :: forall d. List (Point d) -> List (Facet d)
+quickhull L.Nil = L.Nil -- no points do not a hull make
+quickhull l@(L.Cons p1 _) | L.length l < (P.dims p1) + 1 = L.Nil -- not enough pts
+quickhull pts = foldMap (\f -> findHull f (ptsAbove f pts')) $ S.facets simplex
   where
-    left  = unsafeMinBy (\p1 p2 -> compare (p1 !!! 0) (p2 !!! 0)) pts
-    right = unsafeMaxBy (\p1 p2 -> compare (p1 !!! 0) (p2 !!! 0)) pts
-    splits = splitPts left right pts
+  Tuple simplex pts' = initialSimplex pts
 
--- split the set of points into left and right hand points
-splitPts :: forall d
-          . Point d -> Point d 
-         -> List (Point d)
-         -> {init :: List (Point d), rest :: List (Point d)}
-splitPts lp1 lp2 = split <<< rmPts
+-- TODO: start with something better, esp. if points are colinear...
+initialSimplex :: forall d. List (Point d) -> Tuple (Simplex d) (List (Point d))
+initialSimplex pts = Tuple (S.fromPoints (L.take (dims+1) pts)) 
+                           (L.drop (dims+1) pts)
   where
-  split = L.span (rhsPts lp1 lp2)
-  rmPts = L.filter (\p -> p /= lp1 && p /= lp2)
+  dims = maybe 0 P.dims $ L.head pts
 
-findHull :: forall d
-          . Point d -> Point d 
-         -> List (Point d)
-         -> List (HullSegment d)
-findHull lp1 lp2 L.Nil = pure $ HullSegment $ Tuple lp1 lp2 -- done!
-findHull lp1 lp2 pts = findHull lp2 maxPt split.init 
-                    <> findHull maxPt lp1 split.rest
-  where
-  l = Line.fromPoints lp1 lp2
-  maxPt = unsafeMaxBy (\p1 p2 -> compare (Line.dist2pt l p1) (Line.dist2pt l p2)) pts
-  split = splitPts maxPt lp2 pts
+ptsAbove :: forall d. Facet d -> List (Point d) -> List (Point d)
+ptsAbove facet = L.filter (S.aboveFacet facet)
 
-rhsPts :: forall d. Point d -> Point d -> Point d -> Boolean
-rhsPts lp1 lp2 pt = V.sinTheta v1 v2 > 0.0
+maxPt :: forall d. Facet d -> List (Point d) -> Point d
+maxPt facet = unsafeMaxBy (\p1 p2 -> compare (S.facetDist facet p1) (S.facetDist facet p2))
+
+-- TODO: make the foldMap part cleaner (and above)
+findHull :: forall d. Facet d -> List (Point d) -> List (Facet d)
+findHull facet L.Nil = pure facet
+findHull facet pts = foldMap (\f -> findHull f (ptsAbove f pts')) facets
   where
-  v1 = V.fromPoints lp1 lp2
-  v2 = V.fromPoints lp1 pt
+  pt = maxPt facet pts
+  pts' = L.delete pt pts
+  s' = S.fromFacet facet pt
+  facets = L.delete facet $ S.facets s'
 
 -- dangerous functions but these are only run on non-empty lists
 unsafeMaxBy :: forall a f. Foldable f => (a -> a -> Ordering) -> f a -> a
