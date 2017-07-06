@@ -9,6 +9,7 @@ import Math (sqrt, pi, cos, sin)
 
 import Test.Spec (Spec, pending, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual, shouldContain)
+import Test.Util (shouldApproxEqual)
 
 p1 = unsafePartial $ fromJust $ P.fromArray [ 0.0, 0.0 ]
 p2 = unsafePartial $ fromJust $ P.fromArray [ 1.0, 1.0 ]
@@ -22,6 +23,8 @@ v2 = fromPoints p1 p4
 v3 = fromPoints p4 p2
 v3' = fromPoints p2 p4
 
+shouldEpsEq = shouldApproxEqual 1e-9
+
 spec :: forall e. Spec e Unit
 spec = describe "vectors" do
   describe "length" do
@@ -33,14 +36,14 @@ spec = describe "vectors" do
       len v3 `shouldEqual` 1.0
   describe "cos theta" do
     it "perpendicular should be 0" do
-      cosTheta v2 v3 `shouldEqual` 0.0
+      cosTheta v2 v3 `shouldEpsEq` 0.0
     it "isociles 1" do
-      cosTheta v1 v2 `shouldEqual` cos (pi/4.0)
+      cosTheta v1 v2 `shouldEpsEq` cos (pi/4.0)
     it "isociles 2" do
-      cosTheta v1' v3' `shouldEqual` cos (pi/4.0)
+      cosTheta v1' v3' `shouldEpsEq` cos (pi/4.0)
   describe "sin theta" do
     it "rhs points should be positive" do
-      sinTheta v2 v1 `shouldEqual` sin (pi/4.0)
+      sinTheta v2 v1 `shouldEpsEq` sin (pi/4.0)
     it "lhs points should be negative" do
-      sinTheta v1 v2 `shouldEqual` -sin (pi/4.0)
+      sinTheta v1 v2 `shouldEpsEq` -sin (pi/4.0)
 
