@@ -5,7 +5,7 @@ import Data.List as L
 import Data.Maybe (fromJust)
 import Partial.Unsafe (unsafePartial)
 import Data.Geom.Point as P
-import App.NearestNeighbor (quickhull, splitPts, rhsPts)
+import App.NearestNeighbor (quickhull)
 import Control.Monad.Aff (Aff())
 import Data.Foldable (class Foldable, elem)
 
@@ -31,29 +31,6 @@ p5 = unsafePartial $ fromJust $ P.fromArray [ 0.5, 0.5 ]
 
 spec :: forall e. Spec e Unit
 spec = describe "neighborhood calculation" do
-  describe "rhsPts" do
-    it "p3 is rhs of p2->p1" do
-      rhsPts p2 p1 p3 `shouldEqual` true
-    it "p1 is rhs of p3->p2" do
-      rhsPts p1 p3 p2 `shouldEqual` true
-    it "p4 is rhs of p1->p2" do
-      rhsPts p1 p2 p4 `shouldEqual` true
-    it "p3 is lhs of p1->p2" do
-      rhsPts p1 p2 p4 `shouldEqual` false
-    it "rhsPts is > not >=" do
-      rhsPts p1 p2 p5 `shouldEqual` false
-  describe "splitPts" do
-    it "should not include the input points" do
-      let split = splitPts p1 p2 (L.fromFoldable [p1,p2,p3])
-      split.init `shouldNotContain` p1
-      split.init `shouldNotContain` p2
-      split.rest `shouldNotContain` p1
-      split.rest `shouldNotContain` p2
-    it "should properly split based on p1 and p2" do
-      let split = splitPts p1 p2 (L.fromFoldable [p1,p2,p3,p4,p5])
-      split.init `shouldContain` p4
-      split.rest `shouldContain` p3
-      split.rest `shouldContain` p5
   describe "quickhull" do
     describe "2 points" do
       it "should always connect" do

@@ -31,6 +31,9 @@ instance eqFacet :: Eq (Facet d) where
     && f1.normal == f2.normal
     && f1.points == f2.points
 
+instance showFacet :: Show (Facet d) where
+  show (Facet f) = "Facet: " <> show f.points
+
 fromPoints :: forall f d. Foldable f => f (Point d) -> Simplex d
 fromPoints = Simplex <<< L.fromFoldable
 
