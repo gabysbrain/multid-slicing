@@ -13,6 +13,9 @@ type NormVector d = Vector d -- for ensuring len 1
 instance eqVector :: Eq (Vector d) where
   eq (Vector v1) (Vector v2) = v1 == v2
 
+instance showVector :: Show (Vector d) where
+  show (Vector pts) = "Vector: " <> show pts
+
 fromPoints :: forall d. Point d -> Point d -> Vector d
 fromPoints src tgt = Vector $ P.zipDimsWith ((-)) tgt src
 

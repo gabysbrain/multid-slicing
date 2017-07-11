@@ -1,12 +1,13 @@
 module Data.Geom.Matrix where
 
--- from https://github.com/emilhaugberg/gaussian-elimination/blob/master/src/Data/Gaussian.purs
-
-import Data.Array (index, length, nubBy, zipWith, snoc, cons)
+import Prelude 
+import Data.Array (index, length, updateAt, find, take, drop, head, tail, init, last, uncons, unsnoc, nubBy, zipWith, filter, (!!), (..), (:))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe, maybe, fromMaybe)
+import Data.Foldable (sum, foldl, foldr, foldM)
+import Data.Traversable (traverse, for)
+import Data.Maybe (Maybe(..), maybe, fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
-import Prelude (class Eq, class Show, bind, flip, id, join, map, not, pure, show, negate, ($), (*), (+), (-), (/), (<$>), (<#>), (<*>), (<<<), (<>), (==), (=<<), (>>=), (<))
+import Data.Tuple (Tuple(..), fst, snd)
 import Data.Geom.Vector (Vector(..))
 
 type    Row    = Array Number
@@ -24,73 +25,102 @@ instance eqMatrix :: Eq Matrix where
 
 type Length = Int
 
-indexFl :: forall a. Int -> Array a -> Maybe a
-indexFl = flip index
+dims :: Matrix -> Tuple Int Int
+dims (Matrix rs) = case uncons rs of
+  Nothing -> Tuple 0 0
+  Just {head:c1,tail:cs} -> Tuple (length cs + 1) (length c1)
 
-subtractRow :: Row -> Row -> Row
-subtractRow = zipWith (-)
+rows :: Matrix -> Int
+rows = fst <<< dims
 
-flipRows :: Row -> Row -> Array Row -> Array Row
-flipRows row1 row2 = map (\r -> if r == row1 then row2 else if r == row2 then row1 else id r)
+cols :: Matrix -> Int
+cols = snd <<< dims
 
-index2 :: forall a. Index -> Index -> Array (Array a) -> Maybe a
-index2 i j xs = join $ indexFl j <$> (indexFl i xs)
+cell :: Index -> Index -> Matrix -> Maybe Number
+cell r c m = do
+  row <- (unwrap m) !! r
+  col <- row !! c
+  pure col
 
-isZero :: Number -> Boolean
-isZero = (==) 0.0
+validMatrix :: Matrix -> Boolean
+validMatrix = (==) 1
+          <<< length
+          <<< nubBy (\xs ys -> length xs == length ys)
+          <<< unwrap
 
-eliminate :: Length -> Index -> Index -> Matrix -> Maybe Matrix
-eliminate length k i m = eliminate' m
+splitAt :: forall a. Int -> Array a -> Tuple (Array a) (Array a)
+splitAt i xs = Tuple (take i xs) (drop i xs)
+
+--swaps element at position a with element at position b.
+swap :: Matrix -> Index -> Index -> Maybe Matrix
+swap m a b | a == b = pure m
+swap m a b          = do
+  r1 <- (unwrap m) !! a
+  r2 <- (unwrap m) !! b
+  m' <- (updateAt a r2 (unwrap m) >>= updateAt b r1)
+  pure $ Matrix m'
+
+-- Gaussian elimination operation, subtract and multiply
+factorSub :: Number -> Row -> Row -> Row
+factorSub k = zipWith (\x y -> k*x - y)
+
+reduceRow :: Matrix -> Index -> Maybe Matrix
+reduceRow m r = do
+    -- index of first non-zero element on or below (r,r).
+    firstnonzero <- find (\x -> maybe false ((/=) 0.0) $ cell x r m)
+                         (r..(rows m-1))
+ 
+    --matrix with row swapped (if needed)
+    m' <- swap m r firstnonzero
+ 
+    --row we're working with
+    pivot <- (unwrap m) !! r
+ 
+    --make it have 1 as the leading coefficient
+    f <- pivot !! r
+    let pivot' = map (\x -> x / f) pivot
+ 
+    --apply subrow to all rows below
+    let rs = drop (r+1) $ unwrap m'
+    nextrows <- for (drop (r+1) $ unwrap m') $ \nr -> do
+      k <- nr !! r
+      pure $ factorSub k pivot' nr
+ 
+    -- concat the lists and repeat
+    pure $ Matrix $ take r (unwrap m') <> [pivot'] <> nextrows
+
+-- from https://luckytoilet.wordpress.com/2010/02/21/solving-systems-of-linear-equations-in-haskell/
+gauss :: Matrix -> Maybe Matrix
+gauss matrix = foldM reduceRow matrix (0..(rows matrix-1)) >>= fixlastrow
   where
-    eliminate' m = if k == length
-      then pure m
-      else do
-        kElem <- index2  k i m'
-        iElem <- index2  i i m'
-        kRow  <- indexFl k m'
-        iRow  <- indexFl i m'
+  fixlastrow :: Matrix -> Maybe Matrix
+  fixlastrow (Matrix m') = do
+    a <- init m'
+    rw <- last m'
+    z <- last rw
+    nz <- last =<< init rw
+    rst <- init =<< init rw
+    pure $ Matrix $ a <> [rst <> [1.0, z / nz]]
 
-        let r       = kElem / iElem
-        let newKRow = subtractRow (map ((*) r) iRow) kRow
-        let newRows = map (\r -> if r == kRow then newKRow else id r) m'
-
-        eliminate length (k + 1) i (Matrix newRows)
-    m' = unwrap m
-
-pivot :: Length -> Index -> Index -> Matrix -> Maybe Matrix
-pivot length j i m = pivot' m
+--Solve a matrix (must already be in REF form) by back substitution.
+substitute :: forall d. Matrix -> Maybe (Vector d)
+substitute matrix = do
+    sMtx <- unsnoc $ unwrap matrix
+    solution1 <- last sMtx.last
+    solution <- foldrM next [solution1] sMtx.init
+    pure $ Vector solution
   where
-    pivot' m = if j == length
-      then pure m
-      else do
-        jElem <- index2 j i m'
-        if isZero jElem
-          then pivot length (j + 1) i m
-          else Matrix <$> ((\r1 r2 -> flipRows r1 r2 m') <$> indexFl i m' <*> indexFl j m')
-    m' = unwrap m
+  foldrM :: forall a b m. Monad m => (a -> b -> m b) -> b -> Array a -> m b
+  foldrM f d xs = case uncons xs of
+    Nothing -> pure d
+    Just spt -> (\x -> f spt.head x) =<< foldrM f d spt.tail
+  next :: Row -> Array Number -> Maybe (Array Number)
+  next row found = do
+    subpart <- init $ drop (rows matrix - length found) row
+    lastElem <- last row
+    let solution = lastElem - sum (zipWith (*) found subpart)
+    pure $ solution : found
 
-gauss' :: Index -> Matrix -> Maybe Matrix
-gauss' i m =
-  if i == n - 1
-    then pure m else do
-      iElem <- index2 i i rowss
-      gauss' (i + 1) =<< eliminate n (i + 1) i =<< if isZero iElem
-        then pivot n (i + 1) i m
-        else pure m
-  where
-    rowss = unwrap m
-    n     = length rowss
-
-foreign import solver :: Int -> Matrix -> Array Number
-
-gauss :: forall d. Matrix -> Either String (Vector d)
-gauss m = if not $ isMatrix m
-  then Left "Matrix incorrect"
-  else maybe (Left "Couldn't calculate") (Right <<< Vector) result
-  where
-    result   = solver length' <$> gauss' 0 m
-    length'  = (length $ unwrap m)
-    isMatrix = (==) 1
-           <<< length
-           <<< nubBy (\xs ys -> length xs == length ys)
-           <<< unwrap
+gaussJ :: forall d. Matrix -> Maybe (Vector d)
+gaussJ m = gauss m >>= substitute
+ 

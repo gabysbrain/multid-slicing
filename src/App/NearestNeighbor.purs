@@ -88,7 +88,7 @@ convexHull :: forall d. List (Point d) -> List (Facet d)
 convexHull = quickhull
 
 quickhull :: forall d. List (Point d) -> List (Facet d)
-quickhull L.Nil = L.Nil -- no points do not a hull make
+quickhull L.Nil = L.Nil -- zero points do not a hull make
 quickhull l@(L.Cons p1 _) | L.length l < (P.dims p1) + 1 = L.Nil -- not enough pts
 quickhull pts = foldMap (\f -> findHull f (ptsAbove f pts')) $ S.facets simplex
   where

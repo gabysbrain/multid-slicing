@@ -7,7 +7,7 @@ import Data.Array as A
 import Data.List (List)
 import Data.List as L
 import Data.Either (fromRight)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), maybe, fromJust)
 import Data.Geom.Point (Point)
 import Data.Geom.Point as P
 import Data.Geom.Vector (Vector, NormVector)
@@ -32,7 +32,7 @@ instance eqFacet :: Eq (Facet d) where
     && f1.points == f2.points
 
 instance showFacet :: Show (Facet d) where
-  show (Facet f) = "Facet: " <> show f.points
+  show (Facet f) = "Facet: " <> show f.offset <> " + " <> show f.points
 
 fromPoints :: forall f d. Foldable f => f (Point d) -> Simplex d
 fromPoints = Simplex <<< L.fromFoldable
@@ -48,16 +48,22 @@ facets (Simplex pts) = map (facet interiorPt) $ combinations dims pts
   dims = L.length pts
   interiorPt = center pts
 
+points :: forall d. Simplex d -> List (Point d)
+points (Simplex pts) = pts
+
 facet :: forall d. Point d -> List (Point d) -> Facet d
 facet interiorPt = fixFacetNormal interiorPt <<< _facet
 
 _facet :: forall d. List (Point d) -> Facet d
 _facet pts = Facet
     { points: pts
-    , offset: maybe 0.0 ((*) (-1.0) <<< V.ptDist norm) $ L.head pts
+    , offset: _facetOffset pts
     , normal: facetNormal pts
     }
-  where 
+
+_facetOffset :: forall d. List (Point d) -> Number
+_facetOffset pts = maybe 0.0 ((*) (-1.0) <<< V.ptDist norm) $ L.head pts
+  where
   norm = facetNormal pts
 
 ridges :: forall d. Facet d -> List (Tuple (Point d) (Point d))
@@ -87,10 +93,11 @@ center = P.centroid
 
 facetVectors :: forall d. List (Point d) -> Matrix
 facetVectors L.Nil = M.Matrix []
-facetVectors (L.Cons x xs) = M.Matrix $ A.fromFoldable $ map (V.toArray <<< V.fromPoints x) xs
+facetVectors (L.Cons x xs) = M.Matrix $ A.fromFoldable 
+                           $ map (V.toArray <<< V.fromPoints x) xs
 
 facetNormal :: forall d. List (Point d) -> NormVector d
-facetNormal pts = unsafePartial $ fromRight $ V.norm <$> (M.gauss $ facetVectors pts)
+facetNormal pts = unsafePartial $ fromJust $ V.norm <$> (M.gaussJ $ facetVectors pts)
 
 fixFacetNormal :: forall d. Point d -> Facet d -> Facet d
 fixFacetNormal interiorPoint face@(Facet f) = 
