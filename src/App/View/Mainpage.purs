@@ -54,18 +54,11 @@ viewSlices (Loaded dsi) = PS.view dsi
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
-viewFileErrors (LoadError errs) = 
+viewFileErrors (LoadError err) = 
   div do
     p $ text "cannot load file"
     ul ! className "details" $ do
-      for_ errs $ \e -> do
-        li $ text (show e)
-viewFileErrors (ParseError errs) = 
-  div do
-    p $ text "cannot parse csv file"
-    ul ! className "details" $ do
-      for_ errs $ \e -> do
-        li $ text (show e)
+      li $ text err
 
 uploadPanel :: HTML Event
 uploadPanel = 

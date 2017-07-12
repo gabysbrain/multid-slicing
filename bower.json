@@ -16,7 +16,8 @@
     "Skeleton-Sass": "skeleton-scss#*",
     "purescript-sets": "^3.0.0",
     "purescript-numbers": "^5.0.0",
-    "purescript-formatters": "^1.0.1"
+    "purescript-formatters": "^1.0.1",
+    "purescript-argonaut": "^3.0.0"
   },
   "devDependencies": {
     "purescript-spec": "^1.0.0",
