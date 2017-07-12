@@ -38,7 +38,6 @@ viewDataInfo (Loaded dsi) =
     label do
       text "Number of rows: "
       span $ text $ show $ DF.rows dsi.paretoPoints
-    paretoRangeSlider dsi.fieldNames dsi.paretoRadius
     angleThreshSlider dsi.cosThetaThresh
     label do
       text "Dimensions"
@@ -54,18 +53,11 @@ viewSlices (Loaded dsi) = PS.view dsi
 
 viewFileErrors :: FileLoadError -> HTML Event
 viewFileErrors NoFile = div $ text "" -- FIXME: should be empty
-viewFileErrors (LoadError errs) = 
+viewFileErrors (LoadError err) = 
   div do
     p $ text "cannot load file"
     ul ! className "details" $ do
-      for_ errs $ \e -> do
-        li $ text (show e)
-viewFileErrors (ParseError errs) = 
-  div do
-    p $ text "cannot parse csv file"
-    ul ! className "details" $ do
-      for_ errs $ \e -> do
-        li $ text (show e)
+      li $ text err
 
 uploadPanel :: HTML Event
 uploadPanel = 
@@ -82,15 +74,9 @@ uploadPanel =
             a #! onClick (LoadStaticFile fn) $
               text fn
 
-paretoRangeSlider :: forall d. FieldNames d -> Number -> HTML Event
-paretoRangeSlider fns r = 
-    rangeSlider "Neighbor radius:" ParetoRadiusChange 0.0 maxDist r
-  where
-  maxDist = sqrt $ toNumber $ A.length fns
-
 angleThreshSlider :: Number -> HTML Event
 angleThreshSlider theta = 
-  rangeSlider "cos theta threshold:" AngleThreshChange 0.8 1.0 theta
+  rangeSlider "cos theta threshold:" AngleThreshChange 0.0 1.0 theta
   -- #! onChange ParetoRadiusChange
 
 rangeSlider :: String -> (DOMEvent -> Event) -> Number -> Number -> Number -> HTML Event
