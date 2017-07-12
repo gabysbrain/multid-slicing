@@ -38,7 +38,6 @@ viewDataInfo (Loaded dsi) =
     label do
       text "Number of rows: "
       span $ text $ show $ DF.rows dsi.paretoPoints
-    paretoRangeSlider dsi.fieldNames dsi.paretoRadius
     angleThreshSlider dsi.cosThetaThresh
     label do
       text "Dimensions"
@@ -75,15 +74,9 @@ uploadPanel =
             a #! onClick (LoadStaticFile fn) $
               text fn
 
-paretoRangeSlider :: forall d. FieldNames d -> Number -> HTML Event
-paretoRangeSlider fns r = 
-    rangeSlider "Neighbor radius:" ParetoRadiusChange 0.0 maxDist r
-  where
-  maxDist = sqrt $ toNumber $ A.length fns
-
 angleThreshSlider :: Number -> HTML Event
 angleThreshSlider theta = 
-  rangeSlider "cos theta threshold:" AngleThreshChange 0.8 1.0 theta
+  rangeSlider "cos theta threshold:" AngleThreshChange 0.0 1.0 theta
   -- #! onChange ParetoRadiusChange
 
 rangeSlider :: String -> (DOMEvent -> Event) -> Number -> Number -> Number -> HTML Event
