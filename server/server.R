@@ -19,13 +19,12 @@ jug() %>%
     #data = d2
     pareto.pts = pareto.points(data)
     edges = delaunay.edges(pareto.pts)
-    print(edges)
     json.data = list(
       paretoPoints = pareto.pts,
       simplexEdges = edges
     )
-    print(json.data)
-    
+    print("done!")
+
     # send back the result
     res$json(json.data)
   }) %>%
