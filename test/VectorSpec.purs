@@ -8,8 +8,7 @@ import Partial.Unsafe (unsafePartial)
 import Math (sqrt, pi, cos, sin)
 
 import Test.Spec (Spec, pending, describe, it)
-import Test.Spec.Assertions (fail, shouldEqual, shouldContain)
-import Test.Util (shouldApproxEqual)
+import Test.Assertions
 
 p1 = unsafePartial $ fromJust $ P.fromArray [ 0.0, 0.0 ]
 p2 = unsafePartial $ fromJust $ P.fromArray [ 1.0, 1.0 ]
