@@ -69,16 +69,6 @@ linkAngle2d d1 d2 = DF.mutate angleLink
     , linkId: l.linkId
     }
 
--- sort the points so that the line drawing algorithm works correctly
-{--paretoSort :: String -> String -> Query ParetoSlabs ParetoSlabs--}
-{--paretoSort d1 d2 = DF.mutate innerSort'--}
-  {--where--}
-  {--innerSort' {slab:s, data:d} = --}
-    {--{ slab: s--}
-    {--, data: DF.runQuery (DF.sort (order2d d1 d2)) d--}
-    {--}--}
-
-
 -------------------------------------------
 -- Utility functions used by the queries --
 -------------------------------------------
@@ -121,16 +111,8 @@ setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}
 cosTheta2d :: forall d. Int -> Int -> Link d -> Number
 cosTheta2d d1 d2 {src:p1,tgt:p2} = sqrt (V.sqLen v' / V.sqLen v)
   where
+  p1' = P.project2D d1 d2 <$> p1
+  p2' = P.project2D d1 d2 <$> p2
   v = rowVal $ V.fromPoints <$> p1 <*> p2
-  v' = rowVal $ V.fromPoints <$> (P.project2D d1 d2 <$> p1) <*> (P.project2D d1 d2 <$> p2)
-
-{--order2d :: String -> String -> AppDatum -> AppDatum -> Ordering--}
-{--order2d d1 d2 pt1 pt2 = --}
-  {--fromMaybe EQ $ compare <$> (pt2theta d1 d2 pt1) <*> (pt2theta d1 d2 pt2)--}
-
-{--pt2theta :: String -> String -> AppDatum -> Maybe Number--}
-{--pt2theta d1 d2 {point:pt} = do--}
-  {--x <- SM.lookup d1 pt--}
-  {--y <- SM.lookup d2 pt--}
-  {--pure $ atan (y/x)--}
+  v' = rowVal $ V.fromPoints <$> p1' <*> p2'
 
