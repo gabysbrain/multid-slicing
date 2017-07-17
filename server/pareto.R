@@ -1,22 +1,26 @@
 
 library(geometry)
-library(mco)
+library(rPref)
 library(plyr)
 
 # filters a dataset to only include the pareto points
 pareto.points = function(data) {
-  # paretoFilter is the only one that filters
-  # also, it refuses to take a dataframe
-  ppts = paretoFilter(as.matrix(data))
-  res = data.frame(ppts)
-  names(res) = names(data)
-  res
+  # need to indicate our preferences (maximize all)
+  nms = names(data)
+  preff = high_
+  prefs = Reduce(function(p,nm) p*preff(nm), tail(nms,n=-1), preff(nms[1]))
+  psel(data, prefs)
+  #res = data.frame(ppts)
+  #names(res) = names(data)
+  #res
 }
 
-# should be given pareto points!
+# should only be given pareto points!
 delaunay.edges = function(ppts) {
-  simplices = delaunayn(ppts)
-  edges = adply(simplices, 1, function(x) t(combn(x,2)), .id=NULL)
+  simplices = convhulln(ppts)
+  print("simplices done")
+  edges = adply(simplices, 1, function(x) t(combn(x,2)), .id=NULL, .parallel=FALSE)
+  print("edges done")
   res = data.frame(edges)
   names(res) = c("p1", "p2")
   res
