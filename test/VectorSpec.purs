@@ -1,14 +1,11 @@
 module Test.VectorSpec where
 
-import Prelude
+import Test.Prelude
 import Data.Geom.Vector
 import Data.Geom.Point as P
 import Data.Maybe (fromJust)
 import Partial.Unsafe (unsafePartial)
 import Math (sqrt, pi, cos, sin)
-
-import Test.Spec (Spec, pending, describe, it)
-import Test.Assertions
 
 p1 = unsafePartial $ fromJust $ P.fromArray [ 0.0, 0.0 ]
 p2 = unsafePartial $ fromJust $ P.fromArray [ 1.0, 1.0 ]
