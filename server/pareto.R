@@ -2,6 +2,7 @@
 library(geometry)
 library(rPref)
 library(plyr)
+library(dplyr)
 library(ggplot2)
 library(gridExtra)
 
@@ -56,7 +57,7 @@ intersect.pts = function(data, edges, fp, d1, d2) {
   res = adply(edges, 1, f)
   if(nrow(res)>0) {
     res = res[,names(data)]
-    res[!is.na(res[,1]),]
+    pareto.points(res[!is.na(res[,1]),])
   } else {
     # need a proper empty data frame
     res = data.frame(matrix(nrow=0,ncol=length(names(data))))
@@ -109,15 +110,18 @@ splom.layout = function(d) {
 
 plot.hull.discrete = function(ppts, n=10) {
   edges = delaunay.edges(ppts)
+  if(nrow(edges)==0) warning("no edges found")
   plot.data = gen.plot.data(ppts, edges, n)
+  if(nrow(plot.data)==0) stop("No plane/edge intersections found")
   plot.data$fpid = factor(plot.data$fpid)
   fields = names(ppts)
   d = ncol(ppts)
   plots = list()
   for(i in 1:(d-1)) { # d1 varies the slowest
     for(j in (i+1):d) {
-      p = ggplot(plot.data %>% filter(d1==i&d2==j), 
-                 aes_string(x=fields[i], y=fields[j], group="fpid")) + 
+      pd = plot.data %>% filter(d1==i&d2==j)
+      pd = pd[order(pd[,fields[i]]),]
+      p = ggplot(pd, aes_string(x=fields[i], y=fields[j], group="fpid")) + 
             geom_point() + 
             geom_line(aes(colour=fpid)) +
             scale_x_continuous(limits=c(0,1)) +
@@ -129,3 +133,5 @@ plot.hull.discrete = function(ppts, n=10) {
   layout = splom.layout(d)
   grid.arrange(grobs=plots, layout_matrix=layout)
 }
+
+
