@@ -3,6 +3,7 @@ library(geometry)
 library(rPref)
 library(plyr)
 library(ggplot2)
+library(gridExtra)
 
 # filters a dataset to only include the pareto points
 pareto.points = function(data) {
@@ -86,3 +87,45 @@ gen.plot.data = function(data, edges, n) {
   })
 }
 
+# append to a list
+lappend <- function(lst, obj) {
+  lst[[length(lst)+1]] <- obj
+  return(lst)
+}
+
+# layout for grid.arrange
+splom.layout = function(d) {
+  layout = matrix(NA, nrow=d-1, ncol=d-1)
+  iter = 1
+  num = d-1
+  for(c in 1:ncol(layout)) {
+    nums = seq(from=iter, length.out=num)
+    layout[c:(c+length(nums)-1),c] = nums
+    iter = iter + length(nums)
+    num = num - 1
+  }
+  layout
+}
+
+plot.hull.discrete = function(ppts, n=10) {
+  edges = delaunay.edges(ppts)
+  plot.data = gen.plot.data(ppts, edges, n)
+  plot.data$fpid = factor(plot.data$fpid)
+  fields = names(ppts)
+  d = ncol(ppts)
+  plots = list()
+  for(i in 1:(d-1)) { # d1 varies the slowest
+    for(j in (i+1):d) {
+      p = ggplot(plot.data %>% filter(d1==i&d2==j), 
+                 aes_string(x=fields[i], y=fields[j], group="fpid")) + 
+            geom_point() + 
+            geom_line(aes(colour=fpid)) +
+            scale_x_continuous(limits=c(0,1)) +
+            scale_y_continuous(limits=c(0,1)) +
+            theme_bw()
+      plots = lappend(plots, p)
+    }
+  }
+  layout = splom.layout(d)
+  grid.arrange(grobs=plots, layout_matrix=layout)
+}
