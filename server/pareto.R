@@ -71,9 +71,9 @@ gen.plot.data = function(data, edges, n) {
   d = ncol(data)
   samples = data.frame(matrix(runif(d*n), ncol=d))
   dims = t(combn(d,2))
-  adply(1:n, 1, function(rid) {
+  adply(1:n, 1, function(rid) { # go over all focus points
     fp = samples[rid,]
-    res = adply(dims, 1, function(d) {
+    res = adply(dims, 1, function(d) { # all pairs of dims
       res2 = intersect.pts(data, edges, fp, d[1], d[2])
       if(nrow(res2)>0) {
         res2$d1 = d[1]
@@ -134,4 +134,114 @@ plot.hull.discrete = function(ppts, n=10) {
   grid.arrange(grobs=plots, layout_matrix=layout)
 }
 
+intersect.test = function(d1, d2, focus.pt, simplex) {
+  n = nrow(simplex)
+  r.last = t(simplex)[,n]
+  T = (t(simplex) - r.last)[,-n]
+  T.inv = solve(T)
+  
+  # compute lambda as best we can (there will be 3 parts)
+  rr = focus.pt
+  rr[c(d1,d2)] = 0
+  rr = rr - r.last
+  rr.x = array(0,n-1)
+  rr.y = array(0,n-1)
+  rr.x[d1] = rr.y[d2] = 1
+  # we are trying to compute T^(-1) . [x-xn,y-yn,...,z-zn]
+  lambda.rest = T.inv %*% rr # column vector multiplication
+  lambda.x = as.vector(T.inv %*% rr.x)
+  lambda.y = as.vector(T.inv %*% rr.y)
+  lambda.c = as.vector(lambda.rest)
+  
+  # find the d1 and d2 ranges that make each lambda 0
+  intersect.range = data.frame(d1.min=array(NA,n),d1.max=array(NA,n),
+                               d2.min=array(NA,n),d2.max=array(NA,n))
+  
+  # most indices are based on solving ax + by + c = 0
+  # but keeping the other lambdas between 0 and 1
+  for(i in 1:(n-1)) {
+    rng = NULL
+    # put y=mx+b into each other lambda formula and try and get a good range
+    for(j in (1:n)[-i]) { # don't intersect i with itself
+      # compute the range
+      new.rng = NULL
+      # figure out the bounds of variable d1 that will keep b_j between 0 and 1
+      if(j != n) {
+        new.rng = common.cross.range(lambda.x, lambda.y, lambda.c, i, j)
+      } else {
+        new.rng = lastn.cross.range(lambda.x, lambda.y, lambda.c, i)
+      }
+      if(!is.null(rng)) # special first case
+        new.rng = intersect.ranges(new.rng,rng)
+      rng = new.rng
+    }
+    # problem is b_n = 1 - b_1 - ... - b_(n-1)
+    # so this requires special work
+    # if we got an intersection then we're good!
+    if(all(!is.na(rng))) {
+      y.rng = (-lambda.x[i] * rng - lambda.c[i])/lambda.y[i]
+      intersect.range[i,"d1.min"] = rng[1]
+      intersect.range[i,"d1.max"] = rng[2]
+      intersect.range[i,"d2.min"] = y.rng[1]
+      intersect.range[i,"d2.max"] = y.rng[2]
+    }
+  }
+  
+  # the last index (n) is based on solving 1 - sum_i (a_i x + b_i y + c) = 0
+  # but keeping the other lambdas in range
+  c.sum = sum(lambda.c)
+  x.sum = sum(lambda.x)
+  y.sum = sum(lambda.y)
+  if(x.sum!=0 && y.sum!=0) {
+    x.factor = -x.sum / y.sum
+    c.value = (1-c.sum) / y.sum # based on solving the final lambda for 0
+    rng = NULL
+    for(i in 1:(n-1)) {
+      cc = lambda.c[i] + lambda.y[i]*c.value
+      xx = lambda.x[i] - lambda.y[i]*x.factor
+      new.rng = sort(c(-cc/xx,(1-cc)/xx))
+      if(!is.null(rng)) {
+        new.rng = intersect.ranges(new.rng, rng)
+      }
+    }
+    y.rng = x.factor * rng + c.value
+    intersect.range[n,"d1.min"] = rng[1]
+    intersect.range[n,"d1.max"] = rng[2]
+    intersect.range[n,"d2.min"] = y.rng[1]
+    intersect.range[n,"d2.max"] = y.rng[2]
+  }
+  
+  intersect.range
+}
 
+common.cross.range = function(lambda.x, lambda.y, lambda.c, i, j) {
+  f1 = (lambda.y[j]*lambda.c[i] - lambda.y[i]*lambda.c[j]) /
+    (lambda.x[j]*lambda.y[i] - lambda.x[i]*lambda.y[j])
+  f2 = (lambda.y[i] + lambda.y[j]*lambda.c[i] - lambda.y[i]*lambda.c[j]) /
+    (lambda.x[j]*lambda.y[i] - lambda.x[i]*lambda.y[j])
+  sort(c(f1,f2))
+}
+
+lastn.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
+  n = length(lambda.x)
+  x.sum = 0
+  c.sum = 0
+  for(k in (1:n)[-i]) {
+    x.sum = x.sum + lambda.x[k] - lambda.y[k]*lambda.x[i]/lambda.y[i]
+    c.sum = c.sum + lambda.c[k] - lambda.y[k]*lambda.c[i]/lambda.y[i]
+  }
+  c.sum = 1 - c.sum
+  f1 = -c.sum / x.sum
+  f2 = (1-c.sum) / x.sum
+  sort(c(f1,f2))
+}
+
+intersect.ranges = function(rng1,rng2) {
+  if(any(is.na(c(rng1,rng2))))
+    return(c(NA,NA))
+  rng = c(max(rng1[1],rng2[1]),min(rng1[2],rng2[2]))
+  # if the max and min reverse then there is no intersection
+  if(rng[2]<rng[1]) 
+    rng = c(NA,NA)
+  rng
+}
