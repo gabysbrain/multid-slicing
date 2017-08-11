@@ -5,6 +5,7 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
+library(MASS)
 
 # filters a dataset to only include the pareto points
 pareto.points = function(data) {
@@ -19,6 +20,7 @@ pareto.points = function(data) {
 }
 
 # should only be given pareto points!
+# NOTE: only works in 3D
 delaunay.edges = function(ppts) {
   simplices = convhulln(ppts)
   print("simplices done")
@@ -29,7 +31,7 @@ delaunay.edges = function(ppts) {
   unique(res)
 }
 
-# convex hull w/ plane intersection
+# 3D convex hull w/ plane intersection
 segment.intersects = function(fp, d1, d2, pt1, pt2) {
   # since everything on the d1xd2 plane conatains all numbers we 
   # can just cheat with 0
@@ -66,15 +68,21 @@ intersect.pts = function(data, edges, fp, d1, d2) {
   }
 }
 
+intersect.simplex = function(simplex, data, fp, d1, d2) {
+  intersects = simplex.intersect.test(d1, d2, fp, data[simplex,])
+  interesects
+}
+
 # plotting
-gen.plot.data = function(data, edges, n) {
+gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
-  samples = data.frame(matrix(runif(d*n), ncol=d))
+  focus.points = data.frame(matrix(runif(d*n), ncol=d))
   dims = t(combn(d,2))
   adply(1:n, 1, function(rid) { # go over all focus points
-    fp = samples[rid,]
+    fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
-      res2 = intersect.pts(data, edges, fp, d[1], d[2])
+      res2 = adply(simplexes, 1, intersect.simplex, data=data, fp=fp, d1=d[1], d2=d[2])
+        #intersect.pts(data, edges, fp, d[1], d[2])
       if(nrow(res2)>0) {
         res2$d1 = d[1]
         res2$d2 = d[2]
@@ -109,10 +117,10 @@ splom.layout = function(d) {
 }
 
 plot.hull.discrete = function(ppts, n=10) {
-  edges = delaunay.edges(ppts)
-  if(nrow(edges)==0) warning("no edges found")
-  plot.data = gen.plot.data(ppts, edges, n)
-  if(nrow(plot.data)==0) stop("No plane/edge intersections found")
+  simplexes = convhulln(ppts) # these are d-1 dimensional simplexes
+  if(nrow(simplexes)==0) warning("cannot generate simplexes")
+  plot.data = gen.plot.data(ppts, simplexes, n)
+  if(nrow(plot.data)==0) stop("No plane/simplex intersections found")
   plot.data$fpid = factor(plot.data$fpid)
   fields = names(ppts)
   d = ncol(ppts)
@@ -134,21 +142,21 @@ plot.hull.discrete = function(ppts, n=10) {
   grid.arrange(grobs=plots, layout_matrix=layout)
 }
 
-intersect.test = function(d1, d2, focus.pt, simplex) {
-  n = nrow(simplex)
-  r.last = t(simplex)[,n]
-  T = (t(simplex) - r.last)[,-n]
-  T.inv = solve(T)
+simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
+  n = nrow(simplex) # number of lambdas, dimensionality of the simplex+1
+  r.last = simplex[n,]
+  T = t(sub.rows(simplex, r.last))[,-n]
+  T.inv = ginv(T) # T isn't always square
   
   # compute lambda as best we can (there will be 3 parts)
   rr = focus.pt
   rr[c(d1,d2)] = 0
   rr = rr - r.last
-  rr.x = array(0,n-1)
-  rr.y = array(0,n-1)
+  rr.x = array(0,length(focus.pt))
+  rr.y = array(0,length(focus.pt))
   rr.x[d1] = rr.y[d2] = 1
   # we are trying to compute T^(-1) . [x-xn,y-yn,...,z-zn]
-  lambda.rest = T.inv %*% rr # column vector multiplication
+  lambda.rest = T.inv %*% t(rr) # column vector multiplication
   lambda.x = as.vector(T.inv %*% rr.x)
   lambda.y = as.vector(T.inv %*% rr.y)
   lambda.c = as.vector(lambda.rest)
@@ -236,6 +244,12 @@ lastn.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
   sort(c(f1,f2))
 }
 
+# subtract a row vector from every row of a matrix
+sub.rows = function(mtx, v) {
+  adply(mtx, 1, function(r) r - v)
+}
+
+# return the intersection of 2 ranges or NA,NA if there's no intersection
 intersect.ranges = function(rng1,rng2) {
   if(any(is.na(c(rng1,rng2))))
     return(c(NA,NA))
