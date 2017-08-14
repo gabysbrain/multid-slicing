@@ -70,7 +70,7 @@ intersect.pts = function(data, edges, fp, d1, d2) {
 
 intersect.simplex = function(simplex, data, fp, d1, d2) {
   intersects = simplex.intersect.test(d1, d2, fp, data[simplex,])
-  interesects
+  intersects
 }
 
 # plotting
@@ -78,7 +78,7 @@ gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
   focus.points = data.frame(matrix(runif(d*n), ncol=d))
   dims = t(combn(d,2))
-  adply(1:n, 1, function(rid) { # go over all focus points
+  plot.data = adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
       res2 = adply(simplexes, 1, intersect.simplex, data=data, fp=fp, d1=d[1], d2=d[2])
@@ -94,6 +94,8 @@ gen.plot.data = function(data, simplexes, n) {
     }
     res
   })
+  # remove all the NA rows
+  filter_all(plot.data, all_vars(!is.na(.)))
 }
 
 # append to a list
@@ -116,20 +118,28 @@ splom.layout = function(d) {
   layout
 }
 
+setup.plot.data = function(intersect.data) {
+  mins = intersect.data[,c("d1.min","d2.min","d1","d2","fpid")]
+  maxes = intersect.data[,c("d1.max","d2.max","d1","d2","fpid")]
+  res = data.frame(rbind(as.matrix(mins), as.matrix(maxes)))
+  names(res) = c("x1","x2","d1","d2","fpid")
+  res
+}
+
 plot.hull.discrete = function(ppts, n=10) {
   simplexes = convhulln(ppts) # these are d-1 dimensional simplexes
   if(nrow(simplexes)==0) warning("cannot generate simplexes")
   plot.data = gen.plot.data(ppts, simplexes, n)
   if(nrow(plot.data)==0) stop("No plane/simplex intersections found")
+  plot.data = setup.plot.data(plot.data)
   plot.data$fpid = factor(plot.data$fpid)
-  fields = names(ppts)
   d = ncol(ppts)
   plots = list()
   for(i in 1:(d-1)) { # d1 varies the slowest
     for(j in (i+1):d) {
       pd = plot.data %>% filter(d1==i&d2==j)
-      pd = pd[order(pd[,fields[i]]),]
-      p = ggplot(pd, aes_string(x=fields[i], y=fields[j], group="fpid")) + 
+      pd = pd[order(pd[,"x1"]),]
+      p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) +
             geom_point() + 
             geom_line(aes(colour=fpid)) +
             scale_x_continuous(limits=c(0,1)) +
@@ -211,6 +221,7 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
       if(!is.null(rng)) {
         new.rng = intersect.ranges(new.rng, rng)
       }
+      rng = new.rng
     }
     y.rng = x.factor * rng + c.value
     intersect.range[n,"d1.min"] = rng[1]
