@@ -78,11 +78,12 @@ gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
   focus.points = data.frame(matrix(runif(d*n), ncol=d))
   dims = t(combn(d,2))
-  plot.data = adply(1:n, 1, function(rid) { # go over all focus points
+  adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
       res2 = adply(simplexes, 1, intersect.simplex, data=data, fp=fp, d1=d[1], d2=d[2])
-        #intersect.pts(data, edges, fp, d[1], d[2])
+      # remove all the NA rows
+      res2 = filter_all(res2, all_vars(!is.na(.)))
       if(nrow(res2)>0) {
         res2$d1 = d[1]
         res2$d2 = d[2]
@@ -94,8 +95,6 @@ gen.plot.data = function(data, simplexes, n) {
     }
     res
   })
-  # remove all the NA rows
-  filter_all(plot.data, all_vars(!is.na(.)))
 }
 
 # append to a list
@@ -123,7 +122,12 @@ setup.plot.data = function(intersect.data) {
   maxes = intersect.data[,c("d1.max","d2.max","d1","d2","fpid")]
   res = data.frame(rbind(as.matrix(mins), as.matrix(maxes)))
   names(res) = c("x1","x2","d1","d2","fpid")
-  res
+  # need to only show points that are pareto (these are cross-connections in the convex hull)
+  res %>%
+    group_by(d1, d2, fpid) %>%
+    pareto.points() %>%
+    ungroup() %>%
+    as.data.frame()
 }
 
 plot.hull.discrete = function(ppts, n=10) {
@@ -211,20 +215,6 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   }
 
   intersect.range
-}
-
-is.coplanar = function(simplex, x.rng, y.rng, focus.pt, d1, d2) {
-  # how many dimensions the simplex exists in
-  dims = nrow(simplex) - 1
-  pt1 = focus.pt
-  pt1[d1] = x.rng[1]
-  pt1[d2] = y.rng[1]
-  pt2 = focus.pt
-  pt2[d1] = x.rng[2]
-  pt2[d2] = y.rng[2]
-  mtx1 = as.matrix(adply(simplex, 1, function(r) r - pt1, .id=NULL))
-  mtx2 = as.matrix(adply(simplex, 1, function(r) r - pt2, .id=NULL))
-  rankMatrix(mtx1) <= dims & rankMatrix(mtx2) <= dims
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
