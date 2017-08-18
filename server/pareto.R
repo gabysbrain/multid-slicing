@@ -5,7 +5,6 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
-library(MASS)
 library(Matrix)
 
 # filters a dataset to only include the pareto points
@@ -154,9 +153,22 @@ plot.hull.discrete = function(ppts, n=10) {
 }
 
 simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
-  n = nrow(simplex) # number of lambdas, dimensionality of the simplex+1
-  T = rbind(t(simplex), rep(1,n))
-  T.inv = ginv(T) # T isn't always square
+  n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
+  T = rbind(t(simplex), rep(1,nrow(simplex)))
+  # T may not be square so if it is then pad with the intersection point
+  if(nrow(T) != ncol(T)) {
+    T = cbind(T, c(focus.pt, 1))
+    T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+  }
+  # if T is singluar then the simplex lies in a plane
+  if(det(T)==0) {
+    rows = t(combn(nrow(simplex), 2))
+    res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
+    names(res) = c("d1.min", "d2.min", "d1.max", "d2.max")
+    return(res)
+  }
+  T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
+  T.inv = solve(T)
   
   # compute lambda as best we can (there will be 3 parts)
   rr = c(unlist(focus.pt), 1)
@@ -168,26 +180,28 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   lambda.c = as.vector(T.inv %*% rr) # column vector multiplication
   lambda.x = as.vector(T.inv %*% rr.x)
   lambda.y = as.vector(T.inv %*% rr.y)
-  
+
   # find the d1 and d2 ranges that make each lambda 0
   intersect.range = data.frame(d1.min=array(NA,n),d1.max=array(NA,n),
                                d2.min=array(NA,n),d2.max=array(NA,n))
   
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  for(i in 1:n) {
+  for(i in 1:length(lambda.c)) {
     # put y=mx+b into each other lambda formula and try and get a good range
     ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
-    rng = c(max(ranges[,1]), min(ranges[,2]))
-    if(rng[2]<rng[1]) rng = c(NA,NA)
+    if(nrow(ranges)>0) {
+      rng = c(max(ranges[,1]), min(ranges[,2]))
+      if(rng[2]<rng[1]) rng = c(NA,NA)
 
-    # problem is b_n = 1 - b_1 - ... - b_(n-1)
-    # so this requires special work
-    # if we got an intersection then we're good!
-    if(all(!is.na(rng))) {
-      y.rng = (-lambda.x[i] * rng - lambda.c[i])/lambda.y[i]
-      # now we have to check if everything is co-planar
-      if(is.coplanar(simplex, rng, y.rng, focus.pt, d1, d2)) {
+      # problem is b_n = 1 - b_1 - ... - b_(n-1)
+      # so this requires special work
+      # if we got an intersection then we're good!
+      eps = 1e-9
+      if(all(!is.na(rng)) & abs(rng[1]+1)>eps & abs(rng[2]+1)>eps) {
+                             # all.equal doesn't return false if not equal :/
+        y.rng = (-lambda.x[i] * rng - lambda.c[i])/lambda.y[i]
+        # now we have to check if everything is co-planar
         intersect.range[i,"d1.min"] = rng[1]
         intersect.range[i,"d1.max"] = rng[2]
         intersect.range[i,"d2.min"] = y.rng[1]
@@ -195,7 +209,7 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
       }
     }
   }
-  
+
   intersect.range
 }
 
@@ -210,7 +224,7 @@ is.coplanar = function(simplex, x.rng, y.rng, focus.pt, d1, d2) {
   pt2[d2] = y.rng[2]
   mtx1 = as.matrix(adply(simplex, 1, function(r) r - pt1, .id=NULL))
   mtx2 = as.matrix(adply(simplex, 1, function(r) r - pt2, .id=NULL))
-  rankMatrix(mtx1) == dims & rankMatrix(mtx2) == dims
+  rankMatrix(mtx1) <= dims & rankMatrix(mtx2) <= dims
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
@@ -218,6 +232,8 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
     (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
   f2 = (lambda.y[i] + lambda.c[i]*lambda.y - lambda.y[i]*lambda.c) /
     (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
-  matrix(apply(matrix(cbind(f1,f2)[-i,], ncol=2), 1, sort), ncol=2, byrow=TRUE)
+  mtx = matrix(cbind(f1,f2), ncol=2)
+  mtx = mtx[apply(mtx, 1, function(r) all(is.finite(r))),] # remove non-numeric rows
+  matrix(apply(mtx, 1, sort), ncol=2, byrow=TRUE)
 }
 
