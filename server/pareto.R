@@ -5,7 +5,7 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
-library(Matrix)
+library(randtoolbox)
 
 # filters a dataset to only include the pareto points
 pareto.points = function(data) {
@@ -76,7 +76,7 @@ intersect.simplex = function(simplex, data, fp, d1, d2) {
 # plotting
 gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
-  focus.points = data.frame(matrix(runif(d*n), ncol=d))
+  focus.points = data.frame(sobol(n,d))
   dims = t(combn(d,2))
   adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
@@ -130,6 +130,7 @@ setup.plot.data = function(intersect.data) {
     as.data.frame()
 }
 
+#' Produce a set of 2D slices of the convex hull of a set of points
 plot.hull.discrete = function(ppts, n=10) {
   simplexes = convhulln(ppts) # these are d-1 dimensional simplexes
   if(nrow(simplexes)==0) warning("cannot generate simplexes")
