@@ -131,7 +131,7 @@ setup.plot.data = function(intersect.data) {
 }
 
 #' Produce a set of 2D slices of the convex hull of a set of points
-plot.hull.discrete = function(ppts, n=10) {
+plot.hull.discrete = function(ppts, dim.labels=NA, n=10) {
   simplexes = convhulln(ppts) # these are d-1 dimensional simplexes
   if(nrow(simplexes)==0) warning("cannot generate simplexes")
   plot.data = gen.plot.data(ppts, simplexes, n)
@@ -145,16 +145,28 @@ plot.hull.discrete = function(ppts, n=10) {
       pd = plot.data %>% filter(d1==i&d2==j) %>% unique()
       pd = pd[order(pd[,"x2"]),]
       p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) +
-            geom_point() + 
+            geom_point(size=0.5) + 
             geom_line(aes(colour=fpid)) +
             scale_x_continuous(limits=c(0,1)) +
             scale_y_continuous(limits=c(0,1)) +
-            theme_bw()
+            theme_bw() +
+            theme(axis.title.x=element_blank(),
+                  axis.title.y=element_blank())
       plots = lappend(plots, p)
     }
   }
+  
+  # need axis names as well
+  if(is.na(dim.labels)) {
+    dim.labels = paste("x", 1:d, sep="")
+  }
+  horiz.labels = Map(textGrob, dim.labels[1:(d-1)])
+  vert.labels = Map(textGrob, dim.labels[2:d])
   layout = splom.layout(d)
-  grid.arrange(grobs=plots, layout_matrix=layout)
+  layout = rbind(max(layout, na.rm=TRUE)+1:(d-1), layout) # put the labels after
+  layout = cbind(c(NA, max(layout, na.rm=TRUE)+1:(d-1)), layout)
+  grid.arrange(grobs=c(plots, horiz.labels, vert.labels), layout_matrix=layout,
+               widths=c(0.1,rep(1,d-1)), heights=c(0.2, rep(1,d-1)))
 }
 
 simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
