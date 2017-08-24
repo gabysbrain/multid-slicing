@@ -1,0 +1,148 @@
+---
+title: "Dataset exploration"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source('server/pareto.R')
+```
+
+# 3D sphere
+
+Slices of a 3D sphere, mostly as a santity check.
+
+```{r}
+data = read.csv('static/test_data/3sphere_50.csv')
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+# 5D sphere
+
+Slices of a 5D sphere, to make sure the intersection tests work
+
+```{r}
+data = read.csv('static/test_data/sphere_50.csv')
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+# SCH from the NSGA-II paper
+
+[@Deb:2002]
+
+Some of the test problems are not convex so they are not used here.This is 
+also a bit of a sanity check since there are only 2 objectives
+
+* 1 input
+* 2 outputs
+
+\[
+\begin{aligned}
+f_1(x) & = x^2 \\
+f_2(x) & = (x-2)^2
+\end{aligned}
+\]
+
+```{r}
+f1 = function(x) x^2
+f2 = function(x) (x-2)^2
+
+samples = runif(50)
+data = data.frame(f1=f1(samples), f2=f2(samples))
+data$f1 = 1 - data$f1 / max(data$f1) # scale and flip
+data$f2 = 1 - data$f2 / max(data$f2)
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+# DLTZ5
+
+[@Deb:2005]
+
+* $M$ inputs
+* $M$ outputs
+
+Produces an $I$ dimensional pareto surface from $M$ objectives. By changing $I$
+we get different dimensionalities of the pareto front.
+
+```{r}
+g = function(x) {
+  sum((x-0.5)**2)
+}
+dltz5 = function(I,M) {
+  f = function(x) {
+    theta = c(pi/2 * x[1:(I-1)], (pi*(1+2*g(x)*x[I:(M-1)]))/(4*(1+g(x))))
+    tmp = 1 + 100*g(x)
+    tmp * c(prod(cos(theta)), unlist(Map(function(i) prod(cos(theta[i:(M-i)]))*sin(theta[M-i+1]), 2:(M-1))), sin(theta[1]))
+  }
+  function(x) {
+    if(is.null(dim(x))) f(x)
+    else t(apply(x, 1, f))
+  }
+}
+```
+
+## DLTZ5(2,3)
+
+2D Pareto front in 3D objective space
+
+```{r}
+f = dltz5(2,3)
+samples = matrix(runif(50*3), ncol=3)
+data = data.frame(f(samples))
+data = 1 - data / max(data) # scale and flip
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+## DLTZ(3,10)
+
+3D Pareto front in 10D space
+
+```{r}
+f = dltz5(3,10)
+samples = matrix(runif(50*10), ncol=10)
+data = data.frame(f(samples))
+data = 1 - data / max(data) # scale and flip
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+## DLTZ(3,5)
+
+3D Pareto front in 5D space
+
+```{r}
+f = dltz5(3,5)
+samples = matrix(runif(50*5), ncol=5)
+data = data.frame(f(samples))
+data = 1 - data / max(data) # scale and flip
+data.p = pareto.points(data)
+plot.hull.discrete(data.p)
+```
+
+# Geometric shapes
+
+## 4D Klein bottle
+
+The 4D Klein bottle doesn't self-intersect.
+
+```{r}
+kleinb = function(theta, phi, r=2, p=2, eps=1e-9) {
+  x = r * (cos(theta/2)*cos(phi) - sin(theta/2)*sin(2*phi))
+  y = r * (sin(theta/2)*cos(phi) + cos(theta/2)*sin(2*phi))
+  z = p * cos(theta) * (1 + eps * sin(phi))
+  w = p * sin(theta) * (1 + eps * sin(phi))
+  cbind(x, y, z, w)
+}
+samples = data.frame(theta=2*pi * runif(50), phi=2*pi * runif(50))
+data = kleinb(samples$theta, samples$phi)
+data = data - min(data)
+data = data / max(data)
+#data.p = pareto.points(data)
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
+
