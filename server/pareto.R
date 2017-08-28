@@ -4,6 +4,7 @@ library(rPref)
 library(plyr)
 library(dplyr)
 library(ggplot2)
+library(grid)
 library(gridExtra)
 library(randtoolbox)
 
@@ -117,41 +118,51 @@ splom.layout = function(d) {
   layout
 }
 
-setup.plot.data = function(intersect.data) {
+setup.plot.data = function(intersect.data, filter.pareto=TRUE) {
   mins = intersect.data[,c("d1.min","d2.min","d1","d2","fpid")]
   maxes = intersect.data[,c("d1.max","d2.max","d1","d2","fpid")]
   res = data.frame(rbind(as.matrix(mins), as.matrix(maxes)))
   names(res) = c("x1","x2","d1","d2","fpid")
   # need to only show points that are pareto (these are cross-connections in the convex hull)
-  res %>%
-    group_by(d1, d2, fpid) %>%
-    pareto.points() %>%
-    ungroup() %>%
-    as.data.frame()
+  if(filter.pareto) {
+    res %>%
+      group_by(d1, d2, fpid) %>%
+      pareto.points() %>%
+      ungroup() %>%
+      as.data.frame()
+  } else {
+    res
+  }
 }
 
 #' Produce a set of 2D slices of the convex hull of a set of points
-plot.hull.discrete = function(ppts, dim.labels=NA, n=10) {
+plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
   simplexes = convhulln(ppts) # these are d-1 dimensional simplexes
   if(nrow(simplexes)==0) warning("cannot generate simplexes")
   plot.data = gen.plot.data(ppts, simplexes, n)
   if(nrow(plot.data)==0) stop("No plane/simplex intersections found")
-  plot.data = setup.plot.data(plot.data)
-  plot.data$fpid = factor(plot.data$fpid)
+  plot.data = setup.plot.data(plot.data, filter.pareto)
+  plot.data$fpid = factor(plot.data$fpid) # keeps the fp color consistent
   d = ncol(ppts)
   plots = list()
   for(i in 1:(d-1)) { # d1 varies the slowest
     for(j in (i+1):d) {
-      pd = plot.data %>% filter(d1==i&d2==j) %>% unique()
-      pd = pd[order(pd[,"x2"]),]
+      pd = plot.data %>% filter(d1==i&d2==j) %>% unique() %>%
+                     group_by(fpid) %>% 
+                     do(cbind(., data.frame(theta=clock.angle(.)))) %>%
+                     arrange(fpid, theta)
       p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) +
-            geom_point(size=0.5) + 
-            geom_line(aes(colour=fpid)) +
-            scale_x_continuous(limits=c(0,1)) +
-            scale_y_continuous(limits=c(0,1)) +
-            theme_bw() +
-            theme(axis.title.x=element_blank(),
-                  axis.title.y=element_blank())
+            geom_point(size=0.5)
+      if(filter.pareto) { # see if we're dealing with polygons or not
+        p = p + geom_path(aes(colour=fpid))
+      } else {
+        p = p + geom_polygon(aes(colour=fpid), fill=NA)
+      }
+      p = p + scale_x_continuous(limits=c(0,1)) +
+              scale_y_continuous(limits=c(0,1)) +
+              theme_bw() +
+              theme(axis.title.x=element_blank(),
+                    axis.title.y=element_blank())
       plots = lappend(plots, p)
     }
   }
@@ -228,6 +239,12 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   }
 
   intersect.range
+}
+
+clock.angle = function(pts) {
+  centroid = colMeans(pts[,c(1,2)])
+  recentered.pts = sweep(pts[,c(1,2)], 2, centroid, FUN="-")
+  unlist(as.vector(mapply(atan2, recentered.pts[1], recentered.pts[2])))
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
