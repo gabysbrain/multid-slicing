@@ -90,7 +90,7 @@ dltz5 = function(I,M) {
 
 ```{r}
 f = dltz5(2,3)
-samples = matrix(runif(50*3), ncol=3)
+samples = matrix(runif(25000*3), ncol=3)
 data = data.frame(f(samples))
 data = 1 - data / max(data) # scale and flip
 data.p = pareto.points(data)
@@ -107,7 +107,7 @@ samples = matrix(runif(50*10), ncol=10)
 data = data.frame(f(samples))
 data = 1 - data / max(data) # scale and flip
 data.p = pareto.points(data)
-plot.hull.discrete(data.p)
+#plot.hull.discrete(data.p)
 ```
 
 ## DLTZ(3,5)
@@ -120,7 +120,7 @@ samples = matrix(runif(50*5), ncol=5)
 data = data.frame(f(samples))
 data = 1 - data / max(data) # scale and flip
 data.p = pareto.points(data)
-plot.hull.discrete(data.p)
+#plot.hull.discrete(data.p)
 ```
 
 # Geometric shapes
@@ -145,4 +145,84 @@ data = data / max(data)
 plot.hull.discrete(data, filter.pareto=FALSE)
 ```
 
+# Moment curve
+
+see https://en.wikipedia.org/wiki/Moment_curve
+
+$f(x) = (x, x^2, x^3, \ldots, x^d)$
+
+```{r}
+# moment curve for x in d dimensions
+moment.curve = function(x, d) {
+  res = matrix(rep(1:d, length(x)), ncol=d, byrow=TRUE)
+  for(i in 1:d) {
+    res[,i] = x**res[,i]
+  }
+  res
+}
+```
+
+## 2D moment curve
+
+```{r}
+samples = runif(50)
+data = data.frame(moment.curve(samples, 2))
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
+## 3D moment curve
+
+```{r}
+samples = runif(50)
+data = data.frame(moment.curve(samples, 3))
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
+## 4D moment curve
+
+```{r}
+samples = runif(50)
+data = data.frame(moment.curve(samples, 4))
+plot.hull.discrete(data, n=10, filter.pareto=FALSE)
+```
+
+# Clifford torus
+
+This is a torus made of the cross of two circles and is a 4D object.
+See https://en.wikipedia.org/wiki/Clifford_torus
+
+```{r}
+clifford.torus = function(theta, phi) {
+  sqrt(0.5) * cbind(cos(theta), sin(theta), cos(phi), sin(phi))
+}
+```
+
+```{r}
+samples = matrix(runif(250*2), ncol=2)
+data = data.frame(clifford.torus(samples[,1], samples[,2]))
+plot.hull.discrete(data, n=10, filter.pareto=FALSE)
+```
+
+# MERL BRDF
+
+reflectance functions of 100 different materials. Here we are showing the 
+comparison between red, green, and blue values.
+
+https://www.merl.com/brdf/
+
+## Alum/bronze
+
+```{r}
+data = read.table("merl_brdf_db/alum-bronze.txt")
+data = data[,5:7]
+plot.hull.discrete(data, n=10, filter.pareto=FALSE)
+```
+
+## Aluminum 
+
+```{r}
+data = read.table("merl_brdf_db/aluminium.txt")
+data = data[,5:7]
+plot.hull.discrete(data, n=10, filter.pareto=FALSE)
+```
 
