@@ -1,6 +1,7 @@
 
 library(jug)
 library(magrittr)
+library(geometry)
 
 source('server/pareto.R')
 
@@ -19,8 +20,9 @@ jug() %>%
     #data = d2
     pareto.pts = pareto.points(data)
     edges = delaunay.edges(pareto.pts)
+    simplices = convhulln(data)
     json.data = list(
-      paretoPoints = pareto.pts,
+      paretoPoints = pareto.ptsx,
       simplexEdges = edges
     )
     print("done!")

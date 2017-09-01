@@ -158,8 +158,8 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
       } else {
         p = p + geom_polygon(aes(colour=fpid), fill=NA)
       }
-      p = p + scale_x_continuous(limits=c(0,1)) +
-              scale_y_continuous(limits=c(0,1)) +
+      p = p + #scale_x_continuous(limits=c(0,1)) +
+              #scale_y_continuous(limits=c(0,1)) +
               theme_bw() +
               theme(axis.title.x=element_blank(),
                     axis.title.y=element_blank())
@@ -182,13 +182,15 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
 
 simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
+  n.lambdas = ncol(simplex) + 1
   T = rbind(t(simplex), rep(1,nrow(simplex)))
-  # T may not be square so if it is then pad with the intersection point
+  # T may not be square so if it isn't then pad with the intersection point
   if(nrow(T) != ncol(T)) {
     T = cbind(T, c(focus.pt, 1))
     T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+    #n.lambdas = n.lambdas - 1 # don't try and intersect anything with this extra point
   }
-  # if T is singluar then the simplex lies in a plane
+  # if T is singluar then the simplex lies in the plane we're looking at
   if(det(T)==0) {
     rows = t(combn(nrow(simplex), 2))
     res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
@@ -215,18 +217,21 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  for(i in 1:length(lambda.c)) {
+  for(i in 1:n.lambdas) {
     # put y=mx+b into each other lambda formula and try and get a good range
     ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(nrow(ranges)>0) {
       rng = c(max(ranges[,1]), min(ranges[,2]))
-      if(rng[2]<rng[1]) rng = c(NA,NA)
+      if(rng[2]<rng[1]) {
+        rng = c(NA,NA)
+      }
 
       # problem is b_n = 1 - b_1 - ... - b_(n-1)
       # so this requires special work
       # if we got an intersection then we're good!
       eps = 1e-9
       if(all(!is.na(rng)) & abs(rng[1]+1)>eps & abs(rng[2]+1)>eps) {
+                             # need to ensure rng is positive and
                              # all.equal doesn't return false if not equal :/
         y.rng = (-lambda.x[i] * rng - lambda.c[i])/lambda.y[i]
         # now we have to check if everything is co-planar
