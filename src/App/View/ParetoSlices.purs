@@ -1,10 +1,10 @@
 module App.View.ParetoSlices where
 
 import Prelude hiding (div)
-import App.Data (FieldNames, NeighborGraph)
+import App.Data (FieldNames, CurveData)
 import App.Events (Event)
 import App.State (DataInfo)
-import App.Queries (graphNodes, graphLinks, limits2d, scatterplotPoints, paretoPlotPaths)
+import App.Queries (scatterplotPoints, paretoPlotPaths)
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
@@ -43,7 +43,7 @@ view dsi = div $
 
 paretoPlot :: forall d
             . DataInfo d -> Int -> Int 
-           -> Query (NeighborGraph d) (HTML Event)
+           -> Query CurveData (HTML Event)
 paretoPlot dsi d1 d2 = do
   limits <- graphNodes `DF.chain` limits2d d1 d2
   plotPoints <- graphNodes `DF.chain` scatterplotPoints dsi.selectedPoints d1 d2

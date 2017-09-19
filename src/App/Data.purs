@@ -1,7 +1,7 @@
 module App.Data where
 
 import Prelude 
-import App.Data.ServerData (SDEdges, SDEdge(..), SDPoints, SDPoint, ServerData(..))
+import App.Data.ServerData (SDCurves, SDCurve(..), SDPoints, SDPoint, ServerData(..))
 import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
 import Data.DataFrame (DataFrame(..))
 import Data.DataFrame as DF
@@ -27,9 +27,16 @@ import Data.Geom.Point as P
 
 newtype DataRow a = DataRow {rowId :: Int, row :: a}
 type DataPoint d = DataRow (Point d)
+type DataPoints d = DataFrame (DataPoint d)
 type FieldNames d = Array String
-type RawPoints d = DataFrame (DataPoint d)
-type ParetoPoints d = DataFrame (DataPoint d)
+type CurvePoint = { x1Min :: Number, x1Max :: Number
+                  , x2Min :: Number, x2Max :: Number 
+                  , focusPointId :: Int
+                  }
+--type FocusPoints2D = { group :: Int, data :: DataFrame CurvePoint }
+type Dim2D = Tuple Int Int
+type Dims2D = { group :: Dim2D, data :: DataFrame CurvePoint }
+type SliceData = DataFrame Dims2D
 
 derive instance newtypeDataRow :: Newtype (DataRow a) _
 
@@ -44,21 +51,6 @@ rowVal (DataRow r) = r.row
 
 rowId :: forall a. DataRow a -> Int
 rowId (DataRow r) = r.rowId
-
--- Used for low-level visualization
-type PointData2D = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
-type LineData2D = 
-  { slabId :: Int
-  , selected :: Boolean
-  , cosTheta :: Number
-  , points :: Array PointData2D
-  }
-
--- Used for the neighborhood graph
-type Node d = DataPoint d
-type Link d = {linkId :: Int, src :: Node d, tgt :: Node d}
-type AngleLink d = {linkId :: Int, cosTheta :: Number, src :: Node d, tgt :: Node d}
-type NeighborGraph d = {nodes :: DataFrame (Node d), links :: DataFrame (Link d)}
 
 -- Universal number formatter
 formatNum :: Number -> String
@@ -77,7 +69,7 @@ merge' (Right v1) (Right v2) = Right $ v1 <> v2
 
 ptsFromServerData :: forall d
                    . SDPoints 
-                  -> Except String (Tuple (FieldNames d) (ParetoPoints d))
+                  -> Except String (Tuple (FieldNames d) (DataPoints d))
 ptsFromServerData pts = do
   r1 <- withFail "No data" $ A.head pts
   let fields = A.sort $ SM.keys r1
@@ -88,21 +80,15 @@ ptsFromServerData pts = do
   let rows = A.zipWith (\r i -> DataRow {rowId:i, row: r}) pts' ids
   pure $ Tuple fields (DF.init rows)
 
-ngFromServerData :: forall d. ParetoPoints d -> SDEdges -> Except String (NeighborGraph d)
-ngFromServerData pts edges = do
-  let ids = 1..(A.length edges)
-  links <- for (A.zip ids edges) $ \(Tuple id (SDEdge edge)) -> do
-    p1 <- lookupPoint pts edge.p1
-    p2 <- lookupPoint pts edge.p2
-    pure { linkId: id, src: p1, tgt: p2 }
-  pure { nodes: pts, links: DF.init links }
+curvesFromServerData :: SDCurves -> DataFrame SDCurve
+curvesFromServerData = DF.init
 
 lookupField :: StrMap Number -> String -> Except String Number
 lookupField m f = withFail ("field " <> f <> " missing") $ SM.lookup f m
 
-lookupPoint :: forall d. ParetoPoints d -> Int -> Except String (DataPoint d)
-lookupPoint (DataFrame pts) i = 
-  withFail ("row " <> (show i) <> " not found") $ pts !! (i-1)
+{--lookupPoint :: forall d. ParetoPoints d -> Int -> Except String (DataPoint d)--}
+{--lookupPoint (DataFrame pts) i = --}
+  {--withFail ("row " <> (show i) <> " not found") $ pts !! (i-1)--}
 
 withFail :: forall a. String -> Maybe a -> Except String a
 withFail msg = maybe (throwError msg) pure

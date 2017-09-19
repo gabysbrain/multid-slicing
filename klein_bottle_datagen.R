@@ -51,5 +51,13 @@ json.data = lapply(1:nrow(dim.pairs), function(i) {
   )
 })
 
+curve.data = setNames(plot.data[,names(plot.data)!="X1"], 
+                      c("x1_1", "x2_1", "x1_2", "x2_2", "d1", "d2", "fpid"))
+
+json.data = list(
+  points = setNames(data.frame(data), str_c("x", 1:4)),
+  curves = curve.data
+)
+
 fname = str_c("klein_bottle_", n, "_", fps, ".json")
 cat(toJSON(json.data, pretty=2), file=fname)

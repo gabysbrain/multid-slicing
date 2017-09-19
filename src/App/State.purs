@@ -1,7 +1,7 @@
 module App.State where
 
 import App.Config (config)
-import App.Data (ParetoPoints, NeighborGraph, FieldNames)
+import App.Data (SliceData, DataPoints, FieldNames)
 import App.Routes (Route, match)
 import Data.Set (Set)
 import Loadable (Loadable(..))
@@ -11,20 +11,17 @@ data FileLoadError
   | LoadError String
 
 type DataInfo d =
-  { paretoPoints :: ParetoPoints d
-  , fieldNames :: FieldNames d
-  , selectedPoints :: Set Int
-  , selectedFronts :: Set Int
-  , paretoRadius :: Number
-  , cosThetaThresh ::Number
-  , neighborGraph :: NeighborGraph d
+  { fieldNames :: FieldNames d
+  , dataPoints :: DataPoints d
+  , curves :: SliceData
+  , selectedFocusPoints :: Set Int
   }
 
 data State = State
   { title :: String
   , route :: Route
   , loaded :: Boolean
-  , dataset :: Loadable FileLoadError (DataInfo Int) -- FIXME: this is wrong. it should be the size
+  , dataset :: Loadable FileLoadError (DataInfo Int) -- FIXME: wrong type
   }
 
 init :: String -> State
