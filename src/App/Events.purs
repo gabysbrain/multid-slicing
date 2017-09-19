@@ -4,7 +4,7 @@ import Prelude
 import Loadable (Loadable(..))
 import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
-import App.Data (FieldNames, DataPoints, SliceData, ptsFromServerData)
+import App.Data (FieldNames, DataPoints, CurvePoint, SliceData, ptsFromServerData)
 import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData)
 import App.Routes (Route)
@@ -34,6 +34,7 @@ data Event
   = PageView Route
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError (SD Int)) -- FIXME: should be d
+  | HoverSlice (Array CurvePoint)
   -- | HoverParetoFront (Array LineData2D)
   -- | HoverParetoPoint (Array PointData2D)
   -- | StartParetoFilter AppData
@@ -58,9 +59,9 @@ foldp (DataFileChange ev) (State st) =
       pure $ Just $ ReceiveData sd
     ]
   }
---foldp (HoverParetoFront pfs) (State st@{dataset:Loaded dsi}) = noEffects $
-  --State st {dataset=Loaded dsi {selectedFronts=foldMap (\g -> Set.singleton g.slabId) pfs}}
---foldp (HoverParetoFront _) st = noEffects st
+foldp (HoverSlice slices) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectedFocusPoints=foldMap (\g -> Set.singleton g.focusPointId) slices}}
+foldp (HoverSlice _) st = noEffects st
 --foldp (HoverParetoPoint pts) (State st@{dataset:Loaded dsi}) = noEffects $
   --State st {dataset=Loaded dsi {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}}
 --foldp (HoverParetoPoint _) st = noEffects st

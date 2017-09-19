@@ -2,8 +2,7 @@ module App.View.ParetoVis where
 
 import Prelude (pure, unit, ($), (<<<))
 import App.Data (CurvePoint)
---import App.Events (Event(HoverParetoFront, HoverParetoPoint))
-import App.Events (Event)
+import App.Events (Event(HoverSlice))
 import DOM.Event.Types as ET
 import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (reactClassWithProps)
@@ -26,8 +25,8 @@ paretoVis maxX maxY lines = _paretoVis props
     { "data-maxX": maxX
     , "data-maxY": maxY
     --, "data-paretopoints": pts
-    , "data-paretopaths": lines
-    --, "onFrontHover": onFrontHover HoverParetoFront
+    , "data-hullpaths": lines
+    , "onHullHover": onHullHover HoverSlice
     --, "onPointHover": onPointHover HoverParetoPoint
     }
 
@@ -35,11 +34,11 @@ _paretoVis :: forall props. props -> HTML Event
 _paretoVis props = reactClassWithProps paretoVisComponent "paretovis" props (pure unit)
 
 -- sanitizing event handlers
-{--onFrontHover :: forall ev. (Array LineData2D -> ev) -> EventHandlers (ET.Event -> ev)--}
-{--onFrontHover s = on "onFrontHover" saniHandler--}
-  {--where--}
-  {---- FIXME: can we remove the unsafe coerce?--}
-  {--saniHandler = s <<< fromMaybe [] <<< N.toMaybe <<< unsafeCoerce --}
+onHullHover :: forall ev. (Array CurvePoint -> ev) -> EventHandlers (ET.Event -> ev)
+onHullHover s = on "onHullHover" saniHandler
+  where
+  -- FIXME: can we remove the unsafe coerce?
+  saniHandler = s <<< fromMaybe [] <<< N.toMaybe <<< unsafeCoerce 
 
 {--onPointHover :: forall ev. (Array PointData2D -> ev) -> EventHandlers (ET.Event -> ev)--}
 {--onPointHover s = on "onPointHover" saniHandler--}

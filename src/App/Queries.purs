@@ -27,6 +27,32 @@ type Dims2DGrouped = DataFrame {group::Dim2D, data::RawCurve}
 internalizeData :: Query RawCurve SliceData
 internalizeData = group2D `DF.chain` _2dFilter
 
+curve2dFilter :: Int -> Int -> Query SliceData (Array CurvePoint)
+curve2dFilter d1 d2 = do
+  d <- DF.filter (\r -> r.group == Tuple (d1+1) (d2+1)) `DF.chain`
+       DF.summarize (\r -> DF.runQuery (DF.summarize id) r.data)
+  pure $ A.concat d
+
+{--paretoPlotPaths :: forall d--}
+                 {--. Number -> Set Int -> Int -> Int--}
+                {---> Query (DataFrame (Link d)) (Array LineData2D)--}
+{--paretoPlotPaths r highlightFronts d1 d2 =--}
+  {----pareto2dSlabs r d1 d2 `DF.chain`--}
+  {--linkAngle2d d1 d2 `DF.chain`--}
+  {--DF.summarize (extractPath' highlightFronts d1 d2)--}
+
+-------------------------------------------
+-- Utility functions used by the queries --
+-------------------------------------------
+extract2d :: forall d
+           . Int -> Int -> DataPoint d -> Tuple Number Number
+extract2d d1 d2 p = rowVal $ map (\p' -> Tuple (p' !!! d1) (p' !!! d2)) p
+
+max2d :: Array (Tuple Number Number) -> Tuple Number Number
+max2d = foldl max' (Tuple 0.0 0.0)
+  where
+  max' (Tuple x1 y1) (Tuple x2 y2) = Tuple (max x1 x2) (max y1 y2)
+
 _2dFilter :: Query Dims2DGrouped SliceData
 _2dFilter = DF.mutate f
   where 
@@ -53,32 +79,6 @@ filterCurvePoints = DF.mutate f
                         , x2Min: c.x2Start, x2Max: c.x2End 
                         , focusPointId: c.fpid
                         }
-
-curve2dFilter :: Int -> Int -> Query SliceData (Array CurvePoint)
-curve2dFilter d1 d2 = do
-  d <- DF.filter (\r -> r.group == Tuple d1 d2) `DF.chain`
-       DF.summarize (\r -> DF.runQuery (DF.summarize id) r.data)
-  pure $ A.concat d
-
-{--paretoPlotPaths :: forall d--}
-                 {--. Number -> Set Int -> Int -> Int--}
-                {---> Query (DataFrame (Link d)) (Array LineData2D)--}
-{--paretoPlotPaths r highlightFronts d1 d2 =--}
-  {----pareto2dSlabs r d1 d2 `DF.chain`--}
-  {--linkAngle2d d1 d2 `DF.chain`--}
-  {--DF.summarize (extractPath' highlightFronts d1 d2)--}
-
--------------------------------------------
--- Utility functions used by the queries --
--------------------------------------------
-extract2d :: forall d
-           . Int -> Int -> DataPoint d -> Tuple Number Number
-extract2d d1 d2 p = rowVal $ map (\p' -> Tuple (p' !!! d1) (p' !!! d2)) p
-
-max2d :: Array (Tuple Number Number) -> Tuple Number Number
-max2d = foldl max' (Tuple 0.0 0.0)
-  where
-  max' (Tuple x1 y1) (Tuple x2 y2) = Tuple (max x1 x2) (max y1 y2)
 
 {--setHighlight :: Set Int -> PointData2D -> PointData2D--}
 {--setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}--}

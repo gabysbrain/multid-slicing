@@ -44,16 +44,15 @@ function updateChart(self) {
   var svg = d3.select(self.refs.chartContainer);
   svg.attr('width', self.state.width)
      .attr('height', self.state.height);
-  
+
   // set up the sizes for things
   var visWidth = self.state.width - self.state.margin.left - self.state.margin.right;
   var visHeight = self.state.height - self.state.margin.top - self.state.margin.bottom;
 
-  var paretoPoints = self.props['data-paretopoints'];
-  var paretoLines = self.props['data-paretopaths'];
+  var hullLines = self.props['data-hullpaths'];
   var maxX = self.props['data-maxX'];
   var maxY = self.props['data-maxY'];
-  
+
   // update axes and scales
   self.state.x.range([0, visWidth])
               .domain([0, maxX]);
@@ -67,25 +66,15 @@ function updateChart(self) {
   yAxis.call(self.state.yAxis);
 
   var chartContainer = svg.select('g.container');
-  drawParetoPoints(self, chartContainer, paretoPoints);
-  drawParetoLines(self, chartContainer, paretoLines);
+  drawHullLines(self, chartContainer, hullLines);
 }
 
-function drawParetoLines(self, elem, data) {
-  var handleHover = self.props.onFrontHover;
-  var angleThresh = self.props['data-cosThetaThreshold'];
-
-  var line = d3.line()
-    .x(function(d) {
-      return self.state.x(d.x);
-    })
-    .y(function(d) {
-      return self.state.y(d.y);
-    });
+function drawHullLines(self, elem, data) {
+  var handleHover = self.props.onHullHover;
 
   var lines = elem.selectAll('.pareto-front.path').data(data);
   lines.enter()
-    .append('path')
+    .append('line')
       .on('mouseover', function() {
         // FIXME: hack to handle bug in pux
         // see https://github.com/alexmingoia/purescript-pux/issues/122
@@ -104,52 +93,18 @@ function drawParetoLines(self, elem, data) {
       .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
       .attr('fill', 'none')
       .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
-      //.attr('stroke-opacity', function(d) {return d.cosTheta;})
-      .attr('stroke-opacity', function(d) {return d.cosTheta >= angleThresh ? 1.0 : 0.0;})
-      .attr('d', function(d) {
-        return line(d.points);
-      });
+      .attr('x1', function(d) { return self.state.x(d.x1Min); })
+      .attr('x2', function(d) { return self.state.x(d.x1Max); })
+      .attr('y1', function(d) { return self.state.y(d.x2Min); })
+      .attr('y2', function(d) { return self.state.y(d.x2Max); });
   lines
-    .attr('d', function(d) {
-      return line(d.points);
-    })
+    .attr('x1', function(d) { return self.state.x(d.x1Min); })
+    .attr('x2', function(d) { return self.state.x(d.x1Max); })
+    .attr('y1', function(d) { return self.state.y(d.x2Min); })
+    .attr('y2', function(d) { return self.state.y(d.x2Max); })
     .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
-    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
-    .attr('stroke-opacity', function(d) {return d.cosTheta >= angleThresh ? 1.0 : 0.0;});
+    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';});
   lines.exit().remove();
-}
-
-function drawParetoPoints(self, elem, data) {
-  var handleHover = self.props.onPointHover;
-
-  var points = elem.selectAll('.pareto-front.point').data(data);
-  points.enter()
-    .append('circle')
-      .on('mouseover', function() {
-        // FIXME: hack to handle bug in pux
-        // see https://github.com/alexmingoia/purescript-pux/issues/122
-        var evtData = new Object();
-        evtData.nativeEvent = d3.select(this).data();
-        handleHover(evtData);
-      })
-      .on('mouseout', function() {
-        // FIXME: hack to handle bug in pux
-        // see https://github.com/alexmingoia/purescript-pux/issues/122
-        var evtData = new Object();
-        evtData.nativeEvent = [];
-        handleHover(evtData);
-      })
-      .attr('class', 'pareto-front point')
-      .attr('cx', function(d) {return self.state.x(d.x);})
-      .attr('cy', function(d) {return self.state.y(d.y);})
-      .attr('r', function(d) {return d.selected ? 5 : 3;})
-      .attr('fill', function(d) {return d.selected ? 'red' : 'black';});
-  points
-    .attr('cx', function(d) {return self.state.x(d.x);})
-    .attr('cy', function(d) {return self.state.y(d.y);})
-    .attr('r', function(d) {return d.selected ? 5 : 3;})
-    .attr('fill', function(d) {return d.selected ? 'red' : 'black';});
-  points.exit().remove();
 }
 
 exports.paretoVisComponent = React.createClass({
