@@ -78,7 +78,7 @@ mapErr = withExcept LoadError <<< except
 
 loadDataFile :: forall e. String -> Aff (ajax::AJAX | e) (Either String String)
 loadDataFile fn = do
-  let url = "http://localhost:8080/" <> fn
+  let url = "http://localhost:8000/" <> fn
   res <- attempt $ get url
   pure $ case res of
     Left err -> Left $ show err

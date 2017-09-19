@@ -1,8 +1,9 @@
 module App.View.ParetoVis where
 
 import Prelude (pure, unit, ($), (<<<))
-import App.Data (PointData2D, CurvePoint)
-import App.Events (Event(HoverParetoFront, HoverParetoPoint))
+import App.Data (CurvePoint)
+--import App.Events (Event(HoverParetoFront, HoverParetoPoint))
+import App.Events (Event)
 import DOM.Event.Types as ET
 import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (reactClassWithProps)
@@ -15,16 +16,16 @@ import Unsafe.Coerce (unsafeCoerce)
 foreign import paretoVisComponent :: forall props. ReactClass props
 
 paretoVis :: Number -> Number
-          -> Array PointData2D -> Array CurvePoint
+          -> Array CurvePoint
           -> HTML Event
-paretoVis maxX maxY pts lines = _paretoVis props 
+paretoVis maxX maxY lines = _paretoVis props 
                                   -- #! onPointHover HoverParetoPoint
                                   -- #! onFrontHover HoverParetoFront
   where 
   props =
     { "data-maxX": maxX
     , "data-maxY": maxY
-    , "data-paretopoints": pts
+    --, "data-paretopoints": pts
     , "data-paretopaths": lines
     --, "onFrontHover": onFrontHover HoverParetoFront
     --, "onPointHover": onPointHover HoverParetoPoint

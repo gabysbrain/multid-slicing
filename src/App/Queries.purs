@@ -1,8 +1,11 @@
 module App.Queries where
 
 import Prelude
-import App.Data (DataPoints, DataPoint, CurvePoint, SliceData, Dim2D, Dims2D, rowId, rowVal)
+import App.Data ( DataPoints, DataPoint, CurvePoint, CurvePoints
+                , SliceData, Dim2D, Dims2D
+                , rowId, rowVal )
 import App.Data.ServerData (SDCurve(..))
+import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Foldable (foldl)
@@ -50,6 +53,12 @@ filterCurvePoints = DF.mutate f
                         , x2Min: c.x2Start, x2Max: c.x2End 
                         , focusPointId: c.fpid
                         }
+
+curve2dFilter :: Int -> Int -> Query SliceData (Array CurvePoint)
+curve2dFilter d1 d2 = do
+  d <- DF.filter (\r -> r.group == Tuple d1 d2) `DF.chain`
+       DF.summarize (\r -> DF.runQuery (DF.summarize id) r.data)
+  pure $ A.concat d
 
 {--paretoPlotPaths :: forall d--}
                  {--. Number -> Set Int -> Int -> Int--}

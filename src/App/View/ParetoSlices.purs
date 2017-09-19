@@ -1,10 +1,10 @@
 module App.View.ParetoSlices where
 
 import Prelude hiding (div)
-import App.Data (FieldNames, CurveData)
+import App.Data (FieldNames, SliceData)
 import App.Events (Event)
 import App.State (DataInfo)
-import App.Queries (scatterplotPoints, paretoPlotPaths)
+import App.Queries (curve2dFilter)
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
@@ -36,22 +36,16 @@ view dsi = div $
           let d1 = fst $ fst plotFields
               d2 = fst $ snd plotFields
           div ! className "splom subplot" $ do
-            let plotQ = paretoPlot dsi d1 d2
-            DF.runQuery plotQ dsi.neighborGraph
+            let plotQ = paretoPlot d1 d2
+            DF.runQuery plotQ dsi.curves
   where 
   sortedNames = L.sort $ fldIdxs dsi.fieldNames
 
-paretoPlot :: forall d
-            . DataInfo d -> Int -> Int 
-           -> Query CurveData (HTML Event)
-paretoPlot dsi d1 d2 = do
-  limits <- graphNodes `DF.chain` limits2d d1 d2
-  plotPoints <- graphNodes `DF.chain` scatterplotPoints dsi.selectedPoints d1 d2
-  plotPaths <- graphLinks 
-    `DF.chain` paretoPlotPaths dsi.paretoRadius dsi.selectedFronts d1 d2
-  let pps' = A.filter (\l -> l.cosTheta >= dsi.cosThetaThresh) plotPaths
+paretoPlot :: Int -> Int -> Query SliceData (HTML Event)
+paretoPlot d1 d2 = do
+  curves2d <- curve2dFilter d1 d2
   pure $ div do
-    PV.paretoVis (fst limits) (snd limits) plotPoints plotPaths dsi.cosThetaThresh
+    PV.paretoVis 1.0 1.0 curves2d
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)

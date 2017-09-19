@@ -33,9 +33,10 @@ type CurvePoint = { x1Min :: Number, x1Max :: Number
                   , x2Min :: Number, x2Max :: Number 
                   , focusPointId :: Int
                   }
+type CurvePoints = DataFrame CurvePoint
 --type FocusPoints2D = { group :: Int, data :: DataFrame CurvePoint }
 type Dim2D = Tuple Int Int
-type Dims2D = { group :: Dim2D, data :: DataFrame CurvePoint }
+type Dims2D = { group :: Dim2D, data :: CurvePoints }
 type SliceData = DataFrame Dims2D
 
 derive instance newtypeDataRow :: Newtype (DataRow a) _

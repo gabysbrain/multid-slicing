@@ -3,14 +3,14 @@ module App.View.Mainpage where
 import Prelude hiding (div, max, min)
 import Math (sqrt)
 import App.Data (FieldNames, formatNum)
-import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange, AngleThreshChange))
+import App.Events (Event(DataFileChange))
 import App.State (State(..), DataInfo, FileLoadError(..))
 import App.View.ParetoSlices as PS
 import Data.Array as A
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Pux.DOM.Events (DOMEvent, onChange, onClick)
-import Text.Smolder.HTML (div, label, h2, input, span, ul, li, p, a)
+import Text.Smolder.HTML (div, button, label, h2, input, span, ul, li, p, a)
 import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
@@ -20,6 +20,7 @@ import Data.Int (toNumber)
 view :: State -> HTML Event
 view (State st) =
   div do
+    button #! onClick DataFileChange ! value "sphere_3d.json" $ text "init"
     viewSlices st.dataset
 
 viewSlices :: forall d. Loadable FileLoadError (DataInfo d) -> HTML Event

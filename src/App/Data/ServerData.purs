@@ -32,10 +32,10 @@ instance decodeJsonServerData :: DecodeJson ServerData where
 instance decodeJsonSDEdge :: DecodeJson SDCurve where
   decodeJson json = do
     obj <- decodeJson json
-    x1s <- obj .? "x1_1"
-    x2s <- obj .? "x2_1"
-    x1e <- obj .? "x1_2"
-    x2e <- obj .? "x2_2"
+    x1s <- obj .? "d1.min"
+    x2s <- obj .? "d2.min"
+    x1e <- obj .? "d1.max"
+    x2e <- obj .? "d2.max"
     d1 <- obj .? "d1"
     d2 <- obj .? "d2"
     fpid <- obj .? "fpid"
