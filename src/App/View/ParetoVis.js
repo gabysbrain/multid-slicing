@@ -69,8 +69,13 @@ function updateChart(self) {
   drawHullLines(self, chartContainer, hullLines);
 }
 
+function isSelected(d, fps) {
+  return fps.has(d.focusPointId);
+}
+
 function drawHullLines(self, elem, data) {
   var handleHover = self.props.onHullHover;
+  var selectedFPs = new Set(self.props['data-selectedfps']);
 
   var lines = elem.selectAll('.pareto-front.path').data(data);
   lines.enter()
@@ -90,9 +95,10 @@ function drawHullLines(self, elem, data) {
         handleHover(evtData);
       })
       .attr('class', 'pareto-front path')
-      .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
+      .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 2.5 : 1;})
+      .attr('stroke-opacity', '0.6')
       .attr('fill', 'none')
-      .attr('stroke', function(d) {return d.selected ? 'red' : 'black';})
+      .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';})
       .attr('x1', function(d) { return self.state.x(d.x1Min); })
       .attr('x2', function(d) { return self.state.x(d.x1Max); })
       .attr('y1', function(d) { return self.state.y(d.x2Min); })
@@ -102,8 +108,8 @@ function drawHullLines(self, elem, data) {
     .attr('x2', function(d) { return self.state.x(d.x1Max); })
     .attr('y1', function(d) { return self.state.y(d.x2Min); })
     .attr('y2', function(d) { return self.state.y(d.x2Max); })
-    .attr('stroke-width', function(d) {return d.selected ? 2.5 : 1;})
-    .attr('stroke', function(d) {return d.selected ? 'red' : 'black';});
+    .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 2.5 : 1;})
+    .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';});
   lines.exit().remove();
 }
 

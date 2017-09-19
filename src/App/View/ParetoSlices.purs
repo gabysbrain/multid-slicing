@@ -9,9 +9,12 @@ import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
 import Data.DataFrame (Query)
+import Data.Foldable (foldMap)
 import Data.List (List)
 import Data.List as L
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Set (Set)
+import Data.Set as Set
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
@@ -36,16 +39,16 @@ view dsi = div $
           let d1 = fst $ fst plotFields
               d2 = fst $ snd plotFields
           div ! className "splom subplot" $ do
-            let plotQ = paretoPlot d1 d2
+            let plotQ = paretoPlot d1 d2 dsi.selectedFocusPoints
             DF.runQuery plotQ dsi.curves
   where 
   sortedNames = L.sort $ fldIdxs dsi.fieldNames
 
-paretoPlot :: Int -> Int -> Query SliceData (HTML Event)
-paretoPlot d1 d2 = do
+paretoPlot :: Int -> Int -> Set Int -> Query SliceData (HTML Event)
+paretoPlot d1 d2 fps = do
   curves2d <- curve2dFilter d1 d2
   pure $ div do
-    PV.paretoVis 1.0 1.0 curves2d
+    PV.paretoVis 1.0 1.0 curves2d (stoa fps)
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)
@@ -58,4 +61,7 @@ splomPairs' xs = case L.uncons xs of
   Just {head:x,tail:L.Nil} -> L.Nil
   Just {head:x,tail:xs'} -> (map (Tuple x) xs') L.: (splomPairs xs')
   Nothing -> L.Nil
+
+stoa :: forall a. Set a -> Array a
+stoa = foldMap pure
 

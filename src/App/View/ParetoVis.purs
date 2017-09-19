@@ -16,17 +16,19 @@ foreign import paretoVisComponent :: forall props. ReactClass props
 
 paretoVis :: Number -> Number
           -> Array CurvePoint
+          -> Array Int
           -> HTML Event
-paretoVis maxX maxY lines = _paretoVis props 
+paretoVis maxX maxY lines fps = _paretoVis props 
                                   -- #! onPointHover HoverParetoPoint
-                                  -- #! onFrontHover HoverParetoFront
-  where 
+                                  #! onHullHover HoverSlice
+  where
   props =
     { "data-maxX": maxX
     , "data-maxY": maxY
+    , "data-selectedfps": fps
     --, "data-paretopoints": pts
     , "data-hullpaths": lines
-    , "onHullHover": onHullHover HoverSlice
+    --, "onHullHover": onHullHover HoverSlice
     --, "onPointHover": onPointHover HoverParetoPoint
     }
 
