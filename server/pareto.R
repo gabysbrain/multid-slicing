@@ -151,8 +151,8 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
                      group_by(fpid) %>% 
                      do(cbind(., data.frame(theta=clock.angle(.)))) %>%
                      arrange(fpid, theta)
-      p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) +
-            geom_point(size=0.5)
+      p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) #+
+            #geom_point(size=0.5)
       if(filter.pareto) { # see if we're dealing with polygons or not
         p = p + geom_path(aes(colour=fpid))
       } else {
