@@ -22,6 +22,8 @@ datasets =
   [ Tuple "sphere" "sphere_3d.json"
   , Tuple "5D sphere" "sphere_5d.json"
   , Tuple "Klein bottle" "klein.json"
+  , Tuple "Cube" "cube.json"
+  , Tuple "Hypercube" "4d_cube.json"
   ]
 
 view :: State -> HTML Event
