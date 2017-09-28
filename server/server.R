@@ -22,7 +22,7 @@ jug() %>%
     edges = delaunay.edges(pareto.pts)
     simplices = convhulln(data)
     json.data = list(
-      paretoPoints = pareto.ptsx,
+      paretoPoints = pareto.pts,
       simplexEdges = edges
     )
     print("done!")
