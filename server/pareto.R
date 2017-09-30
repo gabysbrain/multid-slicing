@@ -9,15 +9,11 @@ library(gridExtra)
 library(randtoolbox)
 
 # filters a dataset to only include the pareto points
-pareto.points = function(data) {
-  # need to indicate our preferences (maximize all)
-  nms = names(data)
+pareto.points = function(data, nms=names(data)) {
+  # TODO: need to indicate our preferences (maximize all)
   preff = high_
   prefs = Reduce(function(p,nm) p*preff(nm), tail(nms,n=-1), preff(nms[1]))
   psel(data, prefs)
-  #res = data.frame(ppts)
-  #names(res) = names(data)
-  #res
 }
 
 # should only be given pareto points!
