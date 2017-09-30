@@ -5,3 +5,4 @@ output
 
 .Rproj.user
 packrat/lib*/
+json/*.json
