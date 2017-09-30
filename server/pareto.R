@@ -65,9 +65,9 @@ intersect.pts = function(data, edges, fp, d1, d2) {
   }
 }
 
+# does nothing but rearrange it's arguments
 intersect.simplex = function(simplex, data, fp, d1, d2) {
-  intersects = simplex.intersect.test(d1, d2, fp, data[simplex,])
-  intersects
+  simplex.intersect.test(d1, d2, fp, data[simplex,])
 }
 
 # plotting
@@ -144,7 +144,7 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
   for(i in 1:(d-1)) { # d1 varies the slowest
     for(j in (i+1):d) {
       pd = plot.data %>% filter(d1==i&d2==j) %>% unique() %>%
-                     group_by(fpid) %>% 
+                     group_by(fpid) %>%
                      do(cbind(., data.frame(theta=clock.angle(.)))) %>%
                      arrange(fpid, theta)
       p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) #+
