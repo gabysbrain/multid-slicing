@@ -242,6 +242,28 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   intersect.range
 }
 
+# plot the simplex and the intersection plane
+# useful for debugging random errors
+plot.intersect = function(tri.pts, focus.pt, d1, d2) {
+  normal = array(1, 3)
+  normal[c(d1,d2)] = 0
+  plane.pts = c(normal, normal %*% -focus.pt)
+  simplex = rbind(as.matrix(tri.pts), t(fp))
+  base = matrix(c(0,0,0,0,1,0,1,1,0,1,0,0), ncol=3, byrow=TRUE)
+  #base = base * 10
+  #base = base - 5
+  
+  open3d()
+  quads3d(xyz.coords(base), alpha=0.2)
+  tetramesh(matrix(1:4, nrow=1), simplex, clear=FALSE)
+  #planes3d(a=0, b=0, c=1, d=-0.75+1e-5, col="green")
+  planes3d(a=plane.pts[1], b=plane.pts[2], c=plane.pts[3], d=plane.pts[4]+1e-5, col="green")
+  points3d(fp[1], fp[2], fp[3], col="blue", size=10)
+  axes3d(col="black")
+  title3d(xlab="x", ylab="y", zlab="z")
+ # bbox3d(col="grey", alpha=0.7)
+}
+
 clock.angle = function(pts) {
   centroid = colMeans(pts[,c(1,2)])
   recentered.pts = sweep(pts[,c(1,2)], 2, centroid, FUN="-")
