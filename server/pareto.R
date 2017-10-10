@@ -65,9 +65,8 @@ intersect.pts = function(data, edges, fp, d1, d2) {
   }
 }
 
-# does nothing but rearrange it's arguments
-intersect.simplex = function(simplex, data, fp, d1, d2) {
-  simplex.intersect.test(d1, d2, fp, data[simplex,])
+intersect.simplices = function(simplices, data, fp, d1, d2) {
+  adply(simplices, 1, function(s) simplex.intersect.test(d1, d2, fp, data[s,]))
 }
 
 # plotting
@@ -78,7 +77,7 @@ gen.plot.data = function(data, simplexes, n) {
   adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
-      res2 = adply(simplexes, 1, intersect.simplex, data=data, fp=fp, d1=d[1], d2=d[2])
+      res2 = intersect.simplices(simplexes, data, fp, d[1], d[2])
       # remove all the NA rows
       res2 = filter_all(res2, all_vars(!is.na(.)))
       if(nrow(res2)>0) {
