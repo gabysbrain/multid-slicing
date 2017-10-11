@@ -1,5 +1,5 @@
 source('server/pareto.R')
-source('server/write_hull_json.R')
+source('write_hull_json.R')
 source('poly_sample.R')
 library(stringr)
 
@@ -15,7 +15,9 @@ poly.space.convhull = function(deg, f, fname) {
 }
 
 # 3d sphere pareto
-write.hull.json("json/sphere_3d.json", sphere.3d.p)
+#sphere.3d = read.csv("static/test_data/3sphere_50.csv")
+#sphere.3d.p = pareto.points(sphere.3d)
+#write.hull.json("json/sphere_3d.json", sphere.3d.p)
 
 # cube
 cube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))
