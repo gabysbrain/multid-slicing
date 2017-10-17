@@ -51,6 +51,11 @@ ran.positive.poly = function(deg, domain=c(0, 1)) {
 # returns a polynomial as a vector of coefficients in increasing order
 ran.bernstein = function(deg) {
   coeffs = runif(deg+1, min=0, max=1)
+  bern.poly(coeffs)
+}
+
+bern.poly = function(coeffs) {
+  deg = length(coeffs)-1
   ans = c(0) # 0 polynomial
   for(v in 0:deg) {
     b = bernstein.basis(v, deg)
