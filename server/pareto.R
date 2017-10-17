@@ -4,9 +4,12 @@ library(geometry)
 library(plyr)
 library(dplyr)
 library(ggplot2)
-#library(grid)
+library(grid)
 library(gridExtra)
 library(randtoolbox)
+#library(rgl)
+
+EPS = 1e-9
 
 # filters a dataset to only include the pareto points
 pareto.points = function(data, nms=names(data)) {
@@ -211,14 +214,13 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   intersect.range = data.frame(d1.min=array(NA,n),d1.max=array(NA,n),
                                d2.min=array(NA,n),d2.max=array(NA,n))
 
-  eps = 1e-9
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
   for(i in 1:n.lambdas) {
     # put y=mx+b into each other lambda formula and try and get a good range
     range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(range$x[1])) {
-      if(min(abs(range$x-focus.pt[d1])) > eps) { # only if we don't hit the extra focus point
+      if(min(abs(range$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
         intersect.range[i,"d1.min"] = range$x[1]
         intersect.range[i,"d1.max"] = range$x[2]
         intersect.range[i,"d2.min"] = range$y[1]
@@ -281,6 +283,11 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
       res = res[is.finite(res)]
       x.rng = c(max(res[xs.p>=0]), min(res[xs.p<0]))
       y.rng = c(y, y)
+      # some bounds checking
+      if(x.rng[2]-x.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
     }
   } else if(lambda.y[i] == 0) {
     # solve lx * x + c = 0
@@ -298,6 +305,11 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
       res = res[is.finite(res)]
       x.rng = c(x, x)
       y.rng = c(max(res[ys.p>=0]), min(res[ys.p<0]))
+      # some bounds checking
+      if(y.rng[2]-y.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
     }
   } else {
     # assumes lx[i] and ly[i] are non-zero
@@ -314,14 +326,14 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
       res = res[is.finite(res)]
       x.rng = c(max(res[xs.p>=0]), min(res[xs.p<0])) # divide by negative switches the inequality
       y.rng = (-lambda.c[i] -lambda.x[i] * x.rng) / lambda.y[i]
+      # some bounds checking
+      if(x.rng[2]-x.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
     }
   }
   
-  # some bounds checking
-  if(all(!is.na(x.rng)) & (x.rng[2]<x.rng[1] | y.rng[2]<y.rng[1])) {
-    x.rng = c(NA, NA)
-    y.rng = c(NA, NA)
-  }
   list(x=x.rng, y=y.rng)
 }
 
