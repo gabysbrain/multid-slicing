@@ -13,7 +13,8 @@ sample.poly = function(n, deg, samplef) {
 
 # returns a random polynomial in increasing order of power
 ran.poly = function(deg) {
-  runif(deg+1, min=-1, max=1)
+  coeffs = runif(deg+1, min=-1, max=1)
+  coeffs / max(abs(coeffs))
 }
 
 eval.poly = function(p, x) {
@@ -51,6 +52,7 @@ ran.positive.poly = function(deg, domain=c(0, 1)) {
 # returns a polynomial as a vector of coefficients in increasing order
 ran.bernstein = function(deg) {
   coeffs = runif(deg+1, min=0, max=1)
+  coeffs = coeffs / max(coeffs)
   bern.poly(coeffs)
 }
 
