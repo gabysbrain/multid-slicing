@@ -51,7 +51,7 @@ ran.positive.poly = function(deg, domain=c(0, 1)) {
 
 # returns a polynomial as a vector of coefficients in increasing order
 ran.bernstein = function(deg) {
-  coeffs = runif(deg+1, min=0, max=1)
+  coeffs = runif(deg+1, min=0, max=1) # negative coefficients can make the polynomial negative
   coeffs = coeffs / max(coeffs)
   bern.poly(coeffs)
 }
