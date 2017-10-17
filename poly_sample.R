@@ -19,7 +19,7 @@ ran.poly = function(deg) {
 eval.poly = function(p, x) {
   sum = 0
   for(i in 0:(length(p)-1)) {
-    sum = sum = p[i+1] * x**i
+    sum = sum + p[i+1] * x**i
   }
   sum
 }
