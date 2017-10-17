@@ -15,9 +15,9 @@ poly.space.convhull = function(deg, f, fname) {
 }
 
 # 3d sphere pareto
-#sphere.3d = read.csv("static/test_data/3sphere_50.csv")
-#sphere.3d.p = pareto.points(sphere.3d)
-#write.hull.json("json/sphere_3d.json", sphere.3d.p)
+sphere.3d = read.csv("static/test_data/3sphere_50.csv")
+sphere.3d.p = pareto.points(sphere.3d)
+write.hull.json("json/sphere_3d.json", sphere.3d.p)
 
 # cube
 cube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))
@@ -28,7 +28,7 @@ hcube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5), x4=c(0,0.5))
 write.hull.json("json/4d_cube.json", hcube.data)
 
 # Positive polynomials
-max.deg = 10
+max.deg = 5
 for(deg in 2:max.deg) {
   print(str_c("pos poly deg ", deg))
   poly.space.convhull(deg, ran.positive.poly, "pos_poly")
