@@ -14,7 +14,6 @@ import Data.List (List)
 import Data.List as L
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set (Set)
-import Data.Set as Set
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
@@ -28,7 +27,7 @@ view dsi = div $
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
       div $ pure unit -- empty cell to offset the axis labels
-      for_ sortedNames $ \(Tuple _ fn) -> do
+      for_ (colNames sortedNames) $ \(Tuple _ fn) -> do
         label ! className "dim-label" $ text fn
     for_ (splomPairs sortedNames) $ \row -> do
       let yField = fromMaybe "" $ snd <$> snd <$> L.head row
@@ -52,6 +51,9 @@ paretoPlot d1 d2 fps = do
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)
+
+colNames :: List (Tuple Int String) -> List (Tuple Int String)
+colNames = fromMaybe L.Nil <<< L.init 
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
 splomPairs xs = L.transpose $ map L.reverse $ splomPairs' xs
