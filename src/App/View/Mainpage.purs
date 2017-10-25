@@ -18,12 +18,22 @@ import Loadable (Loadable(..))
 import Data.DataFrame as DF
 import Data.Int (toNumber)
 
+datasets :: Array (Tuple String String)
 datasets = 
   [ Tuple "sphere" "sphere_3d.json"
   , Tuple "5D sphere" "sphere_5d.json"
   , Tuple "Klein bottle" "klein.json"
   , Tuple "Cube" "cube.json"
   , Tuple "Hypercube" "4d_cube.json"
+  , Tuple "2D bernstein" "bernstein_2.json"
+  , Tuple "3D bernstein" "bernstein_3.json"
+  , Tuple "4D bernstein" "bernstein_4.json"
+  , Tuple "5D bernstein" "bernstein_5.json"
+  , Tuple "2D pos poly" "pos_poly_2.json"
+  , Tuple "3D pos poly" "pos_poly_3.json"
+  , Tuple "4D pos poly" "pos_poly_4.json"
+  , Tuple "5D pos poly" "pos_poly_5.json"
+  , Tuple "2D diff poly" "difference_2.json"
   ]
 
 view :: State -> HTML Event

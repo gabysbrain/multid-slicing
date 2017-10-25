@@ -55,9 +55,11 @@ function updateChart(self) {
 
   // update axes and scales
   self.state.x.range([0, visWidth])
-              .domain([0, maxX]);
+              //.domain([0, maxX]);
+              .domain([-1, 1]);
   self.state.y.range([visHeight, 0])
-              .domain([0, maxY]);
+              .domain([-1, 1]);
+              //.domain([0, maxY]);
 
   var xAxis = svg.select('g.x.axis');
   xAxis.attr('transform', 'translate(0,'+self.state.y.range()[0]+')')
