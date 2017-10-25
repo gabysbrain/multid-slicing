@@ -27,10 +27,11 @@ write.hull.json("json/4d_cube.json", hcube.data)
 # Polynomials
 # We want to compute positive, bernstein, and their difference using 
 # the same set of samples
-max.deg = 2
+min.deg = 2
+max.deg = 3
 n = 10000
 # Bernstein polynomials
-for(deg in 2:max.deg) {
+for(deg in min.deg:max.deg) {
   coeffs = sample.poly(n, deg, ran.poly)
   ds = data.frame(coeffs)
   nms = str_c("a_", 0:deg)

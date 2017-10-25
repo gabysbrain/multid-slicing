@@ -66,7 +66,7 @@ ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) +
 ## Bernstein polynomials
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -87,7 +87,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
@@ -118,7 +117,7 @@ ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) +
 ## Bernstein polynomials
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -139,7 +138,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
@@ -170,7 +168,7 @@ ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) +
 ## Bernstein polynomial
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -191,7 +189,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
@@ -222,7 +219,7 @@ ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) +
 ## Bernstein polynomial
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -243,7 +240,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
@@ -274,7 +270,7 @@ ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) +
 ## Bernstein polynomial
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -295,7 +291,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
@@ -326,7 +321,7 @@ ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) +
 ## Bernstein polynomial
 
 ```{r}
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
 ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
   scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
   geom_point() + 
@@ -347,7 +342,6 @@ p2d$class = ifelse(p2d$is.pos&p2d$is.bern,
                                  "bernstein", 
                                  "nonpos")))
 p2d$class = factor(p2d$class)
-p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
 ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 

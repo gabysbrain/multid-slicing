@@ -34,6 +34,7 @@ datasets =
   , Tuple "4D pos poly" "pos_poly_4.json"
   , Tuple "5D pos poly" "pos_poly_5.json"
   , Tuple "2D diff poly" "difference_2.json"
+  , Tuple "3D diff poly" "difference_3.json"
   ]
 
 view :: State -> HTML Event
