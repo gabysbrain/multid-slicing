@@ -3,6 +3,11 @@ library(stringr)
 source('server/pareto.R')
 
 write.hull.json = function(fname, points, filter.pareto=FALSE, n=10) {
+  if(nrow(points)<ncol(points)+1) {
+    warning("insufficient point list")
+    write_json(list(points=c(), curves=c()), fname)
+    return()
+  }
   simplexes = convhulln(points) # these are d-1 dimensional simplexes
   if(nrow(simplexes)==0) warning("cannot generate simplexes")
   curve.data = gen.plot.data(points, simplexes, n)

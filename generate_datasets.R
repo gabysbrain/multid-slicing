@@ -3,15 +3,12 @@ source('write_hull_json.R')
 source('poly_sample.R')
 library(stringr)
 
-poly.space.convhull = function(deg, f, fname) {
-  n.samples = 10000
-  
-  s = sample.poly(n.samples, deg, f)
-  s = data.frame(s)
-  names(s) = str_c("x", 1:ncol(s))
+poly.space.convhull = function(pts, fname) {
+  deg = ncol(pts) - 1
   name = str_c(fname, "_", deg)
-  write.csv(s, file=str_c("csv/", name, ".csv"), row.names=FALSE)
-  write.hull.json(str_c("json/", name, ".json"), s)
+  print(name)
+  write.csv(pts, file=str_c("csv/", name, ".csv"), row.names=FALSE)
+  write.hull.json(str_c("json/", name, ".json"), pts)
 }
 
 # 3d sphere pareto
@@ -27,15 +24,21 @@ write.hull.json("json/cube.json", cube.data)
 hcube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5), x4=c(0,0.5))
 write.hull.json("json/4d_cube.json", hcube.data)
 
-# Positive polynomials
-max.deg = 5
-for(deg in 2:max.deg) {
-  print(str_c("pos poly deg ", deg))
-  poly.space.convhull(deg, ran.positive.poly, "pos_poly")
-}
-
+# Polynomials
+# We want to compute positive, bernstein, and their difference using 
+# the same set of samples
+max.deg = 2
+n = 10000
 # Bernstein polynomials
 for(deg in 2:max.deg) {
-  print(str_c("bernstein poly deg ", deg))
-  poly.space.convhull(deg, ran.bernstein, "bernstein")
+  coeffs = sample.poly(n, deg, ran.poly)
+  ds = data.frame(coeffs)
+  nms = str_c("a_", 0:deg)
+  names(ds) = nms
+  ds$is.pos = apply(coeffs, 1, is.positive, domain=c(0,1))
+  ds$is.bern = apply(coeffs, 1, function(x) all(bern.coeffs(x)>=0))
+  
+  poly.space.convhull(ds[ds$is.pos,nms], "pos_poly")
+  poly.space.convhull(ds[ds$is.bern,nms], "bernstein")
+  poly.space.convhull(ds[ds$is.pos&!ds$is.bern,nms], "difference")
 }

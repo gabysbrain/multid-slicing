@@ -1,0 +1,355 @@
+---
+title: "2nd degree polynomials"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+source("poly_sample.R")
+```
+
+```{r}
+n = 10000
+cm = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
+```
+
+# 2nd degree Bernstein polynomials
+
+The 2nd degree Bernstein polynomial is
+$\beta_0 * (1-x) + \beta_1 * (2x-2x^2) + \beta_2 * x^2 = \beta_0 + 2(\beta_1-\beta_0) * x + (\beta_0 - 2\beta_1+\beta_2) * x^2$. 
+Then $a_0=\beta_0$, $a_1=2(\beta_1-\beta_0)$, and $a_2=\beta_0 - 2\beta_1 + \beta_2$.
+It seems that $\beta_0,\beta_1,\beta_2 \ge 0$ for the Bernstein polynomials to 
+be guaranteed positive.
+
+I was trying to work out today what is the best sampling of the Bernstein 
+coefficients under certain constraints but I’m not sure what’s best so I'm asking
+you guys :) Right now, for the 2 Bernstein views below, I constrain the 
+Bernstein coefficients such that it fixes either $a_0$ or $a_2$ to 1. The 
+remaining parameters are chosen to try and produce polynomials with coefficients
+between $[-1,1]$. So, for example, if we want to set $a_0=1$ then we must set
+$\beta_0=1$. If we want $-1 \le a_1=2(\beta_1-\beta_0) \le 1$ then 
+$0.5 \le \beta_1 \le 1.5$ and $0 \le \beta_2 \le 3$. $\beta_2$ must be positive
+in order to ensure that the Bernstein polynomials are positive. Does this make
+sense?
+
+from https://en.wikipedia.org/wiki/Bézier_curve:
+As the curve is completely contained in the convex hull of its control points, 
+the points can be graphically displayed and used to manipulate the curve 
+intuitively. Affine transformations such as translation and rotation can be 
+applied on the curve by applying the respective transform on the control points 
+of the curve.
+
+# Lowest-order coefficient is 1
+
+These are all polynomials $1 + a_1 * x + a_2 * x^2$.
+
+```{r}
+coeffs = cbind(1, matrix(runif(2*n, min=-1, max=1), ncol=2))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+
+## 2D positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Bernstein polynomials
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+# Lowest-order coefficient is -1
+
+These are all polynomials $-1 + a_1 * x + a_2 * x^2$.
+
+```{r}
+coeffs = cbind(-1, matrix(runif(2*n, min=-1, max=1), ncol=2))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+
+## 2D positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Bernstein polynomials
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+# $a_1$ is 1
+
+These are all polynomials $a_0 + x + a_2 * x^2$.
+
+```{r}
+coeffs = cbind(runif(n, min=-1, max=1), 1, runif(n, min=-1, max=1))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+## Positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) + 
+  geom_point() + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  theme_bw()
+```
+
+
+## Bernstein polynomial
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+# $a_1$ is -1
+
+These are all polynomials $a_0 - x + a_2 * x^2$.
+
+```{r}
+coeffs = cbind(runif(n, min=-1, max=1), -1, runif(n, min=-1, max=1))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+## Positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) + 
+  geom_point() + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  theme_bw()
+```
+
+
+## Bernstein polynomial
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+# Highest-order coefficient is 1
+
+These are all polynomials $a_0 + a_1 * x + x^2$.
+
+```{r}
+coeffs = cbind(matrix(runif(2*n, min=-1, max=1), ncol=2), 1)
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+## Positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) + 
+  geom_point() + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  theme_bw()
+```
+
+
+## Bernstein polynomial
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+# Highest-order coefficient is -1
+
+These are all polynomials $a_0 + a_1 * x - x^2$.
+
+```{r}
+coeffs = cbind(matrix(runif(2*n, min=-1, max=1), ncol=2), -1)
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+```
+
+## Positive/negative polynomials
+
+```{r}
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) + 
+  geom_point() + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  theme_bw()
+```
+
+
+## Bernstein polynomial
+
+```{r}
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+```
+
+## Difference
+
+4 possibilities: negative, Bernstein, positive, and both. Green is used to show
+both and orange is still used to show non-positive.
+
+```{r}
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=0))
+ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```

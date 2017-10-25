@@ -27,14 +27,14 @@ eval.poly = function(p, x) {
 
 is.positive = function(p, domain) {
   roots = polyroot(p)
-  real.roots = Re(roots[Im(roots)==0])
+  real.roots = Re(roots[abs(Im(roots))<=1e-9])
   # if real.roots is length 0 then there are problems with the comparison
   has.no.roots = if(length(real.roots) == 0) {
     TRUE
   } else {
     !any((real.roots > domain[1])&(real.roots < domain[2]))
   }
-  is.pos = eval.poly(p, domain[1]) > 0 | eval.poly(p, domain[2]) > 0
+  is.pos = eval.poly(p, domain[1]) > 1e-9 | eval.poly(p, domain[2]) > 1e-9
   is.pos & has.no.roots
 }
 
@@ -52,8 +52,9 @@ ran.positive.poly = function(deg, domain=c(0, 1)) {
 # returns a polynomial as a vector of coefficients in increasing order
 ran.bernstein = function(deg) {
   coeffs = runif(deg+1, min=0, max=1) # negative coefficients can make the polynomial negative
-  coeffs = coeffs / max(coeffs)
-  bern.poly(coeffs)
+  coeffs = coeffs / max(abs(coeffs))
+  p = bern.poly(coeffs)
+  p / max(abs(p))
 }
 
 bern.poly = function(coeffs) {
@@ -64,6 +65,14 @@ bern.poly = function(coeffs) {
     ans = add.poly(ans, coeffs[v+1]*b)
   }
   ans
+}
+
+# computes the bernstein/bezier coefficients from the polynomial coefficients
+bern.coeffs = function(coeffs) {
+  deg = length(coeffs) - 1
+  # This is basically solving a linear system
+  A = sapply(0:deg, function(x) bernstein.basis(x, deg))
+  solve(A) %*% coeffs
 }
 
 # returns a polynomial as a vector of coefficients in increasing order
