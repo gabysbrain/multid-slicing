@@ -9,6 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 source("poly_sample.R")
+options(expressions=10000) # for thousands of stat_function
 ```
 
 ```{r}
@@ -23,17 +24,6 @@ $\beta_0 * (1-x) + \beta_1 * (2x-2x^2) + \beta_2 * x^2 = \beta_0 + 2(\beta_1-\be
 Then $a_0=\beta_0$, $a_1=2(\beta_1-\beta_0)$, and $a_2=\beta_0 - 2\beta_1 + \beta_2$.
 It seems that $\beta_0,\beta_1,\beta_2 \ge 0$ for the Bernstein polynomials to 
 be guaranteed positive.
-
-I was trying to work out today what is the best sampling of the Bernstein 
-coefficients under certain constraints but I’m not sure what’s best so I'm asking
-you guys :) Right now, for the 2 Bernstein views below, I constrain the 
-Bernstein coefficients such that it fixes either $a_0$ or $a_2$ to 1. The 
-remaining parameters are chosen to try and produce polynomials with coefficients
-between $[-1,1]$. So, for example, if we want to set $a_0=1$ then we must set
-$\beta_0=1$. If we want $-1 \le a_1=2(\beta_1-\beta_0) \le 1$ then 
-$0.5 \le \beta_1 \le 1.5$ and $0 \le \beta_2 \le 3$. $\beta_2$ must be positive
-in order to ensure that the Bernstein polynomials are positive. Does this make
-sense?
 
 from https://en.wikipedia.org/wiki/Bézier_curve:
 As the curve is completely contained in the convex hull of its control points, 
@@ -246,6 +236,57 @@ ggplot(p2d, aes(x=a0, y=a2, colour=class)) +
   theme_bw()
 ```
 
+## Plots of differences
+
+The intent here is to show what do the strictly positive versus Bernstein 
+polynomials look like.
+
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+pos.only = p2d[p2d$class=="pos",]
+both = p2d[p2d$class=="both",]
+# for some reason I need to do this outside the loops
+pos.funs = apply(as.matrix(pos.only[,1:3]), 1, function(cs) {function(x) unlist(cs[1]+cs[2]*x+cs[3]*x^2)})
+both.funs = apply(as.matrix(both[,1:3]), 1, function(cs) {function(x) unlist(cs[1]+cs[2]*x+cs[3]*x^2)})
+both.rows = sample(1:nrow(both), 400)
+for(r in both.rows) {
+  myfun = both.funs[[r]]
+  p = p + stat_function(fun=myfun, geom="line", colour=cm[1], alpha=0.1)
+}
+for(r in 1:nrow(pos.only)) {
+  myfun = pos.funs[[r]]
+  p = p + stat_function(fun=myfun, colour=cm[3], alpha=0.1)
+}
+
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
+  theme_bw()
+```
+
+Positive and Bernstein:
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+for(r in both.rows) {
+  myfun = both.funs[[r]]
+  p = p + stat_function(fun=myfun, geom="line", colour=cm[1], alpha=0.1)
+}
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
+  theme_bw()
+```
+
+Positive only:
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+for(r in 1:nrow(pos.only)) {
+  myfun = pos.funs[[r]]
+  p = p + stat_function(fun=myfun, colour=cm[3], alpha=0.1)
+}
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
+  theme_bw()
+```
+
 # Highest-order coefficient is 1
 
 These are all polynomials $a_0 + a_1 * x + x^2$.
@@ -294,6 +335,57 @@ p2d$class = factor(p2d$class)
 ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
   scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
   geom_point() + 
+  theme_bw()
+```
+
+## Plots of differences
+
+The intent here is to show what do the strictly positive versus Bernstein 
+polynomials look like.
+
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+pos.only = p2d[p2d$class=="pos",]
+both = p2d[p2d$class=="both",]
+# for some reason I need to do this outside the loops
+pos.funs = apply(as.matrix(pos.only[,1:3]), 1, function(cs) {function(x) unlist(cs[1]+cs[2]*x+cs[3]*x^2)})
+both.funs = apply(as.matrix(both[,1:3]), 1, function(cs) {function(x) unlist(cs[1]+cs[2]*x+cs[3]*x^2)})
+both.rows = sample(1:nrow(both), 400)
+for(r in both.rows) {
+  myfun = both.funs[[r]]
+  p = p + stat_function(fun=myfun, geom="line", colour=cm[1], alpha=0.1)
+}
+for(r in 1:nrow(pos.only)) {
+  myfun = pos.funs[[r]]
+  p = p + stat_function(fun=myfun, colour=cm[3], alpha=0.1)
+}
+
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
+  theme_bw()
+```
+
+Positive and Bernstein:
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+for(r in both.rows) {
+  myfun = both.funs[[r]]
+  p = p + stat_function(fun=myfun, geom="line", colour=cm[1], alpha=0.1)
+}
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
+  theme_bw()
+```
+
+Positive only:
+```{r, warning=FALSE}
+p = ggplot(data.frame(x=c(0,1)), aes(x=x))
+for(r in 1:nrow(pos.only)) {
+  myfun = pos.funs[[r]]
+  p = p + stat_function(fun=myfun, colour=cm[3], alpha=0.1)
+}
+p + 
+  scale_y_continuous(limits=c(0,1)) + 
   theme_bw()
 ```
 
@@ -347,3 +439,6 @@ ggplot(p2d, aes(x=a0, y=a1, colour=class)) +
   geom_point() + 
   theme_bw()
 ```
+
+
+
