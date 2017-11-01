@@ -6,3 +6,12 @@ output
 .Rproj.user
 packrat/lib*/
 json/*.json
+
+*.aux
+*.log
+*.pdf
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+
