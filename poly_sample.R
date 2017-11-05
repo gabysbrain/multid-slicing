@@ -12,9 +12,12 @@ sample.poly = function(n, deg, samplef) {
 }
 
 # returns a random polynomial in increasing order of power
-ran.poly = function(deg) {
+ran.poly = function(deg, scale=TRUE) {
   coeffs = runif(deg+1, min=-1, max=1)
-  coeffs / max(abs(coeffs))
+  if(scale) {
+    coeffs = coeffs / max(abs(coeffs))
+  }
+  coeffs
 }
 
 eval.poly = function(p, x) {

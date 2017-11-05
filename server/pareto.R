@@ -1,4 +1,6 @@
 
+library(doSNOW)
+library(parallel)
 library(geometry)
 library(rPref)
 library(plyr)
@@ -8,6 +10,16 @@ library(grid)
 library(gridExtra)
 library(randtoolbox)
 #library(rgl)
+
+
+# initialize the parallel cluster
+cl = makeCluster(detectCores()/2, type="SOCK")
+registerDoSNOW(cl)
+fun.exports = c("filter_all", "all_vars", 
+                "simplex.point.intersection", "common.cross.range", 
+                "EPS", "intersect.simplices")
+clusterExport(cl, fun.exports)
+#stopCluster(cl)
 
 EPS = 1e-9
 
@@ -69,7 +81,15 @@ intersect.pts = function(data, edges, fp, d1, d2) {
 }
 
 intersect.simplices = function(simplices, data, fp, d1, d2) {
-  adply(simplices, 1, function(s) simplex.intersect.test(d1, d2, fp, data[s,]))
+  # initialize the parallel cluster
+  #cl = makeCluster(detectCores()/2, type="SOCK")
+  #registerDoSNOW(cl)
+  #clusterExport(cl, c("simplex.point.intersection", "common.cross.range", "EPS"))
+  adply(simplices, 1, 
+        function(s) simplex.point.intersection(d1, d2, fp, data[s,]),
+        .parallel=TRUE)
+        #.paropts=list(.export=c("simplex.point.intersection", "common.cross.range", "EPS")))
+  #stopCluster(cl)
 }
 
 # plotting
@@ -88,12 +108,12 @@ gen.plot.data = function(data, simplexes, n) {
         res2$d2 = d[2]
       }
       res2
-    })
+    }, .parallel=TRUE)
     if(nrow(res) > 0) {
       res$fpid = rid
     }
     res
-  })
+  }, .parallel=TRUE)
 }
 
 # append to a list
@@ -178,7 +198,7 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
                widths=c(0.1,rep(1,d-1)), heights=c(0.2, rep(1,d-1)))
 }
 
-simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
+simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
   focus.pt = as.vector(unlist(focus.pt))
   n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
   n.lambdas = ncol(simplex) + 1
