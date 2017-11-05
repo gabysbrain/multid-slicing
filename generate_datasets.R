@@ -4,17 +4,17 @@ source('poly_sample.R')
 library(stringr)
 
 poly.space.convhull = function(pts, fname) {
-  deg = ncol(pts) - 1
+  deg = ncol(pts)
   name = str_c(fname, "_", deg)
   print(name)
   write.csv(pts, file=str_c("csv/", name, ".csv"), row.names=FALSE)
-  write.hull.json(str_c("json/", name, ".json"), pts)
+  write.hull.json(str_c("json/", name, ".json"), pts, n=100)
 }
 
 # 3d sphere pareto
 sphere.3d = read.csv("static/test_data/3sphere_50.csv")
 sphere.3d.p = pareto.points(sphere.3d)
-write.hull.json("json/sphere_3d.json", sphere.3d.p)
+write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=TRUE, n=100)
 
 # cube
 cube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))
@@ -25,21 +25,34 @@ hcube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5), x4=c(0,0.5))
 write.hull.json("json/4d_cube.json", hcube.data)
 
 # Polynomials
-# We want to compute positive, bernstein, and their difference using 
-# the same set of samples
-min.deg = 2
-max.deg = 3
-n = 10000
-# Bernstein polynomials
-for(deg in min.deg:max.deg) {
-  coeffs = sample.poly(n, deg, ran.poly)
+sample.polys = function(deg, face, faceval) {
+  sample.f = function(d) ran.poly(d, scale=FALSE)
+  coeffs = sample.poly(n, deg, sample.f)
+  coeffs[,face] = faceval
   ds = data.frame(coeffs)
   nms = str_c("a_", 0:deg)
   names(ds) = nms
   ds$is.pos = apply(coeffs, 1, is.positive, domain=c(0,1))
   ds$is.bern = apply(coeffs, 1, function(x) all(bern.coeffs(x)>=0))
   
-  poly.space.convhull(ds[ds$is.pos,nms], "pos_poly")
-  poly.space.convhull(ds[ds$is.bern,nms], "bernstein")
-  poly.space.convhull(ds[ds$is.pos&!ds$is.bern,nms], "difference")
+  poly.space.convhull(ds[ds$is.pos,nms[-face]],
+                      str_c("pos_poly_", face, "f", faceval))
+  poly.space.convhull(ds[ds$is.bern,nms[-face]],
+                      str_c("bernstein_", face, "f", faceval))
+  poly.space.convhull(ds[ds$is.pos&!ds$is.bern,nms[-face]],
+                      str_c("difference_", face, "f", faceval))
+}
+
+# We want to compute positive, bernstein, and their difference using 
+# the same set of samples
+min.deg = 3
+max.deg = 8
+n = 10000
+# Bernstein polynomials
+for(deg in min.deg:max.deg) {
+  # set each face to +1 and -1
+  for(face in 1:(deg+1)) {
+    sample.polys(deg, face, -1)
+    sample.polys(deg, face, 1)
+  }
 }
