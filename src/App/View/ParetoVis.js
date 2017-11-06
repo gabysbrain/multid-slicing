@@ -97,7 +97,7 @@ function drawHullLines(self, elem, data) {
         handleHover(evtData);
       })
       .attr('class', 'pareto-front path')
-      .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 2.5 : 1;})
+      .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
       .attr('stroke-opacity', '0.6')
       .attr('fill', 'none')
       .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';})
@@ -110,7 +110,7 @@ function drawHullLines(self, elem, data) {
     .attr('x2', function(d) { return self.state.x(d.x1Max); })
     .attr('y1', function(d) { return self.state.y(d.x2Min); })
     .attr('y2', function(d) { return self.state.y(d.x2Max); })
-    .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 2.5 : 1;})
+    .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
     .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';});
   lines.exit().remove();
 }
