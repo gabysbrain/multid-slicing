@@ -11,15 +11,18 @@ library(gridExtra)
 library(randtoolbox)
 #library(rgl)
 
+.run.parallel = TRUE
 
-# initialize the parallel cluster
-cl = makeCluster(detectCores()/2, type="SOCK")
-registerDoSNOW(cl)
-fun.exports = c("filter_all", "all_vars", 
-                "simplex.point.intersection", "common.cross.range", 
-                "EPS", "intersect.simplices")
-clusterExport(cl, fun.exports)
-#stopCluster(cl)
+if(.run.parallel) {
+  # initialize the parallel cluster
+  cl = makeCluster(detectCores()/2, type="SOCK")
+  registerDoSNOW(cl)
+  fun.exports = c(".run.parallel", "filter_all", "all_vars", 
+                  "simplex.point.intersection", "common.cross.range", 
+                  "EPS", "intersect.simplices")
+  clusterExport(cl, fun.exports)
+  #stopCluster(cl)
+}
 
 EPS = 1e-9
 
@@ -87,7 +90,7 @@ intersect.simplices = function(simplices, data, fp, d1, d2) {
   #clusterExport(cl, c("simplex.point.intersection", "common.cross.range", "EPS"))
   adply(simplices, 1, 
         function(s) simplex.point.intersection(d1, d2, fp, data[s,]),
-        .parallel=TRUE)
+        .parallel=.run.parallel)
         #.paropts=list(.export=c("simplex.point.intersection", "common.cross.range", "EPS")))
   #stopCluster(cl)
 }
@@ -96,6 +99,7 @@ intersect.simplices = function(simplices, data, fp, d1, d2) {
 gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
   focus.points = data.frame(sobol(n,d))
+  focus.points = focus.points * 2 - 1 # everything between -1 and 1
   dims = t(combn(d,2))
   adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
@@ -108,12 +112,12 @@ gen.plot.data = function(data, simplexes, n) {
         res2$d2 = d[2]
       }
       res2
-    }, .parallel=TRUE)
+    }, .parallel=.run.parallel)
     if(nrow(res) > 0) {
       res$fpid = rid
     }
     res
-  }, .parallel=TRUE)
+  }, .parallel=.run.parallel)
 }
 
 # append to a list
@@ -176,8 +180,8 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
       } else {
         p = p + geom_polygon(aes(colour=fpid), fill=NA)
       }
-      p = p + #scale_x_continuous(limits=c(0,1)) +
-              #scale_y_continuous(limits=c(0,1)) +
+      p = p + scale_x_continuous(limits=c(-1,1)) +
+              scale_y_continuous(limits=c(-1,1)) +
               theme_bw() +
               theme(axis.title.x=element_blank(),
                     axis.title.y=element_blank())
@@ -196,6 +200,15 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
   layout = cbind(c(NA, max(layout, na.rm=TRUE)+1:(d-1)), layout)
   grid.arrange(grobs=c(plots, horiz.labels, vert.labels), layout_matrix=layout,
                widths=c(0.1,rep(1,d-1)), heights=c(0.2, rep(1,d-1)))
+}
+
+plot.convhull = function(pts) {
+  ch = delaunayn(pts)
+  tetramesh(ch, pts)
+  axis3d('x', pos=c( NA, 0, 0 ), col = "darkgrey")
+  axis3d('y', pos=c( 0, NA, 0 ), col = "darkgrey")
+  axis3d('z', pos=c( 0, 0, NA ), col = "darkgrey")
+  rgl.viewpoint(fov=0)
 }
 
 simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
