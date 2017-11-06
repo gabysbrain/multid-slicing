@@ -7,7 +7,7 @@ import DOM.Event.Types as ET
 import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (reactClassWithProps)
 import React (ReactClass)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe, fromMaybe)
 import Data.Nullable as N
 import Text.Smolder.Markup (EventHandlers, on, (#!))
 import Unsafe.Coerce (unsafeCoerce)
@@ -26,10 +26,7 @@ paretoVis maxX maxY lines fps = _paretoVis props
     { "data-maxX": maxX
     , "data-maxY": maxY
     , "data-selectedfps": fps
-    --, "data-paretopoints": pts
     , "data-hullpaths": lines
-    --, "onHullHover": onHullHover HoverSlice
-    --, "onPointHover": onPointHover HoverParetoPoint
     }
 
 _paretoVis :: forall props. props -> HTML Event
@@ -42,10 +39,11 @@ onHullHover s = on "onHullHover" saniHandler
   -- FIXME: can we remove the unsafe coerce?
   saniHandler = s <<< fromMaybe [] <<< N.toMaybe <<< unsafeCoerce 
 
-{--onPointHover :: forall ev. (Array PointData2D -> ev) -> EventHandlers (ET.Event -> ev)--}
-{--onPointHover s = on "onPointHover" saniHandler--}
-  {--where--}
-  {---- FIXME: can we remove the unsafe coerce?--}
-  {--saniHandler = s <<< fromMaybe [] <<< N.toMaybe <<< unsafeCoerce --}
+-- sanitizing event handlers
+onHullClick :: forall ev. (Maybe CurvePoint -> ev) -> EventHandlers (ET.Event -> ev)
+onHullClick s = on "onHullClick" saniHandler
+  where
+  -- FIXME: can we remove the unsafe coerce?
+  saniHandler = s <<< N.toMaybe <<< unsafeCoerce 
 
 

@@ -9,24 +9,18 @@ import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData)
 import App.Routes (Route)
 import App.State (DataInfo, State(..), FileLoadError(..))
-import Control.Monad.Aff (Aff(), makeAff, attempt)
-import Control.Monad.Eff (Eff())
+import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
-import Data.Number as N
 import Data.Set as Set
 import DOM (DOM)
-import DOM.Event.Types as EVT
-import DOM.File.FileList (item)
-import DOM.File.Types (File, FileList)
-import Network.HTTP.Affjax (AJAX, get, post)
+import Network.HTTP.Affjax (AJAX, get)
 import Pux (EffModel, noEffects)
 import Pux.DOM.Events (DOMEvent, targetValue)
-import Data.Tuple (Tuple(..), snd)
-import Data.String (Pattern(..), Replacement(..), replaceAll)
+import Data.Tuple (Tuple(..))
 
 type SD d = Tuple (Tuple (FieldNames d) (DataPoints d)) SliceData
 
@@ -35,10 +29,7 @@ data Event
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError (SD Int)) -- FIXME: should be d
   | HoverSlice (Array CurvePoint)
-  -- | HoverParetoFront (Array LineData2D)
-  -- | HoverParetoPoint (Array PointData2D)
-  -- | StartParetoFilter AppData
-  -- | FinishParetoFilter AppData
+  | ClickSlice (Maybe CurvePoint)
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -61,10 +52,9 @@ foldp (DataFileChange ev) (State st) =
   }
 foldp (HoverSlice slices) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded dsi {selectedFocusPoints=foldMap (\g -> Set.singleton g.focusPointId) slices}}
-foldp (HoverSlice _) st = noEffects st
---foldp (HoverParetoPoint pts) (State st@{dataset:Loaded dsi}) = noEffects $
-  --State st {dataset=Loaded dsi {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}}
---foldp (HoverParetoPoint _) st = noEffects st
+foldp (HoverSlice _) st = noEffects st -- shouldn't work unless data loaded
+foldp (ClickSlice slice) (State st@{dataset:Loaded dsi}) = noEffects $ State st
+foldp (ClickSlice _) st = noEffects st -- shouldn't work unless data loaded
 
 newDatasetState :: forall d. SD d -> DataInfo d
 newDatasetState (Tuple (Tuple fns pts) curves) =
