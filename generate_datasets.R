@@ -3,18 +3,20 @@ source('write_hull_json.R')
 source('poly_sample.R')
 library(stringr)
 
+n.slices = 50
+
 poly.space.convhull = function(pts, fname) {
   deg = ncol(pts)
   name = str_c(fname, "_", deg)
   print(name)
   write.csv(pts, file=str_c("csv/", name, ".csv"), row.names=FALSE)
-  write.hull.json(str_c("json/", name, ".json"), pts, n=100)
+  write.hull.json(str_c("json/", name, ".json"), pts, n=n.slices)
 }
 
 # 3d sphere pareto
 sphere.3d = read.csv("static/test_data/3sphere_50.csv")
 sphere.3d.p = pareto.points(sphere.3d)
-write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=TRUE, n=100)
+write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=TRUE, n=n.slices)
 
 # cube
 cube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))
@@ -46,7 +48,7 @@ sample.polys = function(deg, face, faceval) {
 # We want to compute positive, bernstein, and their difference using 
 # the same set of samples
 min.deg = 3
-max.deg = 8
+max.deg = 5
 n = 10000
 # Bernstein polynomials
 for(deg in min.deg:max.deg) {
