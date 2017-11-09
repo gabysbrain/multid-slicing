@@ -2,7 +2,7 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import App.Data (FieldNames, SliceData)
-import App.Events (Event)
+import App.Events (Event(ClickSlice))
 import App.State (DataInfo)
 import App.Queries (curve2dFilter)
 import App.View.ParetoVis as PV
@@ -19,7 +19,7 @@ import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
 import Text.Smolder.HTML (div, label)
 import Text.Smolder.HTML.Attributes (className)
-import Text.Smolder.Markup ((!), text)
+import Text.Smolder.Markup ((!), (#!), text)
 
 view :: forall d. DataInfo d -> HTML Event
 view dsi = div $ 
@@ -48,6 +48,7 @@ paretoPlot d1 d2 fps = do
   curves2d <- curve2dFilter d1 d2
   pure $ div do
     PV.paretoVis 1.0 1.0 curves2d (stoa fps)
+      #! PV.onHullClick (ClickSlice d1 d2)
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)

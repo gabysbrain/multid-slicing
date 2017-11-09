@@ -8,7 +8,7 @@ import App.Data (FieldNames, DataPoints, CurvePoint, SliceData, ptsFromServerDat
 import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData)
 import App.Routes (Route)
-import App.State (DataInfo, State(..), FileLoadError(..))
+import App.State (CurveInfo, DataInfo, State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
@@ -29,7 +29,7 @@ data Event
   | DataFileChange DOMEvent
   | ReceiveData (Except FileLoadError (SD Int)) -- FIXME: should be d
   | HoverSlice (Array CurvePoint)
-  | ClickSlice (Maybe CurvePoint)
+  | ClickSlice Int Int (Maybe CurvePoint)
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -53,8 +53,9 @@ foldp (DataFileChange ev) (State st) =
 foldp (HoverSlice slices) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded dsi {selectedFocusPoints=foldMap (\g -> Set.singleton g.focusPointId) slices}}
 foldp (HoverSlice _) st = noEffects st -- shouldn't work unless data loaded
-foldp (ClickSlice slice) (State st@{dataset:Loaded dsi}) = noEffects $ State st
-foldp (ClickSlice _) st = noEffects st -- shouldn't work unless data loaded
+foldp (ClickSlice d1 d2 slice) (State st@{dataset:Loaded dsi}) = noEffects $ 
+  State st {dataset=Loaded dsi {selectedCurve=map (mapClickSlice d1 d2) slice}}
+foldp (ClickSlice _ _ _) st = noEffects st -- shouldn't work unless data loaded
 
 newDatasetState :: forall d. SD d -> DataInfo d
 newDatasetState (Tuple (Tuple fns pts) curves) =
@@ -62,7 +63,12 @@ newDatasetState (Tuple (Tuple fns pts) curves) =
   , fieldNames: fns
   , curves: curves
   , selectedFocusPoints: Set.empty
+  , selectedCurve: Nothing
   }
+
+mapClickSlice :: Int -> Int -> CurvePoint -> CurveInfo
+mapClickSlice d1 d2 cp = 
+  {d1: d1, d2: d2, fpId: cp.focusPointId}
 
 mapErr :: Either String String -> Except FileLoadError String
 mapErr = withExcept LoadError <<< except

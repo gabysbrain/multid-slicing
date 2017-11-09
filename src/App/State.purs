@@ -3,8 +3,15 @@ module App.State where
 import App.Config (config)
 import App.Data (SliceData, DataPoints, FieldNames)
 import App.Routes (Route, match)
+import Data.Maybe (Maybe)
 import Data.Set (Set)
 import Loadable (Loadable(..))
+
+type CurveInfo = 
+  { d1 :: Int
+  , d2 :: Int
+  , fpId :: Int
+  }
 
 data FileLoadError
   = NoFile
@@ -15,6 +22,7 @@ type DataInfo d =
   , dataPoints :: DataPoints d
   , curves :: SliceData
   , selectedFocusPoints :: Set Int
+  , selectedCurve :: Maybe CurveInfo
   }
 
 data State = State

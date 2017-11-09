@@ -77,6 +77,7 @@ function isSelected(d, fps) {
 
 function drawHullLines(self, elem, data) {
   var handleHover = self.props.onHullHover;
+  var handleClick = self.props.onHullClick;
   var selectedFPs = new Set(self.props['data-selectedfps']);
 
   var lines = elem.selectAll('.pareto-front.path').data(data);
@@ -97,9 +98,9 @@ function drawHullLines(self, elem, data) {
         handleHover(evtData);
       }).on('click', function() {
         var evtData = new Object();
-        evtData.nativeEvent = d3.select(this).data();
-        //handleHover(evtData);
-        console.log(evtData);
+        evtData.nativeEvent = d3.select(this).datum();
+        handleClick(evtData);
+        //console.log(evtData);
       })
       .attr('class', 'pareto-front path')
       .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
