@@ -70,3 +70,19 @@
   border: 1px solid grey;
 }
 
+.deselect-button {
+  line-height: 2.5em;
+  height: 2.5em;
+  padding: 0em 2em;
+}
+
+button[disabled] {
+  background:#ccc;
+  border-color: #ccc;
+  text-shadow:none;
+
+  &:hover {
+    color: #555555;
+  }
+}
+

@@ -66,10 +66,12 @@ paretoPlot d1 d2 (Local st) = do
 
 deselectButton :: SelectState -> HTML Event
 deselectButton (Local _) =
-  button #! onClick (const $ ClickSlice 1 1 Nothing) $ text "deselect"
+  deselectButtonBase #! onClick (const $ ClickSlice 1 1 Nothing)
 deselectButton (Global _) =
-  pure unit
-  --button ! disabled "true" $ text "deselect"
+  deselectButtonBase ! disabled "true"
+
+deselectButtonBase :: HTML Event
+deselectButtonBase = button ! className "deselect-button" $ text "deselect"
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)
