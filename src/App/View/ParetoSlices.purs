@@ -21,6 +21,8 @@ import Text.Smolder.HTML (div, label)
 import Text.Smolder.HTML.Attributes (className)
 import Text.Smolder.Markup ((!), (#!), text)
 
+--import Debug.Trace (traceShow)
+
 view :: forall d. DataInfo d -> HTML Event
 view dsi = div $ 
   div ! className "splom-view" $ do
@@ -29,6 +31,7 @@ view dsi = div $
       div $ pure unit -- empty cell to offset the axis labels
       for_ (colNames sortedNames) $ \(Tuple _ fn) -> do
         label ! className "dim-label" $ text fn
+    --traceShow flds
     for_ (splomPairs sortedNames) $ \row -> do
       let yField = fromMaybe "" $ snd <$> snd <$> L.head row
       div ! className "splom row" $ do
@@ -57,14 +60,20 @@ colNames :: List (Tuple Int String) -> List (Tuple Int String)
 colNames = fromMaybe L.Nil <<< L.init 
 
 splomPairs :: forall a. List a -> List (List (Tuple a a))
-splomPairs xs = L.transpose $ map L.reverse $ splomPairs' xs
+splomPairs = L.transpose <<< mapRev <<< splomPairs'
 
 splomPairs' :: forall a. List a -> List (List (Tuple a a))
-splomPairs' xs = case L.uncons xs of
-  Just {head:x,tail:L.Nil} -> L.Nil
-  Just {head:x,tail:xs'} -> (map (Tuple x) xs') L.: (splomPairs xs')
+splomPairs' xs = case L.uncons xs of 
   Nothing -> L.Nil
+  Just {head:x,tail:L.Nil} -> L.Nil
+  Just {head:x,tail:xs'} -> (map (Tuple x) xs') L.: (splomPairs' xs')
 
 stoa :: forall a. Set a -> Array a
 stoa = foldMap pure
+
+-- don't know why but map L.reverse isn't working right...
+mapRev :: forall a. List (List a) -> List (List a)
+mapRev xs = case L.uncons xs of
+  Nothing -> L.Nil
+  Just uc -> (L.reverse uc.head) L.: (mapRev uc.tail)
 
