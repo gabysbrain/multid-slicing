@@ -2,9 +2,9 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import App.Data (FieldNames, SliceData)
-import App.Events (Event(ClickSlice))
-import App.State (DataInfo)
-import App.Queries (curve2dFilter)
+import App.Events (Event(HoverSlice, ClickSlice))
+import App.State (DataInfo, SelectState(..))
+import App.Queries (curve2dFilter, fpFilter)
 import App.View.ParetoVis as PV
 import Data.Array as A
 import Data.DataFrame as DF
@@ -17,14 +17,16 @@ import Data.Set (Set)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.Traversable (for_)
 import Pux.DOM.HTML (HTML)
-import Text.Smolder.HTML (div, label)
-import Text.Smolder.HTML.Attributes (className)
+import Pux.DOM.Events (onClick)
+import Text.Smolder.HTML (div, label, button)
+import Text.Smolder.HTML.Attributes (className, disabled)
 import Text.Smolder.Markup ((!), (#!), text)
 
 --import Debug.Trace (traceShow)
 
 view :: forall d. DataInfo d -> HTML Event
-view dsi = div $ 
+view dsi = div $ do
+  deselectButton dsi.selectState
   div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
@@ -41,17 +43,33 @@ view dsi = div $
           let d1 = fst $ fst plotFields
               d2 = fst $ snd plotFields
           div ! className "splom subplot" $ do
-            let plotQ = paretoPlot d1 d2 dsi.selectedFocusPoints
+            let plotQ = paretoPlot d1 d2 dsi.selectState
             DF.runQuery plotQ dsi.curves
   where 
   sortedNames = L.sort $ fldIdxs dsi.fieldNames
 
-paretoPlot :: Int -> Int -> Set Int -> Query SliceData (HTML Event)
-paretoPlot d1 d2 fps = do
+paretoPlot :: Int -> Int -> SelectState -> Query SliceData (HTML Event)
+-- global view shows all slices
+paretoPlot d1 d2 (Global st) = do
   curves2d <- curve2dFilter d1 d2
   pure $ div do
-    PV.paretoVis 1.0 1.0 curves2d (stoa fps)
+    PV.paretoVis 1.0 1.0 curves2d (stoa st.selectedFocusPoints)
+      #! PV.onHullHover HoverSlice
       #! PV.onHullClick (ClickSlice d1 d2)
+-- local view shows one slice
+paretoPlot d1 d2 (Local st) = do
+  curves2d <- fpFilter st.selectedCurve.fpId `DF.chain`
+              curve2dFilter d1 d2
+  pure $ div do
+    PV.paretoVis 1.0 1.0 curves2d []
+      #! PV.onHullClick (ClickSlice d1 d2)
+
+deselectButton :: SelectState -> HTML Event
+deselectButton (Local _) =
+  button #! onClick (const $ ClickSlice 1 1 Nothing) $ text "deselect"
+deselectButton (Global _) =
+  pure unit
+  --button ! disabled "true" $ text "deselect"
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)

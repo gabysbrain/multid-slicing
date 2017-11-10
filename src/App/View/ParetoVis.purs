@@ -2,7 +2,7 @@ module App.View.ParetoVis where
 
 import Prelude (pure, unit, ($), (<<<))
 import App.Data (CurvePoint)
-import App.Events (Event(HoverSlice, ClickSlice))
+import App.Events (Event)
 import DOM.Event.Types as ET
 import Pux.DOM.HTML (HTML)
 import Pux.Renderer.React (reactClassWithProps)
@@ -19,8 +19,6 @@ paretoVis :: Number -> Number
           -> Array Int
           -> HTML Event
 paretoVis maxX maxY lines fps = _paretoVis props 
-                                  #! onHullHover HoverSlice
-                                  -- #! onHullClick ClickSlice
   where
   props =
     { "data-maxX": maxX

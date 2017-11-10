@@ -33,6 +33,12 @@ curve2dFilter d1 d2 = do
        DF.summarize (\r -> DF.runQuery (DF.summarize id) r.data)
   pure $ A.concat d
 
+fpFilter :: Int -> Query SliceData SliceData
+fpFilter fpId = 
+    DF.mutate (\r -> r {data=DF.runQuery dataFilter r.data})
+  where 
+  dataFilter = DF.filter (\rr -> rr.focusPointId==fpId)
+
 {--paretoPlotPaths :: forall d--}
                  {--. Number -> Set Int -> Int -> Int--}
                 {---> Query (DataFrame (Link d)) (Array LineData2D)--}

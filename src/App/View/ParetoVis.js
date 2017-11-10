@@ -84,23 +84,29 @@ function drawHullLines(self, elem, data) {
   lines.enter()
     .append('line')
       .on('mouseover', function() {
-        // FIXME: hack to handle bug in pux
-        // see https://github.com/alexmingoia/purescript-pux/issues/122
-        var evtData = new Object();
-        evtData.nativeEvent = d3.select(this).data();
-        handleHover(evtData);
+        if(handleHover) {
+          // FIXME: hack to handle bug in pux
+          // see https://github.com/alexmingoia/purescript-pux/issues/122
+          var evtData = new Object();
+          evtData.nativeEvent = d3.select(this).data();
+          handleHover(evtData);
+        }
       })
       .on('mouseout', function() {
-        // FIXME: hack to handle bug in pux
-        // see https://github.com/alexmingoia/purescript-pux/issues/122
-        var evtData = new Object();
-        evtData.nativeEvent = [];
-        handleHover(evtData);
+        if(handleHover) {
+          // FIXME: hack to handle bug in pux
+          // see https://github.com/alexmingoia/purescript-pux/issues/122
+          var evtData = new Object();
+          evtData.nativeEvent = [];
+          handleHover(evtData);
+        }
       }).on('click', function() {
-        var evtData = new Object();
-        evtData.nativeEvent = d3.select(this).datum();
-        handleClick(evtData);
-        //console.log(evtData);
+        if(handleClick) {
+          var evtData = new Object();
+          evtData.nativeEvent = d3.select(this).datum();
+          handleClick(evtData);
+          //console.log(evtData);
+        }
       })
       .attr('class', 'pareto-front path')
       .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
