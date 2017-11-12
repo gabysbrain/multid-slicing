@@ -16,10 +16,12 @@ newtype SDCurve = SDCurve
   , x2End :: Number
   }
 type SDCurves = Array SDCurve
+type SDFocusPoints = Array (Array Number)
 
 newtype ServerData = ServerData
   { points :: SDPoints
   , curves :: SDCurves
+  , focusPoints :: SDFocusPoints
   }
 
 instance decodeJsonServerData :: DecodeJson ServerData where
@@ -27,7 +29,8 @@ instance decodeJsonServerData :: DecodeJson ServerData where
     obj <- decodeJson json
     pts <- obj .? "points"
     cs <- obj .? "curves"
-    pure $ ServerData {points:pts,curves:cs}
+    fps <- obj .? "focusPoints"
+    pure $ ServerData {points:pts,curves:cs,focusPoints:fps}
 
 instance decodeJsonSDEdge :: DecodeJson SDCurve where
   decodeJson json = do

@@ -1,7 +1,11 @@
 module App.Data where
 
 import Prelude 
-import App.Data.ServerData (SDCurves, SDCurve(..), SDPoints, SDPoint, ServerData(..))
+import App.Data.ServerData ( SDCurves, SDCurve(..) 
+                           , SDPoints, SDPoint
+                           , SDFocusPoints
+                           , ServerData(..)
+                           )
 import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
 import Data.DataFrame (DataFrame(..))
 import Data.DataFrame as DF
@@ -74,18 +78,30 @@ ptsFromServerData :: forall d
 ptsFromServerData pts = do
   r1 <- withFail "No data" $ A.head pts
   let fields = A.sort $ SM.keys r1
-      ids = 1..(A.length pts)
+      --ids = 1..(A.length pts)
   pts' :: Array (Point d) <- for pts $ \pt -> do
     ptArray :: Array Number <- traverse (lookupField pt) fields
     withFail "Invalid point size" $ P.fromArray ptArray
-  let rows = A.zipWith (\r i -> DataRow {rowId:i, row: r}) pts' ids
-  pure $ Tuple fields (DF.init rows)
+  pure $ Tuple fields (DF.init $ a2dr pts')
+
+fpsFromServerData :: forall d
+                   . SDFocusPoints
+                  -> Except String (DataPoints d)
+fpsFromServerData fps = do
+  fps' <- for fps $ \fp ->
+    withFail "Invalid focus point size" $ P.fromArray fp
+  pure $ DF.init (a2dr fps')
 
 curvesFromServerData :: SDCurves -> DataFrame SDCurve
 curvesFromServerData = DF.init
 
 lookupField :: StrMap Number -> String -> Except String Number
 lookupField m f = withFail ("field " <> f <> " missing") $ SM.lookup f m
+
+a2dr :: forall a. Array a -> Array (DataRow a)
+a2dr xs = A.zipWith (\r i -> DataRow {rowId:i, row:r}) xs ids
+  where
+  ids = 1..(A.length xs)
 
 {--lookupPoint :: forall d. ParetoPoints d -> Int -> Except String (DataPoint d)--}
 {--lookupPoint (DataFrame pts) i = --}

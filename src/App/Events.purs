@@ -4,12 +4,11 @@ import Prelude
 import Loadable (Loadable(..))
 import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
-import App.Data (FieldNames, DataPoints, CurvePoint, SliceData, ptsFromServerData)
+import App.Data (CurvePoint, ptsFromServerData, fpsFromServerData)
 import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData)
 import App.Routes (Route)
-import App.State (CurveInfo, DataInfo, SelectState(..), 
-                  State(..), FileLoadError(..))
+import App.State (DataInfo, SelectState(..), State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
@@ -21,14 +20,12 @@ import DOM (DOM)
 import Network.HTTP.Affjax (AJAX, get)
 import Pux (EffModel, noEffects)
 import Pux.DOM.Events (DOMEvent, targetValue)
-import Data.Tuple (Tuple(..))
-
-type SD d = Tuple (Tuple (FieldNames d) (DataPoints d)) SliceData
+import Data.Tuple (fst, snd)
 
 data Event 
   = PageView Route
   | DataFileChange DOMEvent
-  | ReceiveData (Except FileLoadError (SD Int)) -- FIXME: should be d
+  | ReceiveData (Except FileLoadError (DataInfo Int)) -- FIXME: should be d
   | HoverSlice (Array CurvePoint)
   | ClickSlice Int Int (Maybe CurvePoint)
 
@@ -37,7 +34,7 @@ type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded = true }
 foldp (ReceiveData d) (State st) = noEffects $ 
-  State st { dataset = either Failed (Loaded <<< newDatasetState) $ runExcept d }
+  State st { dataset = either Failed Loaded $ runExcept d }
 
 -- load the data from the server
 foldp (DataFileChange ev) (State st) = 
@@ -59,14 +56,6 @@ foldp (HoverSlice _) st = noEffects st -- shouldn't work unless data loaded
 foldp (ClickSlice d1 d2 cs) (State st@{dataset:Loaded dsi}) = noEffects $ 
   State st {dataset=Loaded dsi {selectState=foldClickSlice d1 d2 cs dsi.selectState}}
 foldp (ClickSlice _ _ _) st = noEffects st -- shouldn't work unless data loaded
-
-newDatasetState :: forall d. SD d -> DataInfo d
-newDatasetState (Tuple (Tuple fns pts) curves) =
-  { dataPoints: pts
-  , fieldNames: fns
-  , curves: curves
-  , selectState: Global {selectedFocusPoints: Set.empty}
-  }
 
 foldHoverSlice :: Array CurvePoint -> SelectState -> SelectState
 foldHoverSlice slices (Global st) = Global st 
@@ -93,12 +82,19 @@ loadDataFile fn = do
 
 initServerData :: forall d
                 . ServerData 
-               -> Except FileLoadError (SD d)
+               -> Except FileLoadError (DataInfo d)
 initServerData (ServerData sd) = do
   -- inside Except
   namesNPoints <- withExcept LoadError $ ptsFromServerData sd.points
+  fps <- withExcept LoadError $ fpsFromServerData sd.focusPoints
   let curves = DF.runQuery internalizeData (DF.init sd.curves)
-  pure $ Tuple namesNPoints curves
+  pure $ { dataPoints: snd namesNPoints
+         , fieldNames: fst namesNPoints
+         , focusPoints: fps
+         , curves: curves
+         , selectState: Global {selectedFocusPoints: Set.empty}
+         }
+
 
 dsd :: String -> Except FileLoadError ServerData
 dsd = decodeServerData >>> convErr

@@ -23,6 +23,7 @@ data SelectState
 type DataInfo d =
   { fieldNames :: FieldNames d
   , dataPoints :: DataPoints d
+  , focusPoints :: DataPoints d
   , curves :: SliceData
   , selectState :: SelectState
   }
