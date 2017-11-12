@@ -16,7 +16,12 @@ poly.space.convhull = function(pts, fname) {
 # 3d sphere pareto
 sphere.3d = read.csv("static/test_data/3sphere_50.csv")
 sphere.3d.p = pareto.points(sphere.3d)
-write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=TRUE, n=n.slices)
+write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=FALSE, n=n.slices)
+
+# 5d sphere pareto
+sphere.5d = read.csv("static/test_data/sphere_50.csv")
+sphere.5d.p = pareto.points(sphere.5d)
+write.hull.json("json/sphere_5d.json", sphere.5d.p, filter.pareto=FALSE, n=n.slices)
 
 # cube
 cube.data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))

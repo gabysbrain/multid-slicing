@@ -16,7 +16,8 @@ write.hull.json = function(fname, points, filter.pareto=FALSE, n=10) {
   }
   json = list(
     points=fix.pointdata(points),
-    curves=curve.data
+    curves=curve.data$curves,
+    focusPoints=as.matrix(curve.data$focus.pts)
   )
   write_json(json, fname)
   #if(nrow(plot.data)==0) stop("No plane/simplex intersections found")

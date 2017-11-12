@@ -11,7 +11,7 @@ library(gridExtra)
 library(randtoolbox)
 #library(rgl)
 
-.run.parallel = TRUE
+.run.parallel = FALSE
 
 if(.run.parallel) {
   # initialize the parallel cluster
@@ -101,7 +101,7 @@ gen.plot.data = function(data, simplexes, n) {
   focus.points = data.frame(sobol(n,d))
   focus.points = focus.points * 2 - 1 # everything between -1 and 1
   dims = t(combn(d,2))
-  adply(1:n, 1, function(rid) { # go over all focus points
+  curves = adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
       res2 = intersect.simplices(simplexes, data, fp, d[1], d[2])
@@ -118,6 +118,8 @@ gen.plot.data = function(data, simplexes, n) {
     }
     res
   }, .parallel=.run.parallel)
+  list(focus.pts=focus.points,
+       curves=curves)
 }
 
 # append to a list
