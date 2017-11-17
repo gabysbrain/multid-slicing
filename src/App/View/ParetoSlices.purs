@@ -5,7 +5,7 @@ import App.Data (FieldNames, SliceData)
 import App.Events (Event(HoverSlice, ClickSlice))
 import App.State (DataInfo, SelectState(..))
 import App.Queries (curve2dFilter, fpFilter)
-import App.View.ParetoVis as PV
+import App.View.SlicePanel as SP
 import Data.Array as A
 import Data.DataFrame as DF
 import Data.DataFrame (Query)
@@ -53,16 +53,16 @@ paretoPlot :: Int -> Int -> SelectState -> Query SliceData (HTML Event)
 paretoPlot d1 d2 (Global st) = do
   curves2d <- curve2dFilter d1 d2
   pure $ div do
-    PV.paretoVis 1.0 1.0 curves2d (stoa st.selectedFocusPoints)
-      #! PV.onHullHover HoverSlice
-      #! PV.onHullClick (ClickSlice d1 d2)
+    SP.slicePanel 1.0 1.0 curves2d (stoa st.selectedFocusPoints)
+      #! SP.onHullHover HoverSlice
+      #! SP.onHullClick (ClickSlice d1 d2)
 -- local view shows one slice
 paretoPlot d1 d2 (Local st) = do
   curves2d <- fpFilter st.selectedCurve.fpId `DF.chain`
               curve2dFilter d1 d2
   pure $ div do
-    PV.paretoVis 1.0 1.0 curves2d []
-      #! PV.onHullClick (ClickSlice d1 d2)
+    SP.slicePanel 1.0 1.0 curves2d []
+      #! SP.onHullClick (ClickSlice d1 d2)
 
 deselectButton :: SelectState -> HTML Event
 deselectButton (Local _) =

@@ -1,4 +1,4 @@
-module App.View.ParetoVis where
+module App.View.SlicePanel where
 
 import Prelude (pure, unit, ($), (<<<))
 import App.Data (CurvePoint)
@@ -12,13 +12,13 @@ import Data.Nullable as N
 import Text.Smolder.Markup (EventHandlers, on, (#!))
 import Unsafe.Coerce (unsafeCoerce)
 
-foreign import paretoVisComponent :: forall props. ReactClass props
+foreign import slicePanelComponent :: forall props. ReactClass props
 
-paretoVis :: Number -> Number
+slicePanel :: Number -> Number
           -> Array CurvePoint
           -> Array Int
           -> HTML Event
-paretoVis maxX maxY lines fps = _paretoVis props 
+slicePanel maxX maxY lines fps = _slicePanel props 
   where
   props =
     { "data-maxX": maxX
@@ -27,8 +27,8 @@ paretoVis maxX maxY lines fps = _paretoVis props
     , "data-hullpaths": lines
     }
 
-_paretoVis :: forall props. props -> HTML Event
-_paretoVis props = reactClassWithProps paretoVisComponent "paretovis" props (pure unit)
+_slicePanel :: forall props. props -> HTML Event
+_slicePanel props = reactClassWithProps slicePanelComponent "paretovis" props (pure unit)
 
 -- sanitizing event handlers
 onHullHover :: forall ev. (Array CurvePoint -> ev) -> EventHandlers (ET.Event -> ev)

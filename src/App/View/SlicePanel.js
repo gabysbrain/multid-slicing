@@ -127,7 +127,7 @@ function drawHullLines(self, elem, data) {
   lines.exit().remove();
 }
 
-exports.paretoVisComponent = React.createClass({
+exports.slicePanelComponent = React.createClass({
   getInitialState: function() {
     // use PureRenderMixin to limit updates when they are not necessary
     //this.shouldComponentUpdate = PureRenderMixin.shouldComponentUpdate.bind(this);
