@@ -1,7 +1,7 @@
 module App.State where
 
 import App.Config (config)
-import App.Data (SliceData, DataPoints, FieldNames)
+import App.Data (SliceData, LocalCurves, DataPoints, FieldNames)
 import App.Routes (Route, match)
 import Data.Set (Set)
 import Loadable (Loadable(..))
@@ -16,16 +16,18 @@ data FileLoadError
   = NoFile
   | LoadError String
 
-data SelectState 
+data SelectState d
   = Global { selectedFocusPoints :: Set Int }
-  | Local  { selectedCurve :: CurveInfo }
+  | Local  { selectedCurve :: CurveInfo 
+           , localCurves :: LocalCurves d
+           }
 
 type DataInfo d =
   { fieldNames :: FieldNames d
   , dataPoints :: DataPoints d
   , focusPoints :: DataPoints d
   , curves :: SliceData
-  , selectState :: SelectState
+  , selectState :: SelectState d
   }
 
 data State = State

@@ -2,9 +2,9 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import App.Data (FieldNames, SliceData)
-import App.Events (Event(HoverSlice, ClickSlice))
+import App.Events (Event(HoverSlice, ClickSlice, DragFocusPoint, UpdateFocusPoints))
 import App.State (DataInfo, SelectState(..))
-import App.Queries (curve2dFilter, fpFilter)
+import App.Queries (curve2dFilter, fpFilter, fp2dFilter, lc2fp)
 import App.View.SlicePanel as SP
 import Data.Array as A
 import Data.DataFrame as DF
@@ -44,27 +44,30 @@ view dsi = div $ do
               d2 = fst $ snd plotFields
           div ! className "splom subplot" $ do
             let plotQ = paretoPlot d1 d2 dsi.selectState
-            DF.runQuery plotQ dsi.curves
+            DF.runQuery plotQ dsi
   where 
   sortedNames = L.sort $ fldIdxs dsi.fieldNames
 
-paretoPlot :: Int -> Int -> SelectState -> Query SliceData (HTML Event)
+paretoPlot :: forall d. Int -> Int -> SelectState d -> Query (DataInfo d) (HTML Event)
 -- global view shows all slices
 paretoPlot d1 d2 (Global st) = do
-  curves2d <- curve2dFilter d1 d2
-  pure $ div do
-    SP.slicePanel 1.0 1.0 curves2d (stoa st.selectedFocusPoints)
-      #! SP.onHullHover HoverSlice
-      #! SP.onHullClick (ClickSlice d1 d2)
+  dsi <- DF.reset
+  let curves2d = DF.runQuery (curve2dFilter d1 d2) dsi.curves
+  pure $ SP.globalSlicePanel 1.0 1.0 curves2d (stoa st.selectedFocusPoints)
+           #! SP.onHullHover HoverSlice
+           #! SP.onHullClick (ClickSlice d1 d2)
 -- local view shows one slice
 paretoPlot d1 d2 (Local st) = do
-  curves2d <- fpFilter st.selectedCurve.fpId `DF.chain`
-              curve2dFilter d1 d2
-  pure $ div do
-    SP.slicePanel 1.0 1.0 curves2d []
-      #! SP.onHullClick (ClickSlice d1 d2)
+  dsi <- DF.reset
+  let curves2d = DF.runQuery 
+        (fpFilter st.selectedCurve.fpId `DF.chain` curve2dFilter d1 d2) 
+        dsi.curves
+      fps2d = DF.runQuery (lc2fp `DF.chain` fp2dFilter d1 d2) st.localCurves
+  pure $ SP.localSlicePanel 1.0 1.0 curves2d fps2d
+           #! SP.onFPDrag (DragFocusPoint d1 d2)
+           #! SP.onFPRelease (const UpdateFocusPoints)
 
-deselectButton :: SelectState -> HTML Event
+deselectButton :: forall d. SelectState d -> HTML Event
 deselectButton (Local _) =
   deselectButtonBase #! onClick (const $ ClickSlice 1 1 Nothing)
 deselectButton (Global _) =

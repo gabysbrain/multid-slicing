@@ -50,6 +50,7 @@ function updateChart(self) {
   var visHeight = self.state.height - self.state.margin.top - self.state.margin.bottom;
 
   var hullLines = self.props['data-hullpaths'];
+  var focusPoints = self.props['data-focuspoints'];
   var maxX = self.props['data-maxX'];
   var maxY = self.props['data-maxY'];
 
@@ -68,11 +69,63 @@ function updateChart(self) {
   yAxis.call(self.state.yAxis);
 
   var chartContainer = svg.select('g.container');
+  if(focusPoints) {
+    drawFocusPoints(self, chartContainer, focusPoints);
+  } else {
+    drawFocusPoints(self, chartContainer, []);
+  }
   drawHullLines(self, chartContainer, hullLines);
 }
 
 function isSelected(d, fps) {
   return fps.has(d.focusPointId);
+}
+
+function drawFocusPoints(self, elem, data) {
+  var handleDrag = self.props.onPointDrag;
+  var handleUpdate = self.props.onPointRelease;
+
+  // set up drag behavior
+  var dragEvt = d3.drag()
+    .on('drag', function() {
+      if(handleDrag) {
+        var newx = self.state.x.invert(d3.event.x);
+        var newy = self.state.y.invert(d3.event.y);
+
+        // FIXME: hack to handle bug in pux
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
+        var evtData = new Object();
+        evtData.nativeEvent = d3.select(this).datum();
+        evtData.nativeEvent.row = [newx, newy];
+        handleDrag(evtData);
+      }
+    })
+    .on('end', function() {
+      if(handleUpdate) {
+        var newx = self.state.x.invert(d3.event.x);
+        var newy = self.state.y.invert(d3.event.y);
+
+        // FIXME: hack to handle bug in pux
+        // see https://github.com/alexmingoia/purescript-pux/issues/122
+        var evtData = new Object();
+        evtData.nativeEvent = d3.select(this).datum();
+        evtData.nativeEvent.row = [newx, newy];
+        handleUpdate(evtData);
+      }
+    });
+  var points = elem.selectAll('.focus-point.point').data(data);
+  points.enter()
+    .append('circle')
+      .attr('class', 'focus-point point')
+      .attr('fill', 'blue')
+      .attr('r', 5)
+      .attr('cx', function(d) {return self.state.x(d.row[0]);})
+      .attr('cy', function(d) {return self.state.y(d.row[1]);})
+      .call(dragEvt);
+  points
+    .attr('cx', function(d) {return self.state.x(d.row[0]);})
+    .attr('cy', function(d) {return self.state.y(d.row[1]);});
+  points.exit().remove();
 }
 
 function drawHullLines(self, elem, data) {
@@ -118,10 +171,6 @@ function drawHullLines(self, elem, data) {
       .attr('y1', function(d) { return self.state.y(d.x2Min); })
       .attr('y2', function(d) { return self.state.y(d.x2Max); });
   lines
-    .attr('x1', function(d) { return self.state.x(d.x1Min); })
-    .attr('x2', function(d) { return self.state.x(d.x1Max); })
-    .attr('y1', function(d) { return self.state.y(d.x2Min); })
-    .attr('y2', function(d) { return self.state.y(d.x2Max); })
     .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
     .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';});
   lines.exit().remove();

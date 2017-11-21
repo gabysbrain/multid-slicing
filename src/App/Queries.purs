@@ -2,13 +2,14 @@ module App.Queries where
 
 import Prelude
 import App.Data ( DataPoints, DataPoint, CurvePoint, CurvePoints
-                , SliceData, Dim2D, Dims2D
-                , rowId, rowVal )
+                , SliceData, Dim2D, Dims2D, LocalCurves, Point2D
+                , rowId, rowVal, a2dr )
 import App.Data.ServerData (SDCurve(..))
 import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
 import Data.Foldable (foldl)
+import Data.Maybe (Maybe(Nothing))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Tuple (Tuple(..))
@@ -33,19 +34,22 @@ curve2dFilter d1 d2 = do
        DF.summarize (\r -> DF.runQuery (DF.summarize id) r.data)
   pure $ A.concat d
 
+fp2dFilter :: forall d. Int -> Int -> Query (DataPoints d) (Array Point2D)
+fp2dFilter d1 d2 = DF.summarize f
+  where
+  f = map (P.toArray <<< P.project2D d1 d2)
+
 fpFilter :: Int -> Query SliceData SliceData
 fpFilter fpId = 
     DF.mutate (\r -> r {data=DF.runQuery dataFilter r.data})
   where 
   dataFilter = DF.filter (\rr -> rr.focusPointId==fpId)
 
-{--paretoPlotPaths :: forall d--}
-                 {--. Number -> Set Int -> Int -> Int--}
-                {---> Query (DataFrame (Link d)) (Array LineData2D)--}
-{--paretoPlotPaths r highlightFronts d1 d2 =--}
-  {----pareto2dSlabs r d1 d2 `DF.chain`--}
-  {--linkAngle2d d1 d2 `DF.chain`--}
-  {--DF.summarize (extractPath' highlightFronts d1 d2)--}
+lc2fp :: forall d. Query (LocalCurves d) (DataPoints d)
+lc2fp = DF.mutate (map (\r -> r.fp))
+
+localFp :: forall d. Int -> Query (DataPoints d) (LocalCurves d)
+localFp fpId = filterFps fpId `DF.chain` fps2lcs
 
 -------------------------------------------
 -- Utility functions used by the queries --
@@ -65,19 +69,9 @@ _2dFilter = DF.mutate f
   f :: {group::Dim2D, data::RawCurve} -> Dims2D
   f r = r {data=DF.runQuery filterCurvePoints r.data}
 
-{--_fpFilter :: Query (DataFrame {group::Int, data::RawCurve})--}
-                   {--(DataFrame FocusPoints2D)--}
-{--_fpFilter = DF.mutate f--}
-  {--where f v = v {data=DF.runQuery filterCurvePoints v.data}--}
-
 group2D :: Query RawCurve Dims2DGrouped
 group2D = DF.group f
   where f (SDCurve c) = Tuple c.d1 c.d2
-
-{--groupFPs :: Query RawCurve--}
-                  {--(DataFrame {group :: Int, data :: RawCurve})--}
-{--groupFPs = DF.group f--}
-  {--where f (SDCurve c) = c.fpid--}
 
 filterCurvePoints :: Query RawCurve (DataFrame CurvePoint)
 filterCurvePoints = DF.mutate f
@@ -85,6 +79,15 @@ filterCurvePoints = DF.mutate f
                         , x2Min: c.x2Start, x2Max: c.x2End 
                         , focusPointId: c.fpid
                         }
+
+filterFps :: forall d. Int -> Query (DataPoints d) (DataPoints d)
+filterFps fpId = DF.filter (\rr -> rowId rr==fpId)
+
+fps2lcs :: forall d. Query (DataPoints d) (LocalCurves d)
+fps2lcs = do
+  fps <- DF.summarize (\r -> {fp: rowVal r, curves: Nothing})
+  pure $ DF.init (a2dr fps)
+
 
 {--setHighlight :: Set Int -> PointData2D -> PointData2D--}
 {--setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}--}

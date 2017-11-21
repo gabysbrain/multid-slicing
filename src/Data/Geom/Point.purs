@@ -22,6 +22,9 @@ instance showPoint :: Show (Point d) where
 fromArray :: forall d. Array Number -> Maybe (Point d)
 fromArray = Just <<< Point
 
+toArray :: forall d. Point d -> Array Number
+toArray (Point p) = p
+
 -- TODO: when we have type-length arrays make this origin function
 -- origin :: Point d
 
@@ -82,4 +85,7 @@ infixl 8 idx as !!!
 
 delAt :: forall d d'. Int -> Point d -> Point d'
 delAt i (Point p) = Point $ unsafePartial $ fromJust $ A.deleteAt i p
+
+updateAt :: forall d. Int -> Number -> Point d -> Point d
+updateAt i x (Point p) = Point $ unsafePartial $ fromJust $ A.updateAt i x p
 

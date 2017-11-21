@@ -42,6 +42,9 @@ type CurvePoints = DataFrame CurvePoint
 type Dim2D = Tuple Int Int
 type Dims2D = { group :: Dim2D, data :: CurvePoints }
 type SliceData = DataFrame Dims2D
+type LocalCurve d = DataRow {fp :: Point d, curves :: Maybe SliceData}
+type LocalCurves d = DataFrame (LocalCurve d)
+type Point2D = DataRow (Array Number) -- 2 numbers!
 
 derive instance newtypeDataRow :: Newtype (DataRow a) _
 

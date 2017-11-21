@@ -1,7 +1,7 @@
 module App.View.SlicePanel where
 
 import Prelude (pure, unit, ($), (<<<))
-import App.Data (CurvePoint)
+import App.Data (CurvePoint, Point2D)
 import App.Events (Event)
 import DOM.Event.Types as ET
 import Pux.DOM.HTML (HTML)
@@ -9,22 +9,35 @@ import Pux.Renderer.React (reactClassWithProps)
 import React (ReactClass)
 import Data.Maybe (Maybe, fromMaybe)
 import Data.Nullable as N
-import Text.Smolder.Markup (EventHandlers, on, (#!))
+import Text.Smolder.Markup (EventHandlers, on)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import slicePanelComponent :: forall props. ReactClass props
 
-slicePanel :: Number -> Number
+globalSlicePanel :: Number -> Number
           -> Array CurvePoint
           -> Array Int
           -> HTML Event
-slicePanel maxX maxY lines fps = _slicePanel props 
+globalSlicePanel maxX maxY lines fps = _slicePanel props 
   where
   props =
     { "data-maxX": maxX
     , "data-maxY": maxY
     , "data-selectedfps": fps
     , "data-hullpaths": lines
+    }
+
+localSlicePanel :: Number -> Number
+          -> Array CurvePoint
+          -> Array Point2D
+          -> HTML Event
+localSlicePanel maxX maxY lines fps = _slicePanel props 
+  where
+  props =
+    { "data-maxX": maxX
+    , "data-maxY": maxY
+    , "data-hullpaths": lines
+    , "data-focuspoints": fps
     }
 
 _slicePanel :: forall props. props -> HTML Event
@@ -44,4 +57,15 @@ onHullClick s = on "onHullClick" saniHandler
   -- FIXME: can we remove the unsafe coerce?
   saniHandler = s <<< N.toMaybe <<< unsafeCoerce 
 
+onFPDrag :: forall ev. (Maybe Point2D -> ev) -> EventHandlers (ET.Event -> ev)
+onFPDrag s = on "onPointDrag" saniHandler
+  where
+  -- FIXME: can we remove the unsafe coerce?
+  saniHandler = s <<< N.toMaybe <<< unsafeCoerce 
+
+onFPRelease :: forall ev. (Maybe Point2D -> ev) -> EventHandlers (ET.Event -> ev)
+onFPRelease s = on "onPointRelease" saniHandler
+  where
+  -- FIXME: can we remove the unsafe coerce?
+  saniHandler = s <<< N.toMaybe <<< unsafeCoerce 
 

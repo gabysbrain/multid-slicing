@@ -4,9 +4,11 @@ import Prelude
 import Loadable (Loadable(..))
 import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
-import App.Data (CurvePoint, ptsFromServerData, fpsFromServerData)
+import Data.Array ((!!))
+import App.Data (CurvePoint, DataPoints, LocalCurves, LocalCurve, Point2D, 
+                 rowId, rowVal, ptsFromServerData, fpsFromServerData)
 import App.Data.ServerData (ServerData(..))
-import App.Queries (internalizeData)
+import App.Queries (internalizeData, localFp)
 import App.Routes (Route)
 import App.State (DataInfo, SelectState(..), State(..), FileLoadError(..))
 import Control.Monad.Aff (Aff(), attempt)
@@ -14,13 +16,15 @@ import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
 import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
 import DOM (DOM)
 import Network.HTTP.Affjax (AJAX, get)
 import Pux (EffModel, noEffects)
 import Pux.DOM.Events (DOMEvent, targetValue)
 import Data.Tuple (fst, snd)
+import Data.Geom.Point (Point)
+import Data.Geom.Point as Pt
 
 data Event 
   = PageView Route
@@ -28,6 +32,8 @@ data Event
   | ReceiveData (Except FileLoadError (DataInfo Int)) -- FIXME: should be d
   | HoverSlice (Array CurvePoint)
   | ClickSlice Int Int (Maybe CurvePoint)
+  | DragFocusPoint Int Int (Maybe Point2D)
+  | UpdateFocusPoints
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -54,20 +60,59 @@ foldp (HoverSlice slices) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded dsi {selectState=foldHoverSlice slices dsi.selectState}}
 foldp (HoverSlice _) st = noEffects st -- shouldn't work unless data loaded
 foldp (ClickSlice d1 d2 cs) (State st@{dataset:Loaded dsi}) = noEffects $ 
-  State st {dataset=Loaded dsi {selectState=foldClickSlice d1 d2 cs dsi.selectState}}
+  State st {dataset=Loaded dsi {selectState=foldClickSlice dsi.focusPoints d1 d2 cs dsi.selectState}}
 foldp (ClickSlice _ _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp (DragFocusPoint d1 d2 fp) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectState=foldFpDrag d1 d2 fp dsi.selectState}}
+foldp (DragFocusPoint _ _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp UpdateFocusPoints st = noEffects st -- shouldn't work unless data loaded
 
-foldHoverSlice :: Array CurvePoint -> SelectState -> SelectState
+--foldSelectState :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
+
+foldHoverSlice :: forall d. Array CurvePoint -> SelectState d -> SelectState d
 foldHoverSlice slices (Global st) = Global st 
   { selectedFocusPoints=foldMap (\g -> Set.singleton g.focusPointId) slices }
 foldHoverSlice _ st@(Local _) = st
 
-foldClickSlice :: Int -> Int -> Maybe CurvePoint -> SelectState -> SelectState
-foldClickSlice _ _ Nothing (Local st) = 
+foldClickSlice :: forall d
+                . DataPoints d
+               -> Int -> Int 
+               -> Maybe CurvePoint 
+               -> SelectState d 
+               -> SelectState d
+foldClickSlice _ _ _ Nothing (Local st) = 
   Global { selectedFocusPoints: Set.empty }
-foldClickSlice _ _ Nothing st@(Global _) = st
-foldClickSlice d1 d2 (Just cp) _ =
-  Local { selectedCurve: {d1: d1, d2: d2, fpId: cp.focusPointId} }
+foldClickSlice _ _ _ Nothing st@(Global _) = st
+foldClickSlice fps d1 d2 (Just cp) _ =
+       initLocalView fps d1 d2 cp
+
+foldFpDrag :: forall d
+            . Int -> Int
+           -> Maybe Point2D
+           -> SelectState d
+           -> SelectState d
+foldFpDrag _ _ Nothing lc = lc
+foldFpDrag _ _ _       (Global st) = Global st
+foldFpDrag d1 d2 (Just pt) (Local st) =
+  Local st { localCurves = mergeFps d1 d2 st.localCurves pt }
+
+mergeFps :: forall d. Int -> Int -> LocalCurves d -> Point2D -> LocalCurves d
+mergeFps d1 d2 curves pt = DF.runQuery (DF.mutate (mergeFpRow d1 d2 pt)) curves
+
+mergeFpRow :: forall d. Int -> Int -> Point2D -> LocalCurve d -> LocalCurve d
+mergeFpRow d1 d2 pt lc =
+  if rowId pt == rowId lc 
+     then map (\c -> {fp:mergeFp d1 d2 (rowVal pt) c.fp, curves: Nothing}) lc
+     else lc
+
+mergeFp :: forall d. Int -> Int -> Array Number -> Point d -> Point d
+mergeFp d1 d2 xs pt = fromMaybe pt $ _mergeFp d1 d2 xs pt
+
+_mergeFp :: forall d. Int -> Int -> Array Number -> Point d -> Maybe (Point d)
+_mergeFp d1 d2 xs pt = do
+  x1 <- xs !! 0
+  x2 <- xs !! 1
+  pure $ Pt.updateAt d1 x1 $ Pt.updateAt d2 x2 pt
 
 mapErr :: Either String String -> Except FileLoadError String
 mapErr = withExcept LoadError <<< except
@@ -95,6 +140,15 @@ initServerData (ServerData sd) = do
          , selectState: Global {selectedFocusPoints: Set.empty}
          }
 
+initLocalView :: forall d
+               . DataPoints d 
+              -> Int -> Int 
+              -> CurvePoint 
+              -> SelectState d
+initLocalView fps d1 d2 cp = Local 
+  { selectedCurve: {d1: d1, d2: d2, fpId: cp.focusPointId} 
+  , localCurves: DF.runQuery (localFp cp.focusPointId) fps 
+  }
 
 dsd :: String -> Except FileLoadError ServerData
 dsd = decodeServerData >>> convErr
