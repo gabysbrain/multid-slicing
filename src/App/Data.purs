@@ -10,7 +10,7 @@ import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
 import Data.DataFrame (DataFrame(..))
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
-import Data.Foldable (class Foldable, foldMap, foldr)
+import Data.Foldable (class Foldable, foldMap, foldr, minimumBy)
 import Data.Traversable (for, traverse)
 import Data.Array as A
 import Data.Array ((..), (!!))
@@ -74,6 +74,13 @@ merge' (Left e1) (Left e2) = Left $ e1 <> e2
 merge' (Right _) (Left e2) = Left e2
 merge' (Left e1) (Right _) = Left e1
 merge' (Right v1) (Right v2) = Right $ v1 <> v2
+
+closestPoint :: forall d. DataPoints d -> Point d -> Maybe (DataPoint d)
+closestPoint dps pt = minimumBy ord dps
+  where
+  ord p1 p2 | P.sqDist (rowVal p1) pt == P.sqDist (rowVal p2) pt = EQ
+  ord p1 p2 | P.sqDist (rowVal p1) pt <  P.sqDist (rowVal p2) pt = LT
+  ord p1 p2                                                      = GT
 
 ptsFromServerData :: forall d
                    . SDPoints 
