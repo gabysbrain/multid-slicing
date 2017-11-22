@@ -4,7 +4,7 @@ import Prelude hiding (div)
 import App.Data (FieldNames, SliceData)
 import App.Events (Event(HoverSlice, ClickSlice, DragFocusPoint, UpdateFocusPoints))
 import App.State (DataInfo, SelectState(..))
-import App.Queries (curve2dFilter, fpFilter, fp2dFilter, lc2fp)
+import App.Queries (curve2dFilter, fpFilter, fp2dFilter, lc2fp, lc2c2d)
 import App.View.SlicePanel as SP
 import Data.Array as A
 import Data.DataFrame as DF
@@ -63,7 +63,8 @@ paretoPlot d1 d2 (Local st) = do
         (fpFilter st.selectedCurve.fpId `DF.chain` curve2dFilter d1 d2) 
         dsi.curves
       fps2d = DF.runQuery (lc2fp `DF.chain` fp2dFilter d1 d2) st.localCurves
-  pure $ SP.localSlicePanel 1.0 1.0 curves2d fps2d
+      xCurves2d = DF.runQuery (lc2c2d d1 d2) st.localCurves
+  pure $ SP.localSlicePanel 1.0 1.0 curves2d xCurves2d fps2d
            #! SP.onFPDrag (DragFocusPoint d1 d2)
            #! SP.onFPRelease (const UpdateFocusPoints)
 

@@ -29,14 +29,16 @@ globalSlicePanel maxX maxY lines fps = _slicePanel props
 
 localSlicePanel :: Number -> Number
           -> Array CurvePoint
+          -> Array CurvePoint
           -> Array Point2D
           -> HTML Event
-localSlicePanel maxX maxY lines fps = _slicePanel props 
+localSlicePanel maxX maxY lines lines2 fps = _slicePanel props 
   where
   props =
     { "data-maxX": maxX
     , "data-maxY": maxY
     , "data-hullpaths": lines
+    , "data-fppaths": lines2
     , "data-focuspoints": fps
     }
 

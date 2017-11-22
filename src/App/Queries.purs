@@ -2,14 +2,14 @@ module App.Queries where
 
 import Prelude
 import App.Data ( DataPoints, DataPoint, CurvePoint, CurvePoints
-                , SliceData, Dim2D, Dims2D, LocalCurves, Point2D
+                , SliceData, Dim2D, Dims2D, LocalCurve, LocalCurves, Point2D
                 , rowId, rowVal, a2dr )
 import App.Data.ServerData (SDCurve(..))
 import Data.Array as A
 import Data.DataFrame (DataFrame, Query)
 import Data.DataFrame as DF
-import Data.Foldable (foldl)
-import Data.Maybe (Maybe(Nothing))
+import Data.Foldable (foldl, foldMap)
+import Data.Maybe (Maybe(Nothing), fromMaybe)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Tuple (Tuple(..))
@@ -45,6 +45,11 @@ fpFilter fpId =
   where 
   dataFilter = DF.filter (\rr -> rr.focusPointId==fpId)
 
+lc2c2d :: forall d. Int -> Int -> Query (LocalCurves d) (Array CurvePoint)
+lc2c2d d1 d2 = do
+  curves <- DF.summarize (localCurve2curve2d d1 d2)
+  pure $ A.concat curves
+
 lc2fp :: forall d. Query (LocalCurves d) (DataPoints d)
 lc2fp = DF.mutate (map (\r -> r.fp))
 
@@ -62,6 +67,16 @@ max2d :: Array (Tuple Number Number) -> Tuple Number Number
 max2d = foldl max' (Tuple 0.0 0.0)
   where
   max' (Tuple x1 y1) (Tuple x2 y2) = Tuple (max x1 x2) (max y1 y2)
+
+localCurve2curve2d :: forall d. Int -> Int -> LocalCurve d -> Array CurvePoint
+localCurve2curve2d d1 d2 lc = 
+  forceFpId (rowId lc) $ DF.runQuery (curve2dFilter d1 d2) $ changeLC lc
+
+changeLC :: forall d. LocalCurve d -> SliceData
+changeLC lc = fromMaybe (DF.init []) (rowVal lc).curves
+
+forceFpId :: Int -> Array CurvePoint -> Array CurvePoint
+forceFpId fpid = map (\r -> r {focusPointId=fpid})
 
 _2dFilter :: Query Dims2DGrouped SliceData
 _2dFilter = DF.mutate f

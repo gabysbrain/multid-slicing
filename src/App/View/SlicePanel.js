@@ -75,6 +75,11 @@ function updateChart(self) {
     drawFocusPoints(self, chartContainer, []);
   }
   drawHullLines(self, chartContainer, hullLines);
+
+  var addlLines = self.props['data-fppaths'];
+  if(addlLines) {
+    drawAddlLines(self, chartContainer, addlLines);
+  }
 }
 
 function isSelected(d, fps) {
@@ -126,6 +131,34 @@ function drawFocusPoints(self, elem, data) {
     .attr('cx', function(d) {return self.state.x(d.row[0]);})
     .attr('cy', function(d) {return self.state.y(d.row[1]);});
   points.exit().remove();
+}
+
+function drawAddlLines(self, elem, data) {
+  //var handleHover = self.props.onHullHover;
+  //var handleClick = self.props.onHullClick;
+  //var selectedFPs = new Set(self.props['data-selectedfps']);
+
+  var lines = elem.selectAll('.user-selected.path').data(data);
+  lines.enter()
+    .append('line')
+      .attr('class', 'user-selected path')
+      .attr('stroke-width', 1)
+      //.attr('stroke-opacity', '0.6')
+      .attr('fill', 'none')
+      .attr('stroke', 'blue')
+      .attr('x1', function(d) { return self.state.x(d.x1Min); })
+      .attr('x2', function(d) { return self.state.x(d.x1Max); })
+      .attr('y1', function(d) { return self.state.y(d.x2Min); })
+      .attr('y2', function(d) { return self.state.y(d.x2Max); });
+  lines
+    .attr('x1', function(d) { return self.state.x(d.x1Min); })
+    .attr('x2', function(d) { return self.state.x(d.x1Max); })
+    .attr('y1', function(d) { return self.state.y(d.x2Min); })
+    .attr('y2', function(d) { return self.state.y(d.x2Max); });
+  //lines
+    //.attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
+    //.attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';});
+  lines.exit().remove();
 }
 
 function drawHullLines(self, elem, data) {
