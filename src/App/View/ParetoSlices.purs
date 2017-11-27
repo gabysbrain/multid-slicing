@@ -2,7 +2,9 @@ module App.View.ParetoSlices where
 
 import Prelude hiding (div)
 import App.Data (FieldNames, SliceData)
-import App.Events (Event(HoverSlice, ClickSlice, DragFocusPoint, UpdateFocusPoints))
+import App.Events (Event( HoverSlice, ClickSlice, DragFocusPoint
+                        , UpdateFocusPoints, AddFocusPoint
+                        ))
 import App.State (DataInfo, SelectState(..))
 import App.Queries (curve2dFilter, fpFilter, fp2dFilter, lc2fp, lc2c2d)
 import App.View.SlicePanel as SP
@@ -26,7 +28,9 @@ import Text.Smolder.Markup ((!), (#!), text)
 
 view :: forall d. DataInfo d -> HTML Event
 view dsi = div $ do
-  deselectButton dsi.selectState
+  div ! className "view-controls" $ do
+    deselectButton dsi.selectState
+    fpAddButton dsi.selectState
   div ! className "splom-view" $ do
     div ! className "splom dims x-axis" $ do
       -- labels for x-axes
@@ -71,12 +75,19 @@ paretoPlot d1 d2 (Local st) = do
 
 deselectButton :: forall d. SelectState d -> HTML Event
 deselectButton (Local _) =
-  deselectButtonBase #! onClick (const $ ClickSlice 1 1 Nothing)
+  deselectButtonBase #! onClick (const $ ClickSlice 1 1 Nothing) -- dims don't mean anything
 deselectButton (Global _) =
   deselectButtonBase ! disabled "true"
 
 deselectButtonBase :: HTML Event
 deselectButtonBase = button ! className "deselect-button" $ text "deselect"
+
+fpAddButton :: forall d. SelectState d -> HTML Event
+fpAddButton (Local _) = button 
+  ! className "fp-add-button" 
+  #! onClick (const AddFocusPoint)
+  $ text "+ fp"
+fpAddButton (Global _) = pure unit -- nothing
 
 fldIdxs :: forall d. FieldNames d -> List (Tuple Int String)
 fldIdxs fns = L.zip (L.range 0 (A.length fns)) (L.fromFoldable fns)

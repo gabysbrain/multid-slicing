@@ -4,10 +4,11 @@ import Prelude
 import Loadable (Loadable(..))
 import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
+import Data.Array as A
 import Data.Array ((!!))
 import App.Data (CurvePoint, SliceData, DataPoints, 
                  LocalCurves, LocalCurve, Point2D, 
-                 rowId, rowVal, ptsFromServerData, fpsFromServerData, 
+                 rowId, rowVal, rowInit, ptsFromServerData, fpsFromServerData, 
                  closestPoint2d)
 import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData, localFp, fpFilter)
@@ -17,7 +18,7 @@ import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap)
+import Data.Foldable (foldMap, maximum)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Set as Set
 import DOM (DOM)
@@ -36,6 +37,7 @@ data Event
   | ClickSlice Int Int (Maybe CurvePoint)
   | DragFocusPoint Int Int (Maybe Point2D)
   | UpdateFocusPoints Int Int
+  | AddFocusPoint
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -70,6 +72,11 @@ foldp (DragFocusPoint _ _ _) st = noEffects st -- shouldn't work unless data loa
 foldp (UpdateFocusPoints d1 d2) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded $ foldSelectedFps d1 d2 dsi}
 foldp (UpdateFocusPoints _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp AddFocusPoint (State st@{dataset:Loaded dsi}) = 
+  { state: State st {dataset=Loaded $ foldAddFocusPoint dsi}
+  , effects: [ pure $ Just $ UpdateFocusPoints 1 2 ] -- default to first 2 dims
+  }
+foldp AddFocusPoint st = noEffects st -- shouldn't work unless data loaded
 
 --foldSelectState :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 
@@ -104,6 +111,26 @@ foldSelectedFps :: forall d. Int -> Int -> DataInfo d -> DataInfo d
 foldSelectedFps _ _ dsi@{selectState:Global _} = dsi
 foldSelectedFps d1 d2 dsi@{selectState:Local st@{localCurves:lcs}} = 
   dsi {selectState=Local st {localCurves=DF.runQuery (updateLocalCurves d1 d2 dsi.focusPoints dsi.curves) lcs}}
+
+foldAddFocusPoint :: forall d. DataInfo d -> DataInfo d
+foldAddFocusPoint dsi@{selectState:Global _} = dsi
+foldAddFocusPoint dsi@{selectState:Local st@{localCurves:lcs}} =
+  dsi {selectState = Local st {localCurves=createNewFp dsi.focusPoints lcs}}
+
+createNewFp :: forall d. DataPoints d -> LocalCurves d -> LocalCurves d
+createNewFp fps lcs = case firstFp fps of
+  Nothing -> lcs
+  Just fp -> lcs <> (DF.init [rowInit {fp:fp, curves:Nothing} (maxId lcs)])
+
+firstFp :: forall d. DataPoints d -> Maybe (Point d)
+firstFp fps = do
+  fp <- A.head $ DF.runQuery (DF.trim 1 `DF.chain` DF.summarize id) fps
+  pure $ Pt.zerosLike (rowVal fp)
+
+maxId :: forall d. LocalCurves d -> Int
+maxId lcs = case maximum $ DF.runQuery (DF.summarize rowId) lcs of
+  Nothing -> 1
+  Just n -> n+1
 
 updateLocalCurves :: forall d
                    . Int -> Int 

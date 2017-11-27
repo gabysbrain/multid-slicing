@@ -60,6 +60,9 @@ rowVal (DataRow r) = r.row
 rowId :: forall a. DataRow a -> Int
 rowId (DataRow r) = r.rowId
 
+rowInit :: forall a. a -> Int -> DataRow a
+rowInit x i = DataRow {rowId: i, row: x}
+
 -- Universal number formatter
 formatNum :: Number -> String
 formatNum = format {comma: false, before: 0, after: 3, abbreviations: false, sign: false}
@@ -114,7 +117,7 @@ lookupField :: StrMap Number -> String -> Except String Number
 lookupField m f = withFail ("field " <> f <> " missing") $ SM.lookup f m
 
 a2dr :: forall a. Array a -> Array (DataRow a)
-a2dr xs = A.zipWith (\r i -> DataRow {rowId:i, row:r}) xs ids
+a2dr xs = A.zipWith rowInit xs ids
   where
   ids = 1..(A.length xs)
 
