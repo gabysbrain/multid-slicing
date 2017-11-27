@@ -63,8 +63,9 @@ paretoPlot d1 d2 (Local st) = do
         (fpFilter st.selectedCurve.fpId `DF.chain` curve2dFilter d1 d2) 
         dsi.curves
       fps2d = DF.runQuery (lc2fp `DF.chain` fp2dFilter d1 d2) st.localCurves
+      fpTargets2d = DF.runQuery (fp2dFilter d1 d2) dsi.focusPoints
       xCurves2d = DF.runQuery (lc2c2d d1 d2) st.localCurves
-  pure $ SP.localSlicePanel 1.0 1.0 curves2d xCurves2d fps2d
+  pure $ SP.localSlicePanel 1.0 1.0 curves2d xCurves2d fpTargets2d fps2d
            #! SP.onFPDrag (DragFocusPoint d1 d2)
            #! SP.onFPRelease (const UpdateFocusPoints)
 

@@ -22,7 +22,9 @@ function _initialState() {
              .tickFormat(d3.format('0.2f')),
     yAxis: d3.axisLeft(yScale)
              .ticks(5)
-             .tickFormat(d3.format('0.2f'))
+             .tickFormat(d3.format('0.2f')),
+
+    isDragging: false
   };
 }
 
@@ -69,11 +71,19 @@ function updateChart(self) {
   yAxis.call(self.state.yAxis);
 
   var chartContainer = svg.select('g.container');
+  var targetFps = self.props['data-fp-targets'];
+  if(targetFps && self.state.isDragging) {
+    drawTargetFocusPoints(self, chartContainer, targetFps);
+  } else {
+    drawTargetFocusPoints(self, chartContainer, []);
+  }
+
   if(focusPoints) {
     drawFocusPoints(self, chartContainer, focusPoints);
   } else {
     drawFocusPoints(self, chartContainer, []);
   }
+  
   drawHullLines(self, chartContainer, hullLines);
 
   var addlLines = self.props['data-fppaths'];
@@ -86,6 +96,18 @@ function isSelected(d, fps) {
   return fps.has(d.focusPointId);
 }
 
+function drawTargetFocusPoints(self, elem, data) {
+  var points = elem.selectAll('.target.point').data(data);
+  points.enter()
+    .append('circle')
+      .attr('class', 'target point')
+      .attr('fill', '#c0c0c0')
+      .attr('r', 1.5)
+      .attr('cx', function(d) { return self.state.x(d.row[0]); })
+      .attr('cy', function(d) { return self.state.y(d.row[1]); });
+  points.exit().remove();
+}
+
 function drawFocusPoints(self, elem, data) {
   var handleDrag = self.props.onPointDrag;
   var handleUpdate = self.props.onPointRelease;
@@ -94,6 +116,7 @@ function drawFocusPoints(self, elem, data) {
   var dragEvt = d3.drag()
     .on('drag', function() {
       if(handleDrag) {
+        self.setState({isDragging: true});
         var newx = self.state.x.invert(d3.event.x);
         var newy = self.state.y.invert(d3.event.y);
 
@@ -106,6 +129,8 @@ function drawFocusPoints(self, elem, data) {
       }
     })
     .on('end', function() {
+      self.setState({isDragging: false});
+
       if(handleUpdate) {
         var newx = self.state.x.invert(d3.event.x);
         var newy = self.state.y.invert(d3.event.y);
