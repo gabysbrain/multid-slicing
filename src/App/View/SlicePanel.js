@@ -157,6 +157,7 @@ function drawFocusPoints(self, elem, data) {
       .attr('cy', function(d) {return self.state.y(d.row[1]);})
       .call(dragEvt);
   points
+    .attr('fill', function(d) {return self.state.fpColor(d.rowId-1);})
     .attr('cx', function(d) {return self.state.x(d.row[0]);})
     .attr('cy', function(d) {return self.state.y(d.row[1]);});
   points.exit().remove();
@@ -180,6 +181,7 @@ function drawAddlLines(self, elem, data) {
       .attr('y1', function(d) { return self.state.y(d.x2Min); })
       .attr('y2', function(d) { return self.state.y(d.x2Max); });
   lines
+    .attr('stroke', function(d) {return self.state.fpColor(d.focusPointId-1);})
     .attr('x1', function(d) { return self.state.x(d.x1Min); })
     .attr('x2', function(d) { return self.state.x(d.x1Max); })
     .attr('y1', function(d) { return self.state.y(d.x2Min); })
