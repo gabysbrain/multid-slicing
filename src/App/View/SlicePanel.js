@@ -1,6 +1,7 @@
 
 const React = require('react');
 const d3 = require('d3');
+const cbColors = require('d3-scale-chromatic');
 
 const Component = React.Component;
 const PropTypes = React.PropTypes;
@@ -9,6 +10,8 @@ function _initialState() {
   var xScale = d3.scaleLinear();
   var yScale = d3.scaleLinear();
 
+  var fpColorScale = d3.scaleOrdinal(cbColors.schemeDark2);
+
   return {
     width: 163,
     height: 163,
@@ -16,6 +19,7 @@ function _initialState() {
 
     x: xScale,
     y: yScale,
+    fpColor: fpColorScale,
 
     xAxis: d3.axisBottom(xScale)
              .ticks(5)
@@ -147,7 +151,7 @@ function drawFocusPoints(self, elem, data) {
   points.enter()
     .append('circle')
       .attr('class', 'focus-point point')
-      .attr('fill', 'blue')
+      .attr('fill', function(d) {return self.state.fpColor(d.rowId-1);})
       .attr('r', 5)
       .attr('cx', function(d) {return self.state.x(d.row[0]);})
       .attr('cy', function(d) {return self.state.y(d.row[1]);})
@@ -170,7 +174,7 @@ function drawAddlLines(self, elem, data) {
       .attr('stroke-width', 1)
       //.attr('stroke-opacity', '0.6')
       .attr('fill', 'none')
-      .attr('stroke', 'blue')
+      .attr('stroke', function(d) {return self.state.fpColor(d.focusPointId-1);})
       .attr('x1', function(d) { return self.state.x(d.x1Min); })
       .attr('x2', function(d) { return self.state.x(d.x1Max); })
       .attr('y1', function(d) { return self.state.y(d.x2Min); })
