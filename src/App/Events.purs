@@ -8,7 +8,7 @@ import Data.Array ((!!))
 import App.Data (CurvePoint, SliceData, DataPoints, 
                  LocalCurves, LocalCurve, Point2D, 
                  rowId, rowVal, ptsFromServerData, fpsFromServerData, 
-                 closestPoint)
+                 closestPoint2d)
 import App.Data.ServerData (ServerData(..))
 import App.Queries (internalizeData, localFp, fpFilter)
 import App.Routes (Route)
@@ -35,7 +35,7 @@ data Event
   | HoverSlice (Array CurvePoint)
   | ClickSlice Int Int (Maybe CurvePoint)
   | DragFocusPoint Int Int (Maybe Point2D)
-  | UpdateFocusPoints
+  | UpdateFocusPoints Int Int
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
@@ -67,9 +67,9 @@ foldp (ClickSlice _ _ _) st = noEffects st -- shouldn't work unless data loaded
 foldp (DragFocusPoint d1 d2 fp) (State st@{dataset:Loaded dsi}) = noEffects $
   State st {dataset=Loaded dsi {selectState=foldFpDrag d1 d2 fp dsi.selectState}}
 foldp (DragFocusPoint _ _ _) st = noEffects st -- shouldn't work unless data loaded
-foldp UpdateFocusPoints (State st@{dataset:Loaded dsi}) = noEffects $
-  State st {dataset=Loaded $ foldSelectedFps dsi}
-foldp UpdateFocusPoints st = noEffects st -- shouldn't work unless data loaded
+foldp (UpdateFocusPoints d1 d2) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded $ foldSelectedFps d1 d2 dsi}
+foldp (UpdateFocusPoints _ _) st = noEffects st -- shouldn't work unless data loaded
 
 --foldSelectState :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 
@@ -100,22 +100,26 @@ foldFpDrag _ _ _       (Global st) = Global st
 foldFpDrag d1 d2 (Just pt) (Local st) =
   Local st { localCurves = mergeFps d1 d2 st.localCurves pt }
 
-foldSelectedFps :: forall d. DataInfo d -> DataInfo d
-foldSelectedFps dsi@{selectState:Global _} = dsi
-foldSelectedFps dsi@{selectState:Local st@{localCurves:lcs}} = 
-  dsi {selectState=Local st {localCurves=DF.runQuery (updateLocalCurves dsi.focusPoints dsi.curves) lcs}}
+foldSelectedFps :: forall d. Int -> Int -> DataInfo d -> DataInfo d
+foldSelectedFps _ _ dsi@{selectState:Global _} = dsi
+foldSelectedFps d1 d2 dsi@{selectState:Local st@{localCurves:lcs}} = 
+  dsi {selectState=Local st {localCurves=DF.runQuery (updateLocalCurves d1 d2 dsi.focusPoints dsi.curves) lcs}}
 
 updateLocalCurves :: forall d
-                   . DataPoints d -> SliceData 
+                   . Int -> Int 
+                  -> DataPoints d -> SliceData 
                   -> DF.Query (LocalCurves d) (LocalCurves d)
-updateLocalCurves fps curves = do
+updateLocalCurves d1 d2 fps curves = do
   loaded <- DF.filter (rowVal >>> (\r -> r.curves) >>> isJust)
+  -- find any newly changed focus points and load their closest curves
   newLoaded <- DF.filter (rowVal >>> (\r -> r.curves) >>> isNothing) `DF.chain`
-               DF.mutate (_procLC fps curves)
+               DF.mutate (_procLC d1 d2 fps curves)
   pure $ loaded <> newLoaded
 
-_procLC :: forall d. DataPoints d -> SliceData -> LocalCurve d -> LocalCurve d
-_procLC fps curves lc = case closestPoint fps (rowVal lc).fp of
+_procLC :: forall d
+         . Int -> Int 
+        -> DataPoints d -> SliceData -> LocalCurve d -> LocalCurve d
+_procLC d1 d2 fps curves lc = case closestPoint2d d1 d2 fps (rowVal lc).fp of
   Nothing -> lc
   Just pt -> map (\lc' -> { fp: rowVal pt
                           , curves: Just $ DF.runQuery (fpFilter (rowId pt)) curves})

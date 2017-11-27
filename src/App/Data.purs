@@ -78,9 +78,14 @@ merge' (Right v1) (Right v2) = Right $ v1 <> v2
 closestPoint :: forall d. DataPoints d -> Point d -> Maybe (DataPoint d)
 closestPoint dps pt = minimumBy ord dps
   where
-  ord p1 p2 | P.sqDist (rowVal p1) pt == P.sqDist (rowVal p2) pt = EQ
-  ord p1 p2 | P.sqDist (rowVal p1) pt <  P.sqDist (rowVal p2) pt = LT
-  ord p1 p2                                                      = GT
+  ord p1 p2 = P.distOrd pt (rowVal p1) (rowVal p2)
+
+closestPoint2d :: forall d. Int -> Int -> DataPoints d -> Point d -> Maybe (DataPoint d)
+closestPoint2d d1 d2 dps pt = minimumBy ord dps
+  where
+  ord p1 p2 = P.distOrd (P.project2D d1 d2 pt) 
+                        (P.project2D d1 d2 (rowVal p1))
+                        (P.project2D d1 d2 (rowVal p2))
 
 ptsFromServerData :: forall d
                    . SDPoints 

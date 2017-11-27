@@ -57,6 +57,12 @@ projectNot2D d1 d2 p = del p
            else delAt d2 <<< delAt d1
 --project' d1 d2 (Point p) = Point $ delAt d1 $ delAt d2 p
 
+distOrd :: forall d. Point d -> Point d -> Point d -> Ordering
+distOrd pivot p1 p2 = compare d1 d2
+  where
+  d1 = sqDist pivot p1
+  d2 = sqDist pivot p2
+
 projectNot :: forall d d'. Int -> Point d -> Point d'
 projectNot d1 p = delAt d1 p
 

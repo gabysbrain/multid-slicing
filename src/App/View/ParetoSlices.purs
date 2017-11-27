@@ -67,7 +67,7 @@ paretoPlot d1 d2 (Local st) = do
       xCurves2d = DF.runQuery (lc2c2d d1 d2) st.localCurves
   pure $ SP.localSlicePanel 1.0 1.0 curves2d xCurves2d fpTargets2d fps2d
            #! SP.onFPDrag (DragFocusPoint d1 d2)
-           #! SP.onFPRelease (const UpdateFocusPoints)
+           #! SP.onFPRelease (const (UpdateFocusPoints d1 d2))
 
 deselectButton :: forall d. SelectState d -> HTML Event
 deselectButton (Local _) =
