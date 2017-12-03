@@ -1,54 +1,145 @@
 module App.View.Mainpage where
 
 import Prelude hiding (div, max, min)
-import Math (sqrt)
-import App.Data (FieldNames, formatNum)
-import App.Events (Event(DataFileChange, LoadStaticFile, ParetoRadiusChange, AngleThreshChange))
+import App.Events (Event(DataFileChange))
 import App.State (State(..), DataInfo, FileLoadError(..))
 import App.View.ParetoSlices as PS
-import Data.Array as A
 import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
 import Pux.DOM.HTML (HTML)
-import Pux.DOM.Events (DOMEvent, onChange, onClick)
-import Text.Smolder.HTML (div, label, h2, input, span, ul, li, p, a)
-import Text.Smolder.HTML.Attributes (className, type', min, max, step, value)
+import Pux.DOM.Events (onChange)
+import Text.Smolder.HTML (div, label, ul, li, p, select, option)
+import Text.Smolder.HTML.Attributes (className, value)
 import Text.Smolder.Markup ((!), (#!), text)
 import Loadable (Loadable(..))
-import Data.DataFrame as DF
-import Data.Int (toNumber)
 
--- TODO: load these from disk somehow
-dataFiles :: Array String
-dataFiles = ["2d_small.csv", "3d_small.csv", "3sphere_50.csv", "sphere_500.csv", "whiskies.csv"]
+datasets :: Array (Tuple String String)
+datasets = 
+  [ Tuple "sphere" "sphere_3d.json"
+  , Tuple "5D sphere" "sphere_5d.json"
+  , Tuple "Tetrahedron" "tet.json"
+  , Tuple "Klein bottle" "klein.json"
+  , Tuple "Cube" "cube.json"
+  , Tuple "Octahedron" "octahedron.json"
+  , Tuple "Dodecahedron" "dodecahedron.json"
+  , Tuple "Isocahedron" "isocahedron.json"
+  , Tuple "5-cell" "4d_simplex.json"
+  , Tuple "Hypercube" "4d_cube.json"
+  , Tuple "16-cell" "16_cell.json"
+  , Tuple "24-cell" "24_cell.json"
+  , Tuple "5-simplex" "5d_simplex.json"
+  , Tuple "5-cube" "5d_cube.json"
+  , Tuple "5-ortho" "5d_ortho.json"
+  , Tuple "bernstein_1f-1_3.json" "bernstein_1f-1_3.json"
+  , Tuple "bernstein_1f1_3.json" "bernstein_1f1_3.json"
+  , Tuple "bernstein_2f-1_3.json" "bernstein_2f-1_3.json"
+  , Tuple "bernstein_2f1_3.json" "bernstein_2f1_3.json"
+  , Tuple "bernstein_3f-1_3.json" "bernstein_3f-1_3.json"
+  , Tuple "bernstein_3f1_3.json" "bernstein_3f1_3.json"
+  , Tuple "bernstein_4f-1_3.json" "bernstein_4f-1_3.json"
+  , Tuple "bernstein_4f1_3.json" "bernstein_4f1_3.json"
+  , Tuple "pos_poly_1f-1_3.json" "pos_poly_1f-1_3.json"
+  , Tuple "pos_poly_1f1_3.json" "pos_poly_1f1_3.json"
+  , Tuple "pos_poly_2f-1_3.json" "pos_poly_2f-1_3.json"
+  , Tuple "pos_poly_2f1_3.json" "pos_poly_2f1_3.json"
+  , Tuple "pos_poly_3f-1_3.json" "pos_poly_3f-1_3.json"
+  , Tuple "pos_poly_3f1_3.json" "pos_poly_3f1_3.json"
+  , Tuple "pos_poly_4f-1_3.json" "pos_poly_4f-1_3.json"
+  , Tuple "pos_poly_4f1_3.json" "pos_poly_4f1_3.json"
+  , Tuple "difference_1f-1_3.json" "difference_1f-1_3.json"
+  , Tuple "difference_1f1_3.json" "difference_1f1_3.json"
+  , Tuple "difference_2f-1_3.json" "difference_2f-1_3.json"
+  , Tuple "difference_2f1_3.json" "difference_2f1_3.json"
+  , Tuple "difference_3f-1_3.json" "difference_3f-1_3.json"
+  , Tuple "difference_3f1_3.json" "difference_3f1_3.json"
+  , Tuple "difference_4f-1_3.json" "difference_4f-1_3.json"
+  , Tuple "difference_4f1_3.json" "difference_4f1_3.json"
+  , Tuple "bernstein_1f-1_4.json" "bernstein_1f-1_4.json"
+  , Tuple "bernstein_1f1_4.json" "bernstein_1f1_4.json"
+  , Tuple "bernstein_2f-1_4.json" "bernstein_2f-1_4.json"
+  , Tuple "bernstein_2f1_4.json" "bernstein_2f1_4.json"
+  , Tuple "bernstein_3f-1_4.json" "bernstein_3f-1_4.json"
+  , Tuple "bernstein_3f1_4.json" "bernstein_3f1_4.json"
+  , Tuple "bernstein_4f-1_4.json" "bernstein_4f-1_4.json"
+  , Tuple "bernstein_4f1_4.json" "bernstein_4f1_4.json"
+  , Tuple "bernstein_5f-1_4.json" "bernstein_5f-1_4.json"
+  , Tuple "bernstein_5f1_4.json" "bernstein_5f1_4.json"
+  , Tuple "pos_poly_1f-1_4.json" "pos_poly_1f-1_4.json"
+  , Tuple "pos_poly_1f1_4.json" "pos_poly_1f1_4.json"
+  , Tuple "pos_poly_2f-1_4.json" "pos_poly_2f-1_4.json"
+  , Tuple "pos_poly_2f1_4.json" "pos_poly_2f1_4.json"
+  , Tuple "pos_poly_3f-1_4.json" "pos_poly_3f-1_4.json"
+  , Tuple "pos_poly_3f1_4.json" "pos_poly_3f1_4.json"
+  , Tuple "pos_poly_4f-1_4.json" "pos_poly_4f-1_4.json"
+  , Tuple "pos_poly_4f1_4.json" "pos_poly_4f1_4.json"
+  , Tuple "pos_poly_5f-1_4.json" "pos_poly_5f-1_4.json"
+  , Tuple "pos_poly_5f1_4.json" "pos_poly_5f1_4.json"
+  , Tuple "difference_1f-1_4.json" "difference_1f-1_4.json"
+  , Tuple "difference_1f1_4.json" "difference_1f1_4.json"
+  , Tuple "difference_2f-1_4.json" "difference_2f-1_4.json"
+  , Tuple "difference_2f1_4.json" "difference_2f1_4.json"
+  , Tuple "difference_3f-1_4.json" "difference_3f-1_4.json"
+  , Tuple "difference_3f1_4.json" "difference_3f1_4.json"
+  , Tuple "difference_4f-1_4.json" "difference_4f-1_4.json"
+  , Tuple "difference_4f1_4.json" "difference_4f1_4.json"
+  , Tuple "difference_5f-1_4.json" "difference_5f-1_4.json"
+  , Tuple "difference_5f1_4.json" "difference_5f1_4.json"
+  , Tuple "bernstein_1f-1_5.json" "bernstein_1f-1_5.json"
+  , Tuple "bernstein_1f1_5.json" "bernstein_1f1_5.json"
+  , Tuple "bernstein_2f-1_5.json" "bernstein_2f-1_5.json"
+  , Tuple "bernstein_2f1_5.json" "bernstein_2f1_5.json"
+  , Tuple "bernstein_3f-1_5.json" "bernstein_3f-1_5.json"
+  , Tuple "bernstein_3f1_5.json" "bernstein_3f1_5.json"
+  , Tuple "bernstein_4f-1_5.json" "bernstein_4f-1_5.json"
+  , Tuple "bernstein_4f1_5.json" "bernstein_4f1_5.json"
+  , Tuple "bernstein_5f-1_5.json" "bernstein_5f-1_5.json"
+  , Tuple "bernstein_5f1_5.json" "bernstein_5f1_5.json"
+  , Tuple "bernstein_6f-1_5.json" "bernstein_6f-1_5.json"
+  , Tuple "bernstein_6f1_5.json" "bernstein_6f1_5.json"
+  , Tuple "pos_poly_1f-1_5.json" "pos_poly_1f-1_5.json"
+  , Tuple "pos_poly_1f1_5.json" "pos_poly_1f1_5.json"
+  , Tuple "pos_poly_2f-1_5.json" "pos_poly_2f-1_5.json"
+  , Tuple "pos_poly_2f1_5.json" "pos_poly_2f1_5.json"
+  , Tuple "pos_poly_3f-1_5.json" "pos_poly_3f-1_5.json"
+  , Tuple "pos_poly_3f1_5.json" "pos_poly_3f1_5.json"
+  , Tuple "pos_poly_4f-1_5.json" "pos_poly_4f-1_5.json"
+  , Tuple "pos_poly_4f1_5.json" "pos_poly_4f1_5.json"
+  , Tuple "pos_poly_5f-1_5.json" "pos_poly_5f-1_5.json"
+  , Tuple "pos_poly_5f1_5.json" "pos_poly_5f1_5.json"
+  , Tuple "pos_poly_6f-1_5.json" "pos_poly_6f-1_5.json"
+  , Tuple "pos_poly_6f1_5.json" "pos_poly_6f1_5.json"
+  , Tuple "difference_1f-1_5.json" "difference_1f-1_5.json"
+  , Tuple "difference_1f1_5.json" "difference_1f1_5.json"
+  , Tuple "difference_2f-1_5.json" "difference_2f-1_5.json"
+  , Tuple "difference_2f1_5.json" "difference_2f1_5.json"
+  , Tuple "difference_3f-1_5.json" "difference_3f-1_5.json"
+  , Tuple "difference_3f1_5.json" "difference_3f1_5.json"
+  , Tuple "difference_4f-1_5.json" "difference_4f-1_5.json"
+  , Tuple "difference_4f1_5.json" "difference_4f1_5.json"
+  , Tuple "difference_5f-1_5.json" "difference_5f-1_5.json"
+  , Tuple "difference_5f1_5.json" "difference_5f1_5.json"
+  , Tuple "difference_6f-1_5.json" "difference_6f-1_5.json"
+  , Tuple "difference_6f1_5.json" "difference_6f1_5.json"
+  ]
 
 view :: State -> HTML Event
 view (State st) =
   div do
-    div ! className "left-panel" $ do
-      uploadPanel ! className "data-upload" 
-      viewDataInfo st.dataset ! className "data-info"
-    viewSlices st.dataset ! className "right-panel"
+    viewOptions
+    viewSlices st.dataset
 
-viewDataInfo :: forall d. Loadable FileLoadError (DataInfo d) -> HTML Event
-viewDataInfo Unloaded = div $ text "Nothing yet!"
-viewDataInfo Loading = div $ text "Loading..."
-viewDataInfo (Failed errs) = viewFileErrors errs
-viewDataInfo (Loaded dsi) =
-  div do
-    label do
-      text "Number of rows: "
-      span $ text $ show $ DF.rows dsi.paretoPoints
-    angleThreshSlider dsi.cosThetaThresh
-    label do
-      text "Dimensions"
-      ul ! className "dimension-list" $ do
-        for_ (A.sort dsi.fieldNames) $ \fn -> do
-          li $ text fn
+viewOptions :: HTML Event
+viewOptions = div ! className "view-options" $ do
+  label $ do
+    text "Dataset:"
+    select #! onChange DataFileChange $ do
+      for_ datasets $ \(Tuple lbl url) ->
+        option ! value url $ text lbl
 
 viewSlices :: forall d. Loadable FileLoadError (DataInfo d) -> HTML Event
 viewSlices Unloaded = div $ text "Nothing yet!"
 viewSlices Loading = div $ text "Loading..."
-viewSlices (Failed errs) = div $ pure unit
+viewSlices (Failed errs) = viewFileErrors errs
 viewSlices (Loaded dsi) = PS.view dsi
 
 viewFileErrors :: FileLoadError -> HTML Event
@@ -58,39 +149,4 @@ viewFileErrors (LoadError err) =
     p $ text "cannot load file"
     ul ! className "details" $ do
       li $ text err
-
-uploadPanel :: HTML Event
-uploadPanel = 
-  div do
-    h2 $ text "Import data"
-    label do
-      text "Upload data"
-      input ! type' "file" #! onChange DataFileChange
-    label do
-      text "Demo data"
-      ul ! className "static-files" $ do
-        for_ dataFiles $ \fn -> do
-          li $
-            a #! onClick (LoadStaticFile fn) $
-              text fn
-
-angleThreshSlider :: Number -> HTML Event
-angleThreshSlider theta = 
-  rangeSlider "cos theta threshold:" AngleThreshChange 0.0 1.0 theta
-  -- #! onChange ParetoRadiusChange
-
-rangeSlider :: String -> (DOMEvent -> Event) -> Number -> Number -> Number -> HTML Event
-rangeSlider name changeEvt minv maxv curv =
-  label do
-    text name
-    div ! className "range-slider" $ do
-      label $ text (formatNum minv)
-      input ! type' "range" 
-            ! min (show minv) 
-            ! max (show maxv) 
-            ! value (show curv) -- FIXME: why doesn't this work!?!?!
-            ! step (show $ maxv / 50.0)
-            #! onChange changeEvt
-      label $ text (formatNum maxv)
-      label $ text (formatNum curv)
 

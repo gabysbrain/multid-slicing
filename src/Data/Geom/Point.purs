@@ -22,6 +22,9 @@ instance showPoint :: Show (Point d) where
 fromArray :: forall d. Array Number -> Maybe (Point d)
 fromArray = Just <<< Point
 
+toArray :: forall d. Point d -> Array Number
+toArray (Point p) = p
+
 -- TODO: when we have type-length arrays make this origin function
 -- origin :: Point d
 
@@ -54,6 +57,12 @@ projectNot2D d1 d2 p = del p
            else delAt d2 <<< delAt d1
 --project' d1 d2 (Point p) = Point $ delAt d1 $ delAt d2 p
 
+distOrd :: forall d. Point d -> Point d -> Point d -> Ordering
+distOrd pivot p1 p2 = compare d1 d2
+  where
+  d1 = sqDist pivot p1
+  d2 = sqDist pivot p2
+
 projectNot :: forall d d'. Int -> Point d -> Point d'
 projectNot d1 p = delAt d1 p
 
@@ -82,4 +91,7 @@ infixl 8 idx as !!!
 
 delAt :: forall d d'. Int -> Point d -> Point d'
 delAt i (Point p) = Point $ unsafePartial $ fromJust $ A.deleteAt i p
+
+updateAt :: forall d. Int -> Number -> Point d -> Point d
+updateAt i x (Point p) = Point $ unsafePartial $ fromJust $ A.updateAt i x p
 

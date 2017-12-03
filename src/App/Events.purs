@@ -3,171 +3,218 @@ module App.Events where
 import Prelude
 import Loadable (Loadable(..))
 import Data.Argonaut (decodeJson)
-import App.Data (ParetoPoints, FieldNames, PointData2D, LineData2D, NeighborGraph, ptsFromServerData, ngFromServerData)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Array as A
+import Data.Array ((!!))
+import App.Data (CurvePoint, SliceData, DataPoints, 
+                 LocalCurves, LocalCurve, Point2D, 
+                 rowId, rowVal, rowInit, ptsFromServerData, fpsFromServerData, 
+                 closestPoint2d)
 import App.Data.ServerData (ServerData(..))
-import App.Queries (nbrs)
+import App.Queries (internalizeData, localFp, fpFilter)
 import App.Routes (Route)
-import App.State (DataInfo, State(..), FileLoadError(..))
-import Control.Monad.Aff (Aff(), makeAff, attempt)
-import Control.Monad.Eff (Eff())
+import App.State (DataInfo, SelectState(..), State(..), FileLoadError(..))
+import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Except (Except, except, throwError, withExcept, runExcept)
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
-import Data.Foldable (foldMap)
-import Data.Maybe (Maybe(..))
-import Data.Number as N
+import Data.Foldable (foldMap, maximum)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Set as Set
 import DOM (DOM)
-import DOM.Event.Types as EVT
-import DOM.File.FileList (item)
-import DOM.File.Types (File, FileList)
-import Network.HTTP.Affjax (AJAX, get, post)
+import Network.HTTP.Affjax (AJAX, get)
 import Pux (EffModel, noEffects)
 import Pux.DOM.Events (DOMEvent, targetValue)
-import Data.Tuple (Tuple(..), snd)
-import Data.String (Pattern(..), Replacement(..), replaceAll)
-
-type SD d = Tuple (Tuple (FieldNames d) (ParetoPoints d)) (NeighborGraph d)
+import Data.Tuple (fst, snd)
+import Data.Geom.Point (Point)
+import Data.Geom.Point as Pt
 
 data Event 
   = PageView Route
-  | ParetoRadiusChange DOMEvent
-  | AngleThreshChange DOMEvent
-  | LoadStaticFile String DOMEvent
   | DataFileChange DOMEvent
-  | ReceiveData (Except FileLoadError (SD Int)) -- FIXME: should be d
-  | HoverParetoFront (Array LineData2D)
-  | HoverParetoPoint (Array PointData2D)
-  -- | StartParetoFilter AppData
-  -- | FinishParetoFilter AppData
-
-foreign import targetFileList :: DOMEvent -> FileList
-foreign import readFileAsText :: forall e
-                               . (String -> Eff e Unit)
-                              -> File
-                              -> Eff e Unit
+  | ReceiveData (Except FileLoadError (DataInfo Int)) -- FIXME: should be d
+  | HoverSlice (Array CurvePoint)
+  | ClickSlice Int Int (Maybe CurvePoint)
+  | DragFocusPoint Int Int (Maybe Point2D)
+  | UpdateFocusPoints Int Int
+  | AddFocusPoint
 
 type AppEffects fx = (ajax :: AJAX, dom :: DOM | fx)
 
 foldp :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
 foldp (PageView route) (State st) = noEffects $ State st { route = route, loaded = true }
-foldp (ParetoRadiusChange ev) (State st) = noEffects $ 
-  case N.fromString (targetValue ev) of
-    Just r  -> updateRadius r (State st)
-    Nothing -> State st
-foldp (AngleThreshChange ev) (State st) = noEffects $ 
-  case N.fromString (targetValue ev) of
-    Just t  -> updateAngleThresh t (State st)
-    Nothing -> State st
 foldp (ReceiveData d) (State st) = noEffects $ 
-  State st { dataset = either Failed (Loaded <<< newDatasetState) $ runExcept d }
-foldp (LoadStaticFile fn _) (State st) =
-  { state: State (st { dataset = Loading })
-  , effects: [ do
-      raw <- loadStaticFile fn
-      sd <- initServerData' $ mapErr raw
-      pure $ Just $ ReceiveData sd
-    ]
-  }
--- load the data from the file the user specified
+  State st { dataset = either Failed Loaded $ runExcept d }
+
+-- load the data from the server
 foldp (DataFileChange ev) (State st) = 
   { state: State (st { dataset = Loading })
   , effects: [ do
-      let f = userFile ev :: Except FileLoadError File
-      raw <- readFile' f
-      -- FIXME: maybe do the pareto calculatino in a separate async event
-      sd <- initServerData' raw
+      let fname = targetValue ev
+      raw <- loadDataFile fname
+      let rawServerData = convErr (raw >>= decodeServerData)
+      let sd = rawServerData >>= initServerData
 
       pure $ Just $ ReceiveData sd
     ]
   }
-foldp (HoverParetoFront pfs) (State st@{dataset:Loaded dsi}) = noEffects $
-  State st {dataset=Loaded dsi {selectedFronts=foldMap (\g -> Set.singleton g.slabId) pfs}}
-foldp (HoverParetoFront _) st = noEffects st
-foldp (HoverParetoPoint pts) (State st@{dataset:Loaded dsi}) = noEffects $
-  State st {dataset=Loaded dsi {selectedPoints=foldMap (\p -> Set.singleton p.rowId) pts}}
-foldp (HoverParetoPoint _) st = noEffects st
 
-newDatasetState :: forall d. SD d -> DataInfo d
-newDatasetState (Tuple (Tuple fns pts) ng) =
-  { paretoPoints: pts
-  , fieldNames: fns
-  , selectedPoints: Set.empty
-  , selectedFronts: Set.empty
-  , paretoRadius: 1.0
-  , cosThetaThresh: 1.0
-  , neighborGraph: ng
+-- user event handling
+foldp (HoverSlice slices) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectState=foldHoverSlice slices dsi.selectState}}
+foldp (HoverSlice _) st = noEffects st -- shouldn't work unless data loaded
+foldp (ClickSlice d1 d2 cs) (State st@{dataset:Loaded dsi}) = noEffects $ 
+  State st {dataset=Loaded dsi {selectState=foldClickSlice dsi.focusPoints d1 d2 cs dsi.selectState}}
+foldp (ClickSlice _ _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp (DragFocusPoint d1 d2 fp) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded dsi {selectState=foldFpDrag d1 d2 fp dsi.selectState}}
+foldp (DragFocusPoint _ _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp (UpdateFocusPoints d1 d2) (State st@{dataset:Loaded dsi}) = noEffects $
+  State st {dataset=Loaded $ foldSelectedFps d1 d2 dsi}
+foldp (UpdateFocusPoints _ _) st = noEffects st -- shouldn't work unless data loaded
+foldp AddFocusPoint (State st@{dataset:Loaded dsi}) = 
+  { state: State st {dataset=Loaded $ foldAddFocusPoint dsi}
+  , effects: [ pure $ Just $ UpdateFocusPoints 1 2 ] -- default to first 2 dims
   }
+foldp AddFocusPoint st = noEffects st -- shouldn't work unless data loaded
+
+--foldSelectState :: ∀ fx. Event -> State -> EffModel State Event (AppEffects fx)
+
+foldHoverSlice :: forall d. Array CurvePoint -> SelectState d -> SelectState d
+foldHoverSlice slices (Global st) = Global st 
+  { selectedFocusPoints=foldMap (\g -> Set.singleton g.focusPointId) slices }
+foldHoverSlice _ st@(Local _) = st
+
+foldClickSlice :: forall d
+                . DataPoints d
+               -> Int -> Int 
+               -> Maybe CurvePoint 
+               -> SelectState d 
+               -> SelectState d
+foldClickSlice _ _ _ Nothing (Local st) = 
+  Global { selectedFocusPoints: Set.empty }
+foldClickSlice _ _ _ Nothing st@(Global _) = st
+foldClickSlice fps d1 d2 (Just cp) _ =
+       initLocalView fps d1 d2 cp
+
+foldFpDrag :: forall d
+            . Int -> Int
+           -> Maybe Point2D
+           -> SelectState d
+           -> SelectState d
+foldFpDrag _ _ Nothing lc = lc
+foldFpDrag _ _ _       (Global st) = Global st
+foldFpDrag d1 d2 (Just pt) (Local st) =
+  Local st { localCurves = mergeFps d1 d2 st.localCurves pt }
+
+foldSelectedFps :: forall d. Int -> Int -> DataInfo d -> DataInfo d
+foldSelectedFps _ _ dsi@{selectState:Global _} = dsi
+foldSelectedFps d1 d2 dsi@{selectState:Local st@{localCurves:lcs}} = 
+  dsi {selectState=Local st {localCurves=DF.runQuery (updateLocalCurves d1 d2 dsi.focusPoints dsi.curves) lcs}}
+
+foldAddFocusPoint :: forall d. DataInfo d -> DataInfo d
+foldAddFocusPoint dsi@{selectState:Global _} = dsi
+foldAddFocusPoint dsi@{selectState:Local st@{localCurves:lcs}} =
+  dsi {selectState = Local st {localCurves=createNewFp dsi.focusPoints lcs}}
+
+createNewFp :: forall d. DataPoints d -> LocalCurves d -> LocalCurves d
+createNewFp fps lcs = case firstFp fps of
+  Nothing -> lcs
+  Just fp -> lcs <> (DF.init [rowInit {fp:fp, curves:Nothing} (maxId lcs)])
+
+firstFp :: forall d. DataPoints d -> Maybe (Point d)
+firstFp fps = do
+  fp <- A.head $ DF.runQuery (DF.trim 1 `DF.chain` DF.summarize id) fps
+  pure $ Pt.zerosLike (rowVal fp)
+
+maxId :: forall d. LocalCurves d -> Int
+maxId lcs = case maximum $ DF.runQuery (DF.summarize rowId) lcs of
+  Nothing -> 1
+  Just n -> n+1
+
+updateLocalCurves :: forall d
+                   . Int -> Int 
+                  -> DataPoints d -> SliceData 
+                  -> DF.Query (LocalCurves d) (LocalCurves d)
+updateLocalCurves d1 d2 fps curves = do
+  loaded <- DF.filter (rowVal >>> (\r -> r.curves) >>> isJust)
+  -- find any newly changed focus points and load their closest curves
+  newLoaded <- DF.filter (rowVal >>> (\r -> r.curves) >>> isNothing) `DF.chain`
+               DF.mutate (_procLC d1 d2 fps curves)
+  pure $ loaded <> newLoaded
+
+_procLC :: forall d
+         . Int -> Int 
+        -> DataPoints d -> SliceData -> LocalCurve d -> LocalCurve d
+_procLC d1 d2 fps curves lc = case closestPoint2d d1 d2 fps (rowVal lc).fp of
+  Nothing -> lc
+  Just pt -> map (\lc' -> { fp: rowVal pt
+                          , curves: Just $ DF.runQuery (fpFilter (rowId pt)) curves})
+                 lc
+
+mergeFps :: forall d. Int -> Int -> LocalCurves d -> Point2D -> LocalCurves d
+mergeFps d1 d2 curves pt = DF.runQuery (DF.mutate (mergeFpRow d1 d2 pt)) curves
+
+mergeFpRow :: forall d. Int -> Int -> Point2D -> LocalCurve d -> LocalCurve d
+mergeFpRow d1 d2 pt lc =
+  if rowId pt == rowId lc 
+     then map (\c -> {fp:mergeFp d1 d2 (rowVal pt) c.fp, curves: Nothing}) lc
+     else lc
+
+mergeFp :: forall d. Int -> Int -> Array Number -> Point d -> Point d
+mergeFp d1 d2 xs pt = fromMaybe pt $ _mergeFp d1 d2 xs pt
+
+_mergeFp :: forall d. Int -> Int -> Array Number -> Point d -> Maybe (Point d)
+_mergeFp d1 d2 xs pt = do
+  x1 <- xs !! 0
+  x2 <- xs !! 1
+  pure $ Pt.updateAt d1 x1 $ Pt.updateAt d2 x2 pt
 
 mapErr :: Either String String -> Except FileLoadError String
 mapErr = withExcept LoadError <<< except
 
-loadStaticFile :: forall e. String -> Aff (ajax::AJAX | e) (Either String String)
-loadStaticFile fn = do
-  let url = "/test_data/" <> fn
+loadDataFile :: forall e. String -> Aff (ajax::AJAX | e) (Either String String)
+loadDataFile fn = do
+  let url = "http://localhost:8000/" <> fn
   res <- attempt $ get url
   pure $ case res of
     Left err -> Left $ show err
     Right r  -> Right r.response
 
-initServerData' :: forall d e. Except FileLoadError String -> Aff (ajax::AJAX | e) (Except FileLoadError (SD d))
-initServerData' raw = case runExcept raw of
-  Left err   -> pure $ throwError err
-  Right raw' -> withExcept LoadError <$> initServerData raw'
+initServerData :: forall d
+                . ServerData 
+               -> Except FileLoadError (DataInfo d)
+initServerData (ServerData sd) = do
+  -- inside Except
+  namesNPoints <- withExcept LoadError $ ptsFromServerData sd.points
+  fps <- withExcept LoadError $ fpsFromServerData sd.focusPoints
+  let curves = DF.runQuery internalizeData (DF.init sd.curves)
+  pure $ { dataPoints: snd namesNPoints
+         , fieldNames: fst namesNPoints
+         , focusPoints: fps
+         , curves: curves
+         , selectState: Global {selectedFocusPoints: Set.empty}
+         }
 
-initServerData :: forall d e. String -> Aff (ajax::AJAX | e) (Except String (SD d))
-initServerData raw = do
-  -- send the raw data to the R server to get pareto 
-  -- points and neighbor graph
-  pd <- except <$> getParetoData raw
-  pure $ do -- inside Except
-    pd' <- pd
-    let (ServerData sd) = pd'
-    namesNPoints <- ptsFromServerData sd.paretoPoints
-    ng <- ngFromServerData (snd namesNPoints) sd.simplexEdges
-    pure $ Tuple namesNPoints ng
+initLocalView :: forall d
+               . DataPoints d 
+              -> Int -> Int 
+              -> CurvePoint 
+              -> SelectState d
+initLocalView fps d1 d2 cp = Local 
+  { selectedCurve: {d1: d1, d2: d2, fpId: cp.focusPointId} 
+  , localCurves: DF.runQuery (localFp cp.focusPointId) fps 
+  }
 
-getParetoData :: forall e. String -> Aff (ajax::AJAX | e) (Either String ServerData)
-getParetoData raw = do
-  let encRaw = formEncodeRaw raw
-  res <- attempt $ post "http://127.0.0.1:8080/pareto" encRaw
-  let decode r = decodeJson r.response :: Either String ServerData
-  pure $ either (Left <<< show) decode res
+dsd :: String -> Except FileLoadError ServerData
+dsd = decodeServerData >>> convErr
 
-updateRadius :: Number -> State -> State
-updateRadius r (State st) = case st.dataset of
-  Loaded dsi -> State $ st {dataset=Loaded (
-    dsi { paretoRadius = r
-        , neighborGraph = DF.runQuery (nbrs r) dsi.paretoPoints
-        })}
-  _ -> State st
+decodeServerData :: String -> Either String ServerData
+decodeServerData raw = do
+  json <- jsonParser raw
+  decodeJson json
+  --where decode r = decodeJson r :: Either String ServerData
 
-updateAngleThresh :: Number -> State -> State
-updateAngleThresh t (State st) = case st.dataset of
-  Loaded dsi -> State $ st {dataset=Loaded (dsi {cosThetaThresh=t})}
-  _ -> State st
-
-readFile :: forall eff. File -> Aff eff String
-readFile f = makeAff (\error success -> readFileAsText success f)
-
-readFile' :: forall eff. Except FileLoadError File -> Aff eff (Except FileLoadError String)
-readFile' f = case runExcept f of
-  Left err -> pure $ throwError err
-  Right f' -> readFile'' f'
-
-readFile'' :: forall eff. File -> Aff eff (Except FileLoadError String)
-readFile'' f = do
-  contents <- readFile f
-  pure $ pure contents
-
-userFile :: EVT.Event -> Except FileLoadError File
-userFile ev = case item 0 fl of
-    Nothing -> throwError NoFile
-    Just f -> pure f
-  where
-  fl = targetFileList ev -- FIXME: replace with readFileList
-
--- replaces all newlines with %0A so R can read it
-formEncodeRaw :: String -> String
-formEncodeRaw = replaceAll (Pattern "\n") (Replacement "%0A")
+convErr :: forall a. Either String a -> Except FileLoadError a
+convErr = either (throwError <<< LoadError) pure
 

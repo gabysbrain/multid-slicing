@@ -1,12 +1,16 @@
 module App.Data where
 
 import Prelude 
-import App.Data.ServerData (SDEdges, SDEdge(..), SDPoints, SDPoint, ServerData(..))
+import App.Data.ServerData ( SDCurves, SDCurve(..) 
+                           , SDPoints, SDPoint
+                           , SDFocusPoints
+                           , ServerData(..)
+                           )
 import Control.Monad.Except (Except, except, runExcept, mapExcept, throwError)
 import Data.DataFrame (DataFrame(..))
 import Data.DataFrame as DF
 import Data.Either (Either(..), either)
-import Data.Foldable (class Foldable, foldMap, foldr)
+import Data.Foldable (class Foldable, foldMap, foldr, minimumBy)
 import Data.Traversable (for, traverse)
 import Data.Array as A
 import Data.Array ((..), (!!))
@@ -27,9 +31,20 @@ import Data.Geom.Point as P
 
 newtype DataRow a = DataRow {rowId :: Int, row :: a}
 type DataPoint d = DataRow (Point d)
+type DataPoints d = DataFrame (DataPoint d)
 type FieldNames d = Array String
-type RawPoints d = DataFrame (DataPoint d)
-type ParetoPoints d = DataFrame (DataPoint d)
+type CurvePoint = { x1Min :: Number, x1Max :: Number
+                  , x2Min :: Number, x2Max :: Number 
+                  , focusPointId :: Int
+                  }
+type CurvePoints = DataFrame CurvePoint
+--type FocusPoints2D = { group :: Int, data :: DataFrame CurvePoint }
+type Dim2D = Tuple Int Int
+type Dims2D = { group :: Dim2D, data :: CurvePoints }
+type SliceData = DataFrame Dims2D
+type LocalCurve d = DataRow {fp :: Point d, curves :: Maybe SliceData}
+type LocalCurves d = DataFrame (LocalCurve d)
+type Point2D = DataRow (Array Number) -- 2 numbers!
 
 derive instance newtypeDataRow :: Newtype (DataRow a) _
 
@@ -45,20 +60,8 @@ rowVal (DataRow r) = r.row
 rowId :: forall a. DataRow a -> Int
 rowId (DataRow r) = r.rowId
 
--- Used for low-level visualization
-type PointData2D = {rowId :: Int, x :: Number, y :: Number, selected :: Boolean}
-type LineData2D = 
-  { slabId :: Int
-  , selected :: Boolean
-  , cosTheta :: Number
-  , points :: Array PointData2D
-  }
-
--- Used for the neighborhood graph
-type Node d = DataPoint d
-type Link d = {linkId :: Int, src :: Node d, tgt :: Node d}
-type AngleLink d = {linkId :: Int, cosTheta :: Number, src :: Node d, tgt :: Node d}
-type NeighborGraph d = {nodes :: DataFrame (Node d), links :: DataFrame (Link d)}
+rowInit :: forall a. a -> Int -> DataRow a
+rowInit x i = DataRow {rowId: i, row: x}
 
 -- Universal number formatter
 formatNum :: Number -> String
@@ -75,34 +78,52 @@ merge' (Right _) (Left e2) = Left e2
 merge' (Left e1) (Right _) = Left e1
 merge' (Right v1) (Right v2) = Right $ v1 <> v2
 
+closestPoint :: forall d. DataPoints d -> Point d -> Maybe (DataPoint d)
+closestPoint dps pt = minimumBy ord dps
+  where
+  ord p1 p2 = P.distOrd pt (rowVal p1) (rowVal p2)
+
+closestPoint2d :: forall d. Int -> Int -> DataPoints d -> Point d -> Maybe (DataPoint d)
+closestPoint2d d1 d2 dps pt = minimumBy ord dps
+  where
+  ord p1 p2 = P.distOrd (P.project2D d1 d2 pt) 
+                        (P.project2D d1 d2 (rowVal p1))
+                        (P.project2D d1 d2 (rowVal p2))
+
 ptsFromServerData :: forall d
                    . SDPoints 
-                  -> Except String (Tuple (FieldNames d) (ParetoPoints d))
+                  -> Except String (Tuple (FieldNames d) (DataPoints d))
 ptsFromServerData pts = do
   r1 <- withFail "No data" $ A.head pts
   let fields = A.sort $ SM.keys r1
-      ids = 1..(A.length pts)
+      --ids = 1..(A.length pts)
   pts' :: Array (Point d) <- for pts $ \pt -> do
     ptArray :: Array Number <- traverse (lookupField pt) fields
     withFail "Invalid point size" $ P.fromArray ptArray
-  let rows = A.zipWith (\r i -> DataRow {rowId:i, row: r}) pts' ids
-  pure $ Tuple fields (DF.init rows)
+  pure $ Tuple fields (DF.init $ a2dr pts')
 
-ngFromServerData :: forall d. ParetoPoints d -> SDEdges -> Except String (NeighborGraph d)
-ngFromServerData pts edges = do
-  let ids = 1..(A.length edges)
-  links <- for (A.zip ids edges) $ \(Tuple id (SDEdge edge)) -> do
-    p1 <- lookupPoint pts edge.p1
-    p2 <- lookupPoint pts edge.p2
-    pure { linkId: id, src: p1, tgt: p2 }
-  pure { nodes: pts, links: DF.init links }
+fpsFromServerData :: forall d
+                   . SDFocusPoints
+                  -> Except String (DataPoints d)
+fpsFromServerData fps = do
+  fps' <- for fps $ \fp ->
+    withFail "Invalid focus point size" $ P.fromArray fp
+  pure $ DF.init (a2dr fps')
+
+curvesFromServerData :: SDCurves -> DataFrame SDCurve
+curvesFromServerData = DF.init
 
 lookupField :: StrMap Number -> String -> Except String Number
 lookupField m f = withFail ("field " <> f <> " missing") $ SM.lookup f m
 
-lookupPoint :: forall d. ParetoPoints d -> Int -> Except String (DataPoint d)
-lookupPoint (DataFrame pts) i = 
-  withFail ("row " <> (show i) <> " not found") $ pts !! (i-1)
+a2dr :: forall a. Array a -> Array (DataRow a)
+a2dr xs = A.zipWith rowInit xs ids
+  where
+  ids = 1..(A.length xs)
+
+{--lookupPoint :: forall d. ParetoPoints d -> Int -> Except String (DataPoint d)--}
+{--lookupPoint (DataFrame pts) i = --}
+  {--withFail ("row " <> (show i) <> " not found") $ pts !! (i-1)--}
 
 withFail :: forall a. String -> Maybe a -> Except String a
 withFail msg = maybe (throwError msg) pure

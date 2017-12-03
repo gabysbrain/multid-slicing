@@ -28,6 +28,27 @@ data.p = pareto.points(data)
 plot.hull.discrete(data.p)
 ```
 
+# Cube
+
+```{r}
+data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5))
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
+# 4D Cube (Tesseract)
+
+```{r}
+data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5), x4=c(0,0.5))
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
+# 5D Cube
+
+```{r}
+data = expand.grid(x1=c(0,0.5), x2=c(0,0.5), x3=c(0, 0.5), x4=c(0,0.5), x5=c(0,0.5))
+plot.hull.discrete(data, filter.pareto=FALSE)
+```
+
 # SCH from the NSGA-II paper
 
 [@Deb:2002]

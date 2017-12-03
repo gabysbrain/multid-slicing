@@ -1,0 +1,299 @@
+---
+title: "Bernstein polynomials"
+header-includes:
+   - \usepackage{subcaption}
+   - \newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
+output: 
+  pdf_document: 
+    fig_caption: yes
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, dev = 'png')
+library(ggplot2)
+source("poly_sample.R")
+#options(expressions=10000) # for thousands of stat_function
+```
+
+
+# Positive and Bernstein polynomials
+
+In physics contexts it is often necessary to fit data with a positive polynomial.
+This is a polynomial that is strictly positive in the domain $[0,1]$. The difficulty
+is that it is very difficult to control a polynomial such that it is positive during
+the fitting process. One method physicists have found to address this is to restrict
+the fitting process to Bernstein polynomials[@Phillips:2003]. Bernstein polynomials
+are very easy to restrict to be strictly positive. However, physicists do not know
+if the space of possible Bernstein polynomials is the same as the space of positive
+polynomials. In other words, can every positive polynomial be represented by a
+corresponding Bernstein polynomial? We can select a large number of polynomials
+and visually compare the spaces in order to understand the differences.
+
+A Bernstein polynomial of degree $n$ is a linear combination of $n+1$ basis 
+polynomials.
+\[
+B_n(x) = \sum_{i=0}^n \beta_i b_{i,n}(x)
+\]
+where $\beta_i$ is a scalar factor and $b_{i,n}$ is a Bernstein basis polynomial.
+These are defined as,
+\[
+b_{i,n}(x) = {n \choose i} x^i (1-x)^{n-i}
+\].
+Each of the Bernstein basis functions is positive in the range $[0,1]$, 
+therefore if we constrain all $\beta_i \ge 0$ then the resulting polynomial
+will also be positive.
+
+## Sampling method
+
+The space of a polynomial of degree $n$ is the range of each of its coefficients.
+For example, for a 2\textsuperscript{nd} degree polynomial, 
+$a_0 + a_1 x + a_2 x^2$, has three coefficients: $a_0$, $a_1$, and $a_2$.
+Since we are only concerned with positivity, any polynomials that differ from
+each other by a positive factor are equivalent. Therefore, we sample a polynomial
+by setting one of the coefficients to either $-1$ or $1$ and then randomly sample
+the remaining coefficients in the range $[-1, 1]$. Since one coefficient is constrained in
+turn to either $-1$ and $1$ we have $2n$ possible polynomials where the remaining
+$n$ coefficients range between $[-1,1]$. We then test to see if each
+polynomial is positive in the domain $[0,1]$. We also determine if the equivalent
+Bernstein polynomial has all $\beta_i \ge 0$. We can compute the $\beta_i$ factors
+because each coefficient $a_j$ is a linear combination of Bernstein coefficients.
+For our two-dimensional example: $a_0 = \beta_0$, $a_1 = 2(\beta_0-\beta_1)$,
+and $a_2=\beta_0 - 2\beta_1 + \beta_2$. Then, for each polynomial we can label
+it as either non-positive, only positive, or positive and Bernstein.
+
+## Evaluation of 2\textsuperscript{nd} degree polynomials
+
+We can evaluate each polynomial by setting a coeffient to $-1$ and $1$ in turn.
+Each sampling consists of $10,000$ samples. Since we are constraining one of
+the three coefficients to a value we can show the space of the remaining
+coefficients in a 2D view such as a scatterplot. For each coefficient setting
+we show which polynomials are positive, which meet our Bernstein criteria, and
+the difference in spaces.
+
+```{r, include=FALSE}
+n = 10000
+cm = c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
+```
+
+
+### Lowest-order coefficient is -1
+
+These are all polynomials $-1 + a_1 * x + a_2 * x^2$. This always produces
+negative polynomials. This is shown in Figure 1.
+
+```{r low_neg, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_0=-1$", out.width='.3\\linewidth'}
+coeffs = cbind(-1, matrix(runif(2*n, min=-1, max=1), ncol=2))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+### Lowest-order coefficient is 1
+
+These are all polynomials $1 + a_1 * x + a_2 * x^2$. This is shown in Figure 2.
+The offset off the x-axis is positive so there is a range of combinations where
+even though $a_2$ is negative (i.e. the parabola opens down) the function is 
+still positive in the domain $[0,1]$. All positive polynomials when $a_0=1$ can
+be represented by Bernstein polynomials.
+
+```{r low_hi, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_0=1$", out.width='.3\\linewidth'}
+coeffs = cbind(1, matrix(runif(2*n, min=-1, max=1), ncol=2))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a1, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a1, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a1, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+
+### $a_1=-1$
+
+These are all polynomials $a_0 - x + a_2 * x^2$. This is shown in Figure 3.
+Here there is an interesting area of the space where we have polynomials that
+are positive but cannot be represented by Bernstein polynomials. There is a
+line at $a_0=0.5$ where we can no longer represent Bernstein polynomials.
+
+```{r, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_1=-1$", out.width='.3\\linewidth'}
+coeffs = cbind(runif(n, min=-1, max=1), -1, runif(n, min=-1, max=1))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+### $a_1=1$
+
+These are all polynomials $a_0 + x + a_2 * x^2$. This is shown in Figure 4.
+Here, all polynomials are constrained such that the parabola points upward. 
+In this case any polynomial with a positive $a_0$ value is positive.
+
+```{r, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_1=1$", out.width='.3\\linewidth'}
+coeffs = cbind(runif(n, min=-1, max=1), 1, runif(n, min=-1, max=1))
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a0, y=a2, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a2, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a2, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+### Highest-order coefficient is -1
+
+These are all polynomials $a_0 + a_1 * x - x^2$. This is shown in Figure 5.
+This is very similar to Figure 1.
+
+```{r, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_2=-1$", out.width='.3\\linewidth'}
+coeffs = cbind(matrix(runif(2*n, min=-1, max=1), ncol=2), -1)
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+
+### Highest-order coefficient is 1
+
+These are all polynomials $a_0 + a_1 * x + x^2$. This is shown in Figure 6.
+There is a difference between the Bernstein and positive polynomials at the line
+from 0,0 to 0.5,-1.
+
+```{r, echo=FALSE,fig.subcap=c("positive vs non-positive polynomials", "Bernstein vs non-Bernstein", "Difference"), fig.cap="$a_2=1$", out.width='.3\\linewidth'}
+coeffs = cbind(matrix(runif(2*n, min=-1, max=1), ncol=2), 1)
+p2d = data.frame(coeffs)
+names(p2d) = c("a0", "a1", "a2")
+p2d$is.pos = apply(p2d, 1, is.positive, domain=c(0,1))
+p2d$is.bern = apply(p2d[,1:3], 1, function(x) all(bern.coeffs(x)>=-1e-9))
+p2d$class = ifelse(p2d$is.pos&p2d$is.bern, 
+                   "both", 
+                   ifelse(p2d$is.pos, 
+                          "pos",
+                          ifelse(p2d$is.bern, 
+                                 "bernstein", 
+                                 "nonpos")))
+p2d$class = factor(p2d$class)
+
+ggplot(p2d, aes(x=a0, y=a1, colour=is.pos)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a1, colour=is.bern)) + 
+  scale_colour_manual(values=cm, limits=c(TRUE,FALSE)) +
+  geom_point() + 
+  theme_bw()
+ggplot(p2d, aes(x=a0, y=a1, colour=class)) + 
+  scale_colour_manual(values=cm, limits=c("both", "nonpos", "pos", "bernstein")) +
+  geom_point() + 
+  theme_bw()
+```
+
+
+## Evaluation of 3\textsuperscript{rd} degree polynomials
+
+Third degree polynomials have four coefficients and if we fix one to a value then there are
+three remaining coefficients. If we want to look at the space of positive
+but non-Bernstein polynomials then we have a polygon.
+

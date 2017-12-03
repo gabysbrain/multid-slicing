@@ -1,0 +1,29 @@
+---
+title: "Klein bottle exploration"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source('server/pareto.R')
+```
+
+## 4D Klein bottle
+
+The 4D Klein bottle doesn't self-intersect.
+
+```{r}
+kleinb = function(theta, phi, r=2, p=2, eps=1e-9) {
+  x = r * (cos(theta/2)*cos(phi) - sin(theta/2)*sin(2*phi))
+  y = r * (sin(theta/2)*cos(phi) + cos(theta/2)*sin(2*phi))
+  z = p * cos(theta) * (1 + eps * sin(phi))
+  w = p * sin(theta) * (1 + eps * sin(phi))
+  cbind(x, y, z, w)
+}
+samples = data.frame(theta=2*pi * runif(50), phi=2*pi * runif(50))
+data = kleinb(samples$theta, samples$phi)
+data = data - min(data)
+data = data / max(data)
+#data.p = pareto.points(data)
+plot.hull.discrete(data, filter.pareto=FALSE)
+```

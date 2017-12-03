@@ -1,4 +1,6 @@
 
+library(doSNOW)
+library(parallel)
 library(geometry)
 library(rPref)
 library(plyr)
@@ -7,17 +9,29 @@ library(ggplot2)
 library(grid)
 library(gridExtra)
 library(randtoolbox)
+#library(rgl)
+
+.run.parallel = FALSE
+
+if(.run.parallel) {
+  # initialize the parallel cluster
+  cl = makeCluster(detectCores()/2, type="SOCK")
+  registerDoSNOW(cl)
+  fun.exports = c(".run.parallel", "filter_all", "all_vars", 
+                  "simplex.point.intersection", "common.cross.range", 
+                  "EPS", "intersect.simplices")
+  clusterExport(cl, fun.exports)
+  #stopCluster(cl)
+}
+
+EPS = 1e-9
 
 # filters a dataset to only include the pareto points
-pareto.points = function(data) {
-  # need to indicate our preferences (maximize all)
-  nms = names(data)
+pareto.points = function(data, nms=names(data)) {
+  # TODO: need to indicate our preferences (maximize all)
   preff = high_
   prefs = Reduce(function(p,nm) p*preff(nm), tail(nms,n=-1), preff(nms[1]))
   psel(data, prefs)
-  #res = data.frame(ppts)
-  #names(res) = names(data)
-  #res
 }
 
 # should only be given pareto points!
@@ -69,20 +83,28 @@ intersect.pts = function(data, edges, fp, d1, d2) {
   }
 }
 
-intersect.simplex = function(simplex, data, fp, d1, d2) {
-  intersects = simplex.intersect.test(d1, d2, fp, data[simplex,])
-  intersects
+intersect.simplices = function(simplices, data, fp, d1, d2) {
+  # initialize the parallel cluster
+  #cl = makeCluster(detectCores()/2, type="SOCK")
+  #registerDoSNOW(cl)
+  #clusterExport(cl, c("simplex.point.intersection", "common.cross.range", "EPS"))
+  adply(simplices, 1, 
+        function(s) simplex.point.intersection(d1, d2, fp, data[s,]),
+        .parallel=.run.parallel)
+        #.paropts=list(.export=c("simplex.point.intersection", "common.cross.range", "EPS")))
+  #stopCluster(cl)
 }
 
 # plotting
 gen.plot.data = function(data, simplexes, n) {
   d = ncol(data)
   focus.points = data.frame(sobol(n,d))
+  focus.points = focus.points * 2 - 1 # everything between -1 and 1
   dims = t(combn(d,2))
-  adply(1:n, 1, function(rid) { # go over all focus points
+  curves = adply(1:n, 1, function(rid) { # go over all focus points
     fp = focus.points[rid,]
     res = adply(dims, 1, function(d) { # all pairs of dims
-      res2 = adply(simplexes, 1, intersect.simplex, data=data, fp=fp, d1=d[1], d2=d[2])
+      res2 = intersect.simplices(simplexes, data, fp, d[1], d[2])
       # remove all the NA rows
       res2 = filter_all(res2, all_vars(!is.na(.)))
       if(nrow(res2)>0) {
@@ -90,12 +112,14 @@ gen.plot.data = function(data, simplexes, n) {
         res2$d2 = d[2]
       }
       res2
-    })
+    }, .parallel=.run.parallel)
     if(nrow(res) > 0) {
       res$fpid = rid
     }
     res
-  })
+  }, .parallel=.run.parallel)
+  list(focus.pts=focus.points,
+       curves=curves)
 }
 
 # append to a list
@@ -148,18 +172,18 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
   for(i in 1:(d-1)) { # d1 varies the slowest
     for(j in (i+1):d) {
       pd = plot.data %>% filter(d1==i&d2==j) %>% unique() %>%
-                     group_by(fpid) %>% 
+                     group_by(fpid) %>%
                      do(cbind(., data.frame(theta=clock.angle(.)))) %>%
                      arrange(fpid, theta)
-      p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) +
-            geom_point(size=0.5)
+      p = ggplot(pd, aes(x=x1,y=x2,group=fpid)) #+
+            #geom_point(size=0.5)
       if(filter.pareto) { # see if we're dealing with polygons or not
         p = p + geom_path(aes(colour=fpid))
       } else {
         p = p + geom_polygon(aes(colour=fpid), fill=NA)
       }
-      p = p + scale_x_continuous(limits=c(0,1)) +
-              scale_y_continuous(limits=c(0,1)) +
+      p = p + scale_x_continuous(limits=c(-1,1)) +
+              scale_y_continuous(limits=c(-1,1)) +
               theme_bw() +
               theme(axis.title.x=element_blank(),
                     axis.title.y=element_blank())
@@ -180,15 +204,27 @@ plot.hull.discrete = function(ppts, dim.labels=NA, n=10, filter.pareto=TRUE) {
                widths=c(0.1,rep(1,d-1)), heights=c(0.2, rep(1,d-1)))
 }
 
-simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
+plot.convhull = function(pts) {
+  ch = delaunayn(pts)
+  tetramesh(ch, pts)
+  axis3d('x', pos=c( NA, 0, 0 ), col = "darkgrey")
+  axis3d('y', pos=c( 0, NA, 0 ), col = "darkgrey")
+  axis3d('z', pos=c( 0, 0, NA ), col = "darkgrey")
+  rgl.viewpoint(fov=0)
+}
+
+simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
+  focus.pt = as.vector(unlist(focus.pt))
   n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
+  n.lambdas = ncol(simplex) + 1
   T = rbind(t(simplex), rep(1,nrow(simplex)))
-  # T may not be square so if it is then pad with the intersection point
+  # T may not be square so if it isn't then pad with the intersection point
   if(nrow(T) != ncol(T)) {
     T = cbind(T, c(focus.pt, 1))
-    T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+    #T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+    #n.lambdas = n.lambdas - 1 # don't try and intersect anything with this extra point
   }
-  # if T is singluar then the simplex lies in a plane
+  # if T is singluar then the simplex lies in the plane we're looking at
   if(det(T)==0) {
     rows = t(combn(nrow(simplex), 2))
     res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
@@ -197,7 +233,7 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
   T.inv = solve(T)
-  
+
   # compute lambda as best we can (there will be 3 parts)
   rr = c(unlist(focus.pt), 1)
   rr[c(d1,d2)] = 0
@@ -212,33 +248,45 @@ simplex.intersect.test = function(d1, d2, focus.pt, simplex) {
   # find the d1 and d2 ranges that make each lambda 0
   intersect.range = data.frame(d1.min=array(NA,n),d1.max=array(NA,n),
                                d2.min=array(NA,n),d2.max=array(NA,n))
-  
+
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  for(i in 1:length(lambda.c)) {
+  for(i in 1:n.lambdas) {
     # put y=mx+b into each other lambda formula and try and get a good range
-    ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
-    if(nrow(ranges)>0) {
-      rng = c(max(ranges[,1]), min(ranges[,2]))
-      if(rng[2]<rng[1]) rng = c(NA,NA)
-
-      # problem is b_n = 1 - b_1 - ... - b_(n-1)
-      # so this requires special work
-      # if we got an intersection then we're good!
-      eps = 1e-9
-      if(all(!is.na(rng)) & abs(rng[1]+1)>eps & abs(rng[2]+1)>eps) {
-                             # all.equal doesn't return false if not equal :/
-        y.rng = (-lambda.x[i] * rng - lambda.c[i])/lambda.y[i]
-        # now we have to check if everything is co-planar
-        intersect.range[i,"d1.min"] = rng[1]
-        intersect.range[i,"d1.max"] = rng[2]
-        intersect.range[i,"d2.min"] = y.rng[1]
-        intersect.range[i,"d2.max"] = y.rng[2]
+    range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
+    if(!is.na(range$x[1])) {
+      if(min(abs(range$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
+        intersect.range[i,"d1.min"] = range$x[1]
+        intersect.range[i,"d1.max"] = range$x[2]
+        intersect.range[i,"d2.min"] = range$y[1]
+        intersect.range[i,"d2.max"] = range$y[2]
       }
     }
   }
 
   intersect.range
+}
+
+# plot the simplex and the intersection plane
+# useful for debugging random errors
+plot.intersect = function(tri.pts, focus.pt, d1, d2) {
+  normal = array(1, 3)
+  normal[c(d1,d2)] = 0
+  plane.pts = c(normal, normal %*% -focus.pt)
+  simplex = rbind(as.matrix(tri.pts), t(focus.pt))
+  base = matrix(c(0,0,0,0,1,0,1,1,0,1,0,0), ncol=3, byrow=TRUE)
+  #base = base * 10
+  #base = base - 5
+  
+  open3d()
+  quads3d(xyz.coords(base), alpha=0.2)
+  tetramesh(matrix(1:4, nrow=1), simplex, clear=FALSE)
+  #planes3d(a=0, b=0, c=1, d=-0.75+1e-5, col="green")
+  planes3d(a=plane.pts[1], b=plane.pts[2], c=plane.pts[3], d=plane.pts[4]+1e-5, col="green")
+  points3d(focus.pt[1], focus.pt[2], focus.pt[3], col="blue", size=10)
+  axes3d(col="black")
+  title3d(xlab="x", ylab="y", zlab="z")
+ # bbox3d(col="grey", alpha=0.7)
 }
 
 clock.angle = function(pts) {
@@ -248,12 +296,99 @@ clock.angle = function(pts) {
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
-  f1 = (lambda.c[i]*lambda.y - lambda.y[i]*lambda.c) /
-    (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
-  f2 = (lambda.y[i] + lambda.c[i]*lambda.y - lambda.y[i]*lambda.c) /
-    (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
-  mtx = matrix(cbind(f1,f2), ncol=2)
-  mtx = mtx[apply(mtx, 1, function(r) all(is.finite(r))),] # remove non-numeric rows
-  matrix(apply(mtx, 1, sort), ncol=2, byrow=TRUE)
+  x.rng = c(NA, NA)
+  y.rng = c(NA, NA)
+  # if one of the factors is 0 things need to be done differently
+  if(lambda.x[i] == 0 & lambda.y[i] == 0) { # FIXME: this could be done more elegantly
+    # no intersection
+    x.rng = c(NA, NA)
+    y.rng = c(NA, NA)
+  } else if(lambda.x[i] == 0) {
+    # solve ly * y + c = 0
+    y = -lambda.c[i] / lambda.y[i]
+    # replace y in all other formulas and solve lx * x + ly * y + lc >=0 for x
+    xs = lambda.x[-i]
+    cs = lambda.y[-i] * y + lambda.c[-i]
+    res = -cs / xs
+    if(any(xs==0) & any(cs[xs==0] < 0)) { # no intersection
+      x.rng = c(NA, NA)
+      y.rng = c(NA, NA)
+    } else {
+      xs.p = xs[is.finite(res)] # for filtering res later
+      res = res[is.finite(res)]
+      x.rng = c(max(res[xs.p>=0]), min(res[xs.p<0]))
+      y.rng = c(y, y)
+      # some bounds checking
+      if(x.rng[2]-x.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
+    }
+  } else if(lambda.y[i] == 0) {
+    # solve lx * x + c = 0
+    x = -lambda.c[i] / lambda.x[i]
+    # replace x in all other formulas and solve lx * x + ly * y + lc >=0 for y
+    ys = lambda.y[-i]
+    cs = lambda.x[-i] * x + lambda.c[-i]
+    res = -cs / ys
+    if(any(ys==0) & any(cs[ys==0] < 0)) { # no intersection
+      x.rng = c(NA, NA)
+      y.rng = c(NA, NA)
+    } else {
+      res = -cs / ys
+      ys.p = ys[is.finite(res)] # for filtering res later
+      res = res[is.finite(res)]
+      x.rng = c(x, x)
+      y.rng = c(max(res[ys.p>=0]), min(res[ys.p<0]))
+      # some bounds checking
+      if(y.rng[2]-y.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
+    }
+  } else {
+    # assumes lx[i] and ly[i] are non-zero
+    # solve lx * x + ly * y + c = 0 and substitute
+    xs = lambda.x[-i] - lambda.y[-i] * lambda.x[i] / lambda.y[i]
+    cs = lambda.c[-i] - lambda.y[-i] * lambda.c[i] / lambda.y[i]
+    # need to solve xs + cs >= 0
+    res = -cs / xs
+    if(any(xs==0) & any(cs[xs==0] < 0)) { # no intersection
+      x.rng = c(NA, NA)
+      y.rng = c(NA, NA)
+    } else {
+      xs.p = xs[is.finite(res)] # for filtering res later
+      res = res[is.finite(res)]
+      x.rng = c(max(res[xs.p>=0]), min(res[xs.p<0])) # divide by negative switches the inequality
+      y.rng = (-lambda.c[i] -lambda.x[i] * x.rng) / lambda.y[i]
+      # some bounds checking
+      if(x.rng[2]-x.rng[1]<(-EPS)) { # y may be in the wrong direction
+        x.rng = c(NA, NA)
+        y.rng = c(NA, NA)
+      }
+    }
+  }
+  
+  list(x=x.rng, y=y.rng)
 }
 
+filter.pareto.segments = function(data) {
+  d = data
+  d$rid = 1:nrow(d)
+  mins = d[,c("d1.min","d2.min","d1","d2","fpid","rid")]
+  maxes = d[,c("d1.max","d2.max","d1","d2","fpid","rid")]
+  res = data.frame(rbind(as.matrix(mins), as.matrix(maxes)))
+  names(res) = c("x1","x2","d1","d2","fpid","rid")
+  res[1:nrow(d),"type"] = "min"
+  res[(nrow(d)+1):(2*nrow(d)),"type"] = "max"
+  # find the pareto points, we need the rowids to filter data
+  pr = res %>%
+    group_by(d1, d2, fpid) %>%
+    pareto.points(nms=c("x1","x2")) %>%
+    ungroup() %>%
+    as.data.frame() %>%
+    select(rid, type)
+  # only allow rows where both the min and max are pareto
+  pareto.rows = inner_join(pr[pr$type=="min",], pr[pr$type=="max",], by="rid")$rid
+  data[pareto.rows,]
+}
