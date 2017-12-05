@@ -33,3 +33,35 @@ fix.pointdata = function(pd) {
   }
   pd
 }
+
+time.hull.gen = function(fname, points, n=10) {
+  res = list(name=fname, dims=ncol(points), simplices=NA, 
+             user.sec=NA, sys.sec=NA, ttl.sec=NA)
+  if(nrow(points)<ncol(points)+1) {
+    warning("insufficient point list")
+    write_json(list(points=c(), curves=c()), fname)
+    return(res)
+  }
+  simplexes = convhulln(points) # these are d-1 dimensional simplexes
+  if(nrow(simplexes)==0) warning("cannot generate simplexes")
+
+  res$simplices = nrow(simplexes)
+
+  times = system.time({curve.data = gen.plot.data(points, simplexes, n)})
+  #if(filter.pareto) {
+    #curve.data = filter.pareto.segments(curve.data)
+  #}
+
+  res$user.sec = times[1]
+  res$sys.sec = times[2]
+  res$ttl.sec = times[3]
+
+  json = list(
+    points=fix.pointdata(points),
+    curves=curve.data$curves,
+    focusPoints=as.matrix(curve.data$focus.pts)
+  )
+  write_json(json, fname)
+  res
+}
+
