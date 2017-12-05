@@ -35,6 +35,7 @@ fix.pointdata = function(pd) {
 }
 
 time.hull.gen = function(fname, points, n=10) {
+  print(str_c("timing ", fname))
   res = list(name=fname, dims=ncol(points), simplices=NA, 
              user.sec=NA, sys.sec=NA, ttl.sec=NA)
   if(nrow(points)<ncol(points)+1) {
