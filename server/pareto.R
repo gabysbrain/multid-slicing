@@ -46,43 +46,6 @@ delaunay.edges = function(ppts) {
   unique(res)
 }
 
-# 3D convex hull w/ plane intersection
-segment.intersects = function(fp, d1, d2, pt1, pt2) {
-  # since everything on the d1xd2 plane conatains all numbers we 
-  # can just cheat with 0
-  fp.p = unlist(fp)
-  pt1.p = unlist(pt1)
-  pt2.p = unlist(pt2)
-  fp.p[c(d1,d2)] = 0
-  pt1.p[c(d1,d2)] = 0
-  pt2.p[c(d1,d2)] = 0
-  if(all(pt1.p == pt2.p)) return(NULL)
-  
-  t = (fp.p-pt1.p) / (pt2.p-pt1.p)
-  t = t[is.finite(t)] # Infs and NaNs aren't important
-  
-  # only inside the segment between 0 and 1
-  if(!is.null(t[1]) & all(t==t[1]) & t[1] >= 0 & t[1] <= 1) {
-    pt1 + t[1] * (pt2-pt1)
-  } else {
-    NULL
-  }
-}
-
-intersect.pts = function(data, edges, fp, d1, d2) {
-  f = function(r) as.data.frame(segment.intersects(fp, d1, d2, data[r$p1,], data[r$p2,]))
-  res = adply(edges, 1, f)
-  if(nrow(res)>0) {
-    res = res[,names(data)]
-    pareto.points(res[!is.na(res[,1]),])
-  } else {
-    # need a proper empty data frame
-    res = data.frame(matrix(nrow=0,ncol=length(names(data))))
-    names(res) = names(data)
-    res
-  }
-}
-
 intersect.simplices = function(simplices, data, fp, d1, d2) {
   # initialize the parallel cluster
   #cl = makeCluster(detectCores()/2, type="SOCK")
