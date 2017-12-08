@@ -6,6 +6,9 @@ const cbColors = require('d3-scale-chromatic');
 const Component = React.Component;
 const PropTypes = React.PropTypes;
 
+var baseStokeWidth = 2;
+var selectStrokeWidth = 3;
+
 function _initialState() {
   var xScale = d3.scaleLinear();
   var yScale = d3.scaleLinear();
@@ -226,7 +229,9 @@ function drawHullLines(self, elem, data) {
         }
       })
       .attr('class', 'pareto-front path')
-      .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
+      .attr('stroke-width', function(d) {
+        return isSelected(d, selectedFPs) ? selectStrokeWidth : baseStrokeWidth;
+      })
       .attr('stroke-opacity', '0.6')
       .attr('fill', 'none')
       .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';})
@@ -235,8 +240,10 @@ function drawHullLines(self, elem, data) {
       .attr('y1', function(d) { return self.state.y(d.x2Min); })
       .attr('y2', function(d) { return self.state.y(d.x2Max); });
   lines
-    .attr('stroke-width', function(d) {return isSelected(d, selectedFPs) ? 1.5 : 1;})
-    .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';});
+    .attr('stroke-width', function(d) {
+      return isSelected(d, selectedFPs) ? selectStrokeWidth : baseStrokeWidth;
+    })
+    .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';})
   lines.exit().remove();
 }
 
