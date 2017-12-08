@@ -1,5 +1,4 @@
 
-library(doSNOW)
 library(parallel)
 library(geometry)
 library(rPref)
@@ -15,6 +14,7 @@ library(MASS)
 .run.parallel = FALSE
 
 if(.run.parallel) {
+  library(doSNOW)
   # initialize the parallel cluster
   cl = makeCluster(detectCores()/2, type="SOCK")
   registerDoSNOW(cl)
