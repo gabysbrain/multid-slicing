@@ -218,7 +218,7 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
     # put y=mx+b into each other lambda formula and try and get a good range
     range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(range$x[1])) {
-      if(min(abs(range$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
+      if(min(abs(range$x-focus.pt[d1])) > EPS & min(abs(range$x-focus.pt[d2])) > EPS) { # only if we don't hit the extra focus point
         intersect.range[i,"d1.min"] = range$x[1]
         intersect.range[i,"d1.max"] = range$x[2]
         intersect.range[i,"d2.min"] = range$y[1]
