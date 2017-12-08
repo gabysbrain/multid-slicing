@@ -82,7 +82,7 @@ gen.plot.data = function(data, simplexes, n) {
     res
   }, .parallel=.run.parallel)
   list(focus.pts=focus.points,
-       curves=curves)
+       curves=curves[,-1])
 }
 
 # append to a list
