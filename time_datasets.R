@@ -4,7 +4,7 @@ source('poly_sample.R')
 source('klein_bottle_datagen.R')
 library(stringr)
 
-n.slices = 5000
+n.slices = 1000
 tau = (1+sqrt(5)) / 2 # golden ratio
 
 norm.data = function(d) {
