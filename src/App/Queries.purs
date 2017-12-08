@@ -40,10 +40,7 @@ fp2dFilter d1 d2 = DF.summarize f
   f = map (P.toArray <<< P.project2D d1 d2)
 
 fpFilter :: Int -> Query SliceData SliceData
-fpFilter fpId = 
-    DF.mutate (\r -> r {data=DF.runQuery dataFilter r.data})
-  where 
-  dataFilter = DF.filter (\rr -> rr.focusPointId==fpId)
+fpFilter fpId = DF.groupQuery (DF.filter (\rr -> rr.focusPointId==fpId))
 
 lc2c2d :: forall d. Int -> Int -> Query (LocalCurves d) (Array CurvePoint)
 lc2c2d d1 d2 = do
@@ -79,17 +76,14 @@ forceFpId :: Int -> Array CurvePoint -> Array CurvePoint
 forceFpId fpid = map (\r -> r {focusPointId=fpid})
 
 _2dFilter :: Query Dims2DGrouped SliceData
-_2dFilter = DF.mutate f
-  where 
-  f :: {group::Dim2D, data::RawCurve} -> Dims2D
-  f r = r {data=DF.runQuery filterCurvePoints r.data}
+_2dFilter = DF.groupQuery mutateCurvePoints
 
 group2D :: Query RawCurve Dims2DGrouped
 group2D = DF.group f
   where f (SDCurve c) = Tuple c.d1 c.d2
 
-filterCurvePoints :: Query RawCurve (DataFrame CurvePoint)
-filterCurvePoints = DF.mutate f
+mutateCurvePoints :: Query RawCurve (DataFrame CurvePoint)
+mutateCurvePoints = DF.mutate f
   where f (SDCurve c) = { x1Min: c.x1Start, x1Max: c.x1End
                         , x2Min: c.x2Start, x2Max: c.x2End 
                         , focusPointId: c.fpid
@@ -103,15 +97,4 @@ fps2lcs = do
   fps <- DF.summarize (\r -> {fp: rowVal r, curves: Nothing})
   pure $ DF.init (a2dr fps)
 
-
-{--setHighlight :: Set Int -> PointData2D -> PointData2D--}
-{--setHighlight highlightPts pt = pt {selected=Set.member pt.rowId highlightPts}--}
-
-{--cosTheta2d :: forall d. Int -> Int -> Link d -> Number--}
-{--cosTheta2d d1 d2 {src:p1,tgt:p2} = sqrt (V.sqLen v' / V.sqLen v)--}
-  {--where--}
-  {--p1' = P.project2D d1 d2 <$> p1--}
-  {--p2' = P.project2D d1 d2 <$> p2--}
-  {--v = rowVal $ V.fromPoints <$> p1 <*> p2--}
-  {--v' = rowVal $ V.fromPoints <$> p1' <*> p2'--}
 
