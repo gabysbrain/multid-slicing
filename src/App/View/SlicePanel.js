@@ -244,6 +244,10 @@ function drawHullLines(self, elem, data) {
       return isSelected(d, selectedFPs) ? selectStrokeWidth : baseStrokeWidth;
     })
     .attr('stroke', function(d) {return isSelected(d, selectedFPs) ? 'red' : 'black';})
+    .attr('x1', function(d) { return self.state.x(d.x1Min); })
+    .attr('x2', function(d) { return self.state.x(d.x1Max); })
+    .attr('y1', function(d) { return self.state.y(d.x2Min); })
+    .attr('y2', function(d) { return self.state.y(d.x2Max); });
   lines.exit().remove();
 }
 
