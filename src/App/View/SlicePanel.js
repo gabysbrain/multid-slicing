@@ -6,7 +6,7 @@ const cbColors = require('d3-scale-chromatic');
 const Component = React.Component;
 const PropTypes = React.PropTypes;
 
-var baseStokeWidth = 2;
+var baseStrokeWidth = 2;
 var selectStrokeWidth = 3;
 
 function _initialState() {
