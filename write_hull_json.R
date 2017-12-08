@@ -1,6 +1,10 @@
-library(jsonlite)
+library(RJSONIO)
 library(stringr)
 source('server/pareto.R')
+
+write_json = function(obj, fname) {
+  writeChar(toJSON(obj), fname)
+}
 
 write.hull.json = function(fname, points, filter.pareto=FALSE, n=10) {
   if(nrow(points)<ncol(points)+1) {
