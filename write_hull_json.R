@@ -8,12 +8,13 @@ write.hull.json = function(fname, points, filter.pareto=FALSE, n=10) {
     write_json(list(points=c(), curves=c()), fname)
     return()
   }
-  simplexes = convhulln(points) # these are d-1 dimensional simplexes
-  if(nrow(simplexes)==0) warning("cannot generate simplexes")
-  curve.data = gen.plot.data(points, simplexes, n)
+  simplices = convhulln(points) # these are d-1 dimensional simplexes
   if(filter.pareto) {
-    curve.data = filter.pareto.segments(curve.data)
+    simplices = filter.pareto.faces(points, simplices)
   }
+  if(nrow(simplices)==0) warning("cannot generate simplices")
+  curve.data = gen.plot.data(points, simplices, n)
+  
   json = list(
     points=fix.pointdata(points),
     curves=curve.data$curves,

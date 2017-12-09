@@ -2,6 +2,8 @@ source('server/pareto.R')
 source('write_hull_json.R')
 source('poly_sample.R')
 source('klein_bottle_datagen.R')
+source('sphere_sample.R')
+source('dltz.R')
 library(stringr)
 
 n.slices = 50
@@ -22,12 +24,20 @@ poly.space.convhull = function(pts, fname) {
 # 3d sphere pareto
 sphere.3d = read.csv("static/test_data/3sphere_50.csv")
 sphere.3d.p = pareto.points(sphere.3d)
-write.hull.json("json/sphere_3d.json", sphere.3d.p, filter.pareto=FALSE, n=n.slices)
+write.hull.json("json/sphere_3d_pareto.json", sphere.3d.p, filter.pareto=TRUE, n=n.slices)
 
 # 5d sphere pareto
 sphere.5d = read.csv("static/test_data/sphere_50.csv")
 sphere.5d.p = pareto.points(sphere.5d)
-write.hull.json("json/sphere_5d.json", sphere.5d.p, filter.pareto=FALSE, n=n.slices)
+write.hull.json("json/sphere_5d_pareto.json", sphere.5d.p, filter.pareto=TRUE, n=n.slices)
+
+# DLTZ (3d pareto front in 5D)
+f = dltz5(3,5)
+samples = matrix(runif(100*5), ncol=5)
+dltz35.data = data.frame(f(samples))
+dltz35.data = 1 - dltz35.data / max(dltz35.data) # scale and flip
+dltz35.data.p = pareto.points(dltz35.data)
+write.hull.json("json/dltz_3_5.json", dltz35.data.p, filter.pareto=TRUE, n=n.slices)
 
 # tet
 tet.data = data.frame(x1=c(1,1,-1,-1), x2=c(1,-1,1,-1), x3=c(1,-1,-1,1))
@@ -63,6 +73,10 @@ isoc.data = rbind(
 isoc.data = norm.data(isoc.data)
 write.hull.json("json/isocahedron.json", isoc.data, filter.pareto=FALSE, n=n.slices)
 
+# 3D sphere
+sphere.3d.data = sphere.samp(150,3)
+write.hull.json("json/sphere_3d.json", sphere.3d.data, filter.pareto=FALSE, n=n.slices)
+
 # 5-cell (4D simplex)
 cell5.data = data.frame(
   x1=c(1,1,-1,-1,0), 
@@ -94,6 +108,10 @@ cell24.data = rbind(
 cell24.data = norm.data(cell24.data)
 write.hull.json("json/24_cell.json", cell24.data, filter.pareto=FALSE, n=n.slices)
 
+# 4D sphere
+sphere.4d.data = sphere.samp(200,4)
+write.hull.json("json/sphere_4d.json", sphere.4d.data, filter.pareto=FALSE, n=n.slices)
+
 # 5-simplex
 simplex5.data = data.frame(
   x1=c(rep(1/sqrt(15),5), -sqrt(5)/sqrt(3)),
@@ -114,11 +132,15 @@ ortho5.data = rbind(diag(5), -1*diag(5))
 names(ortho5.data) = str_c("x", 1:5)
 write.hull.json("json/5d_ortho.json", ortho5.data, filter.pareto=FALSE, n=n.slices)
 
+# 5D sphere
+sphere.5d.data = sphere.samp(250,5)
+write.hull.json("json/sphere_5d.json", sphere.5d.data, filter.pareto=FALSE, n=n.slices)
+
 # klein bottle
 samples = data.frame(theta=2*pi * runif(n), phi=2*pi * runif(n))
 kb.data = kleinb(samples$theta, samples$phi)
-kb.data = data - min(data)
-kb.data = data / max(data)
+kb.data = kb.data - min(kb.data)
+kb.data = kb.data / max(kb.data)
 write.hull.json("json/klein.json", kb.data, filter.pareto=FALSE, n=n.slices)
 
 # Polynomials
