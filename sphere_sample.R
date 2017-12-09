@@ -5,6 +5,18 @@ n.samples = 50
 r = 1
 dim = 3
 
+sphere.samp = function(n,dims) {
+  d = matrix(NA, nrow=n, ncol=dims)
+  for(i in 1:n) {
+    # from http://mathworld.wolfram.com/HyperspherePointPicking.html
+    x = rnorm(dims)
+    d[i,] = x / sqrt(sum(x*x))
+  }
+  d = data.frame(d)
+  names(d) = str_c("x", 1:dims)
+  d
+}
+
 upper.samp = function(n,dims) {
   d = matrix(NA, nrow=n, ncol=dims)
   for(i in 1:n) {
