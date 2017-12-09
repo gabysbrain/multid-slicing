@@ -215,7 +215,8 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
 
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  for(i in 1:n.lambdas) {
+  #for(i in 1:n.lambdas) {
+  i=n.lambdas
     # put y=mx+b into each other lambda formula and try and get a good range
     range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(range$x[1])) {
@@ -226,7 +227,7 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
         intersect.range[i,"d2.max"] = range$y[2]
       }
     }
-  }
+  #}
 
   intersect.range
 }
