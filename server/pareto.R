@@ -9,6 +9,7 @@ library(ggplot2)
 library(grid)
 library(gridExtra)
 library(randtoolbox)
+library(MASS)
 #library(rgl)
 
 .run.parallel = FALSE
@@ -335,23 +336,29 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
   list(x=x.rng, y=y.rng)
 }
 
-filter.pareto.segments = function(data) {
-  d = data
-  d$rid = 1:nrow(d)
-  mins = d[,c("d1.min","d2.min","d1","d2","fpid","rid")]
-  maxes = d[,c("d1.max","d2.max","d1","d2","fpid","rid")]
-  res = data.frame(rbind(as.matrix(mins), as.matrix(maxes)))
-  names(res) = c("x1","x2","d1","d2","fpid","rid")
-  res[1:nrow(d),"type"] = "min"
-  res[(nrow(d)+1):(2*nrow(d)),"type"] = "max"
-  # find the pareto points, we need the rowids to filter data
-  pr = res %>%
-    group_by(d1, d2, fpid) %>%
-    pareto.points(nms=c("x1","x2")) %>%
-    ungroup() %>%
-    as.data.frame() %>%
-    select(rid, type)
-  # only allow rows where both the min and max are pareto
-  pareto.rows = inner_join(pr[pr$type=="min",], pr[pr$type=="max",], by="rid")$rid
-  data[pareto.rows,]
+filter.pareto.faces = function(data, simplices) {
+  dims = ncol(data)
+  ids = c()
+  for(d in 1:dims) {
+    ids = c(ids, which(data[,d]==min(data[,d])), which(data[,d]==max(data[,d])))
+  } # remove anything that only connects to the mins/maxes
+  front.face = aaply(simplices, 1, function(s) {
+    !all(s %in% ids)
+  })
+  # front.face = aaply(simplices, 1, function(s) {
+  #   # need to see which side of the plane the origin is on
+  #   pts = data[s,]
+  #   n = plane.normal(pts)
+  #   d = -dot(n, unlist(pts[1,]))
+  #   # see if the origin is behind the plane
+  #   dot(c(n,d), c(rep(0,dims),1)) < 0
+  # })
+  simplices[front.face,]
 }
+
+plane.normal = function(pts) {
+  p = adply(pts,1,"-", pts[nrow(pts),], .id=NULL)
+  p = p[-nrow(p),] # last row is all 0
+  as.vector(Null(t(p)))
+}
+
