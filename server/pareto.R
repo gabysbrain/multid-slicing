@@ -316,23 +316,35 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
 }
 
 filter.pareto.faces = function(data, simplices) {
-  dims = ncol(data)
-  ids = c()
-  for(d in 1:dims) {
-    ids = c(ids, which(data[,d]==min(data[,d])), which(data[,d]==max(data[,d])))
-  } # remove anything that only connects to the mins/maxes
-  front.face = aaply(simplices, 1, function(s) {
-    !all(s %in% ids)
-  })
+  # dims = ncol(data)
+  # ids = c()
+  # for(d in 1:dims) {
+  #   ids = c(ids, which(data[,d]==min(data[,d])), which(data[,d]==max(data[,d])))
+  # } # remove anything that only connects to the mins/maxes
   # front.face = aaply(simplices, 1, function(s) {
-  #   # need to see which side of the plane the origin is on
-  #   pts = data[s,]
-  #   n = plane.normal(pts)
-  #   d = -dot(n, unlist(pts[1,]))
-  #   # see if the origin is behind the plane
-  #   dot(c(n,d), c(rep(0,dims),1)) < 0
+  #   !all(s %in% ids)
   # })
+  front.face = aaply(simplices, 1, function(s) {
+    # if the figure is convex then any points not on the plane are behind it
+    # but we make the back facing planes also face outwards so distances may be positive
+    test.id = head(setdiff(1:nrow(data), s), n=1)
+    test.pt = data[test.id,]
+    p = pos.plane(data[s,])
+    dot(c(p$n, p$d), c(unlist(test.pt), 1)) < 0
+  })
+  #front.face[] = TRUE
+  #front.face[28:29] = FALSE
   simplices[front.face,]
+}
+
+pos.plane = function(pts) {
+  n = plane.normal(pts)
+  d = -dot(n, unlist(pts[1,]))
+  if(dot(c(n,d), c(rep(0, ncol(pts)),1)) > 0) {
+    list(n=-n, d=-d)
+  } else {
+    list(n=n, d=d)
+  }
 }
 
 plane.normal = function(pts) {
