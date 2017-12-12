@@ -2,6 +2,7 @@ source('server/pareto.R')
 source('write_hull_json.R')
 source('poly_sample.R')
 source('klein_bottle_datagen.R')
+source('sphere_sample.R')
 library(stringr)
 
 n.slices = 1000
@@ -48,6 +49,18 @@ time.data = rbind(
     kb.data = kb.data - min(kb.data)
     kb.data = kb.data / max(kb.data)
     time.hull.gen("json/klein.json", kb.data, n=n.slices)
+  }, {
+    # sphere
+    sd = sphere.samp(100*3, 3)
+    time.hull.gen("json/sphere_3.json", sd, n=n.slices)
+  }, {
+    # 4 sphere
+    sd = sphere.samp(100*4, 4)
+    time.hull.gen("json/sphere_4.json", sd, n=n.slices)
+  }, {
+    # 5 sphere
+    sd = sphere.samp(100*5, 5)
+    time.hull.gen("json/sphere_5.json", sd, n=n.slices)
   }
 )
 
