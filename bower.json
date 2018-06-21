@@ -12,7 +12,7 @@
     "purescript-css": "^3.0.0",
     "purescript-aff": "^3.0.0",
     "purescript-affjax": "^4.0.0",
-    "purescript-dataframe": "/home/tom/Projects/purescript-dataframe#master",
+    "purescript-dataframe": "git://github.com/gabysbrain/purescript-dataframe#a4c4157ad27fc94754ce345cfc3b142b429b0ad0",
     "Skeleton-Sass": "skeleton-scss#*",
     "purescript-sets": "^3.0.0",
     "purescript-numbers": "^5.0.0",
