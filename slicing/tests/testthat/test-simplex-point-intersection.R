@@ -52,16 +52,21 @@ test_that("3d-embedded triangle in plane (intersection)", {
 test_that("3d-embedded triangle in plane (non-intersection)", {
   res <- simplex.point.intersection(1, 2, c(1.0, 1.0, 0.0), planar.triangle)
 
-  expect_that(nrow(res), equals(4))
-  expect_equal(as.vector(unlist(res)), rep(NA, 4*4))
+  expect_that(nrow(res), equals(1))
+  expect_equal(as.vector(unlist(res)), rep(NA, 4))
 })
 
 test_that("off-axis triangle (intersection)", {
-  #res <- simplex.point.intersection(1, 3, c(0.0719, 0.6409, 0.4756), off.axis.triangle)
   res <- simplex.point.intersection(1, 2, c(0.5, 0.5, 0.5), off.axis.triangle.2)
+
+  expect_that(nrow(res), equals(1))
+  expect_equal(as.vector(unlist(res[1,])), c(0.5, 0.5, 0.0, 0.5))
+})
+
+test_that("off-axis triangle 2 (intersection)", {
+  res <- simplex.point.intersection(1, 3, c(0.5, 0.5, 0.5), off.axis.triangle.2)
   print(res)
 
-  expect_that(nrow(res), equals(4))
-  expect_equal(as.vector(unlist(res[1:3,])), rep(as.numeric(NA), 3*4))
-  expect_equal(as.vector(unlist(res[4,])), c(0.5, 0.5, 0.0, 0.5))
+  expect_that(nrow(res), equals(1))
+  expect_equal(as.vector(unlist(res[1,])), c(0.5, 0.5, 0.0, 0.5))
 })
