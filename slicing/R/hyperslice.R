@@ -29,10 +29,10 @@ hyperslice <- function(mesh, n, focus.points) {
 
   # set up focus points
   if(missing(focus.points)) {
-    if(!is.integer(n)) {
+    if(!is.numeric(n)) {
       stop("n must be an integer")
     }
-    focus.points = data.frame(sobol(n,d))
+    focus.points = data.frame(randtoolbox::sobol(n,d))
     focus.points = focus.points * 2 - 1 # everything between -1 and 1
   } else {
     if(is.null(dim(focus.points))) { # fix vector for single row matrix

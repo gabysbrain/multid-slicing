@@ -9,7 +9,7 @@ intersect.simplices = function(mesh, fp, d1, d2) {
 simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
   focus.pt = as.vector(unlist(focus.pt))
   n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
-  n.lambdas = ncol(simplex) + 1
+
   T = create.T(simplex, focus.pt)
   # if T is singluar then the simplex lies in the plane we're looking at
   if(det(T)==0) {
@@ -20,6 +20,7 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
   T.inv = solve(T)
+  #T.inv = MASS::ginv(T)
 
   # compute lambda as best we can (there will be 3 parts)
   rr = c(unlist(focus.pt), 1)
@@ -38,7 +39,8 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
 
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  for(i in 1:n.lambdas) {
+  for(i in 1:length(lambda.c)) {
+    #i = n.lambdas
     # put y=mx+b into each other lambda formula and try and get a good range
     range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(range$x[1])) {
@@ -53,6 +55,12 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
 
   intersect.range
 }
+
+# create.T = function(simplex, focus.pt) {
+#   T = rbind(t(simplex), rep(1,nrow(simplex)))
+#
+#   matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
+# }
 
 create.T = function(simplex, focus.pt) {
   T = rbind(t(simplex), rep(1,nrow(simplex)))

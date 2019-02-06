@@ -8,5 +8,7 @@
 #'           \code{points} The original point set
 #'           \code{simplices} An \code{m} by \code{dim} matrix containing indices into \code{points} specifying the mesh
 convmesh <- function(points) {
-  list(points=points, simplices=geometry::convhulln(points))
+  r = list(points=points, simplices=geometry::convhulln(points))
+  class(r) = "Mesh"
+  r
 }
