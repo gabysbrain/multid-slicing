@@ -13,4 +13,5 @@ Imports: geometry,
     dplyr,
     plyr
 Suggests:
-    testthat
+    testthat,
+    rgl
