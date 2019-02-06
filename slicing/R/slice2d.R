@@ -1,17 +1,4 @@
 
-# library(parallel)
-# library(geometry)
-# library(rPref)
-# library(plyr)
-# library(dplyr)
-# library(ggplot2)
-# library(grid)
-# library(gridExtra)
-# library(randtoolbox)
-#library(MASS)
-#library(rgl)
-
-
 EPS = 1e-9
 
 intersect.simplices = function(mesh, fp, d1, d2) {
