@@ -23,13 +23,7 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
   focus.pt = as.vector(unlist(focus.pt))
   n = ncol(simplex)+1 # number of lambdas, dimensionality of the space+1
   n.lambdas = ncol(simplex) + 1
-  T = rbind(t(simplex), rep(1,nrow(simplex)))
-  # T may not be square so if it isn't then pad with the intersection point
-  if(nrow(T) != ncol(T)) {
-    T = cbind(T, c(focus.pt, 1))
-    #T[d1,ncol(T)] = T[d2,ncol(T)] = -1
-    #n.lambdas = n.lambdas - 1 # don't try and intersect anything with this extra point
-  }
+  T = create.T(simplex, focus.pt)
   # if T is singluar then the simplex lies in the plane we're looking at
   if(det(T)==0) {
     rows = t(combn(nrow(simplex), 2))
@@ -57,20 +51,32 @@ simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
 
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  #for(i in 1:n.lambdas) {
-  i = n.lambdas
-  # put y=mx+b into each other lambda formula and try and get a good range
-  range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
-  if(!is.na(range$x[1])) {
-    if(min(abs(range$x-focus.pt[d1])) > EPS & min(abs(range$x-focus.pt[d2])) > EPS) { # only if we don't hit the extra focus point
-      intersect.range[i,"d1.min"] = range$x[1]
-      intersect.range[i,"d1.max"] = range$x[2]
-      intersect.range[i,"d2.min"] = range$y[1]
-      intersect.range[i,"d2.max"] = range$y[2]
+  for(i in 1:n.lambdas) {
+    # put y=mx+b into each other lambda formula and try and get a good range
+    range = common.cross.range(lambda.x, lambda.y, lambda.c, i)
+    if(!is.na(range$x[1])) {
+      if(min(abs(range$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
+        intersect.range[i,"d1.min"] = range$x[1]
+        intersect.range[i,"d1.max"] = range$x[2]
+        intersect.range[i,"d2.min"] = range$y[1]
+        intersect.range[i,"d2.max"] = range$y[2]
+      }
     }
   }
 
   intersect.range
+}
+
+create.T = function(simplex, focus.pt) {
+  T = rbind(t(simplex), rep(1,nrow(simplex)))
+  # T may not be square so if it isn't then pad with the intersection point
+  if(nrow(T) != ncol(T)) {
+    T = cbind(T, c(focus.pt, 1))
+    #T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+    #n.lambdas = n.lambdas - 1 # don't try and intersect anything with this extra point
+  }
+
+  matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
