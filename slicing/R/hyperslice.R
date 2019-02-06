@@ -66,7 +66,6 @@ hyperslice <- function(mesh, n, focus.points) {
   })
   slices = curves[,-1]
   names(slices) = c("x1", "y1", "x2", "y2", "d1", "d2", "fpid")
-  list(focusPoints=focus.points,
-       slices=slices)
+  createSliceSet(focus.points, slices)
 }
 
