@@ -11,10 +11,10 @@ exp.slices.1 = list(
     fpid=c(1, 1, 1),
     d1=c(1, 1, 2),
     d2=c(2, 3, 3),
-    x1=c(0.5, 0, 0.0),
-    y1=c(0.5, 0, 0.5),
-    x2=c(0.0, 0, 0.5),
-    y2=c(0.5, 0, 0.5)
+    d1Min=c(0.5, 0, 0.0),
+    d2Min=c(0.5, 0, 0.5),
+    d1Max=c(0.0, 0, 0.5),
+    d2Max=c(0.5, 0, 0.5)
   )
 )
 
@@ -28,6 +28,5 @@ test_that("integer check for n", {
 
 test_that("single slice works", {
   res = hyperslice(test.mesh.1, focus.points=c(0.5, 0.5, 0.5))
-  print(res)
   expect_identical(res, exp.slices.1)
 })
