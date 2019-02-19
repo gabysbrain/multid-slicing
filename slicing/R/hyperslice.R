@@ -34,6 +34,15 @@ hyperslice <- function(mesh, n, focus.points) {
     }
     focus.points = data.frame(randtoolbox::sobol(n,d))
     focus.points = focus.points * 2 - 1 # everything between -1 and 1
+  } else if(any(is.na(focus.points))) {
+    if(!is.numeric(n)) {
+      stop("n must be an integer")
+    }
+    # fill in NAs with random numbers
+    m = matrix(rep(focus.points, n), ncol=length(focus.points), byrow=TRUE)
+    m[is.na(m)] = runif(length(m[is.na(m)])) # TODO: make this work with the ranges of the parameters
+    focus.points = data.frame(m)
+    names(focus.points) = names(mesh$points)
   } else {
     if(is.null(dim(focus.points))) { # fix vector for single row matrix
       focus.points = matrix(focus.points, nrow=1)
