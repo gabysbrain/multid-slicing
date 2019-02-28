@@ -29,3 +29,43 @@ plot.intersect = function(tri.pts, focus.pt, d1, d2) {
   rgl::title3d(xlab="d1", ylab="d2", zlab="d3")
   # bbox3d(col="grey", alpha=0.7)
 }
+
+#' Compute the line of intersection between a triangle and a plane.
+#'
+#' Only works in 3D, but useful for debugging
+#' @param tri The triangle
+#' @param focus.pt A point on the plane
+#' @param d1 \code{d1} and \code{d2} specify the direction of the plane
+#' @param d2
+#' @return A data structure identical to \code{simplex.point.intersection}
+intersect.tri = function(tri, focus.pt, d1, d2) {
+  if(nrow(tri) != 3 || length(focus.pt) != 3) {
+    stop("Only works on 3D objects")
+  }
+
+  # compute the normal
+  n = rep(0, 3)
+  n[-c(d1,d2)] = 1
+
+  # figure out the point projection
+  i1 = as.vector((n %*% (focus.pt - tri[1,])) / (n %*% (tri[2,] - tri[1,])))
+  p1 = tri[1,] + i1 * (tri[2,] - tri[1,])
+  i2 = as.vector((n %*% (focus.pt - tri[1,])) / (n %*% (tri[3,] - tri[1,])))
+  p2 = tri[1,] + i2 * (tri[3,] - tri[1,])
+  i3 = as.vector((n %*% (focus.pt - tri[2,])) / (n %*% (tri[3,] - tri[2,])))
+  p3 = tri[2,] + i3 * (tri[3,] - tri[2,])
+
+  pts = rbind(p1,p2,p3)
+  # only the places of intersection
+  pts = unique(pts[is.finite(pts[,1]),])
+  if(nrow(pts) == 0) {
+    stop("no intersection")
+  }
+  data.frame(d1.min=pts[1,d1], d1.max=pts[2,d1], d2.min=pts[1,d2], d2.max=pts[2,d2])
+}
+
+point.plane.dist = function(pt, plane.pt, plane.n) {
+  p.dist = as.vector(plane.n %*% (pt - plane.pt))
+  p.proj = pt + p.dist * plane.n
+  dist(rbind(pt, p.proj))[1] * sign(p.dist)
+}
