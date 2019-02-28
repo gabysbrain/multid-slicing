@@ -43,6 +43,10 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
     stop("Only works on 3D objects")
   }
 
+  # ensure arguments will work later
+  focus.pt = unlist(focus.pt)
+  tri = matrix(unlist(tri), nrow=nrow(tri))
+
   # compute the normal
   n = rep(0, 3)
   n[-c(d1,d2)] = 1
