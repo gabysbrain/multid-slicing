@@ -20,11 +20,12 @@ plot.intersect = function(tri.pts, focus.pt, d1, d2) {
 
   rgl::open3d()
   rgl::quads3d(xyz.coords(base), alpha=0.2)
-  geometry::tetramesh(matrix(1:4, nrow=1), simplex, clear=FALSE)
+  #geometry::tetramesh(matrix(1:4, nrow=1), simplex, clear=FALSE)
+  rgl::triangles3d(tri.pts[,1],tri.pts[,2],tri.pts[,3],col='purple')
   #planes3d(a=0, b=0, c=1, d=-0.75+1e-5, col="green")
   rgl::planes3d(a=plane.pts[1], b=plane.pts[2], c=plane.pts[3], d=plane.pts[4]+1e-5, col="green")
   rgl::points3d(focus.pt[1], focus.pt[2], focus.pt[3], col="blue", size=10)
   rgl::axes3d(col="black")
-  rgl::title3d(xlab="x", ylab="y", zlab="z")
+  rgl::title3d(xlab="d1", ylab="d2", zlab="d3")
   # bbox3d(col="grey", alpha=0.7)
 }
