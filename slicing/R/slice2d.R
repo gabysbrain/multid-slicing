@@ -2,9 +2,10 @@
 EPS = 1e-9
 
 intersect.simplices = function(mesh, fp, d1, d2) {
-  plyr::adply(mesh$simplices, 1,
-        #function(s) simplex.point.intersection(mesh$points[s,], fp, d1, d2))
-  function(s) intersect.tri(mesh$points[s,], fp, d1, d2))
+  n = nrow(mesh$simplices)
+  purrr::map_dfr(1:n,
+        #function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
+        function(i) intersect.tri(mesh$points[mesh$simplices[i,],], fp, d1, d2))
 }
 
 simplex.point.intersection = function(simplex, focus.pt, d1, d2) {

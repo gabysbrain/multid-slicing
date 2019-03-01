@@ -15,7 +15,8 @@ Imports: geometry,
     magrittr,
     ggplot2,
     gridExtra,
-    rjson
+    rjson,
+    purrr
 Suggests:
     testthat,
     rgl
