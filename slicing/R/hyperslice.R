@@ -32,8 +32,7 @@ hyperslice <- function(mesh, n, focus.points) {
     if(!is.numeric(n)) {
       stop("n must be an integer")
     }
-    focus.points = data.frame(randtoolbox::sobol(n,d))
-    focus.points = focus.points * 2 - 1 # everything between -1 and 1
+    focus.points = sample.ProblemSpec(mesh$problemSpec, n)
   } else if(any(is.na(focus.points))) {
     if(!is.numeric(n)) {
       stop("n must be an integer")
