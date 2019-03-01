@@ -3,10 +3,11 @@ EPS = 1e-9
 
 intersect.simplices = function(mesh, fp, d1, d2) {
   plyr::adply(mesh$simplices, 1,
-        function(s) simplex.point.intersection(d1, d2, fp, mesh$points[s,]))
+        #function(s) simplex.point.intersection(mesh$points[s,], fp, d1, d2))
+  function(s) intersect.tri(mesh$points[s,], fp, d1, d2))
 }
 
-simplex.point.intersection = function(d1, d2, focus.pt, simplex) {
+simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   n = ncol(simplex)+1 # number of lambdas to check, dimensionality of the space+1
   T = rbind(t(simplex), rep(1,nrow(simplex)))
   startCheckI = 1
