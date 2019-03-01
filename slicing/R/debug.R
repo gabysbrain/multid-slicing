@@ -48,8 +48,8 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
   tri = matrix(unlist(tri), nrow=nrow(tri))
 
   # compute the normal
-  n = rep(0, 3)
-  n[-c(d1,d2)] = 1
+  n = rep(1, 3)
+  n[c(d1,d2)] = 0
 
   # figure out the point projection
   i1 = as.vector((n %*% (focus.pt - tri[1,])) / (n %*% (tri[2,] - tri[1,])))
@@ -63,7 +63,8 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
   # only the places of intersection
   pts = unique(pts[is.finite(pts[,1]),])
   if(nrow(pts) == 0) {
-    stop("no intersection")
+    warning("no intersection")
+    return(data.frame(d1.min=NA, d1.max=NA, d2.min=NA, d2.max=NA))
   }
   data.frame(d1.min=pts[1,d1], d1.max=pts[2,d1], d2.min=pts[1,d2], d2.max=pts[2,d2])
 }
