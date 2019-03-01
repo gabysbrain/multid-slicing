@@ -59,8 +59,8 @@ test_that("3d-embedded triangle in plane (non-intersection)", {
 test_that("off-axis triangle - dims 1,2 (intersection)", {
   res <- simplex.point.intersection(off.axis.triangle.2, c(0.5, 0.5, 0.8), 1, 2)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 2)
-  print(res)
-  print(res.exp)
+  #print(res)
+  #print(res.exp)
 
   expect_that(nrow(res), equals(1))
   expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
@@ -69,7 +69,7 @@ test_that("off-axis triangle - dims 1,2 (intersection)", {
 test_that("off-axis triangle - dims 1,3 (intersection)", {
   res <- simplex.point.intersection(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 3)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 3)
-  print(res)
+  #print(res)
 
   expect_that(nrow(res), equals(1))
   expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
@@ -78,7 +78,7 @@ test_that("off-axis triangle - dims 1,3 (intersection)", {
 test_that("point inside simplex", {
   res <- simplex.point.intersection(off.axis.triangle.2, c(0.5,0.5,0.5), 1, 3)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.5), 1, 3)
-  print(res)
+  #print(res)
 
   expect_that(nrow(res), equals(1))
   expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
