@@ -27,7 +27,7 @@ off.axis.triangle.2 = matrix(c(
   ncol=3, byrow=TRUE)
 
 test_that("tet with 2D plane", {
-  res <- simplex.point.intersection(1, 3, c(0.0, 1.5, 0.0), simple.simplex)
+  res <- simplex.point.intersection(simple.simplex, c(0.0, 1.5, 0.0), 1, 3)
   # expect_equal(res, data.frame(d1.min=c(NA, 1.5, 2.0, 1.5), # columns
   #                              d2.min=c(NA, 0.5, 1.5, 0.5),
   #                              d1.max=c(NA, 2.5, 2.5, 2.0),
@@ -39,7 +39,7 @@ test_that("tet with 2D plane", {
 })
 
 test_that("3d-embedded triangle in plane (intersection)", {
-  res <- simplex.point.intersection(1, 2, c(1.0, 1.0, 1.0), planar.triangle)
+  res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
 
   expect_that(nrow(res), equals(3))
 
@@ -50,14 +50,14 @@ test_that("3d-embedded triangle in plane (intersection)", {
 })
 
 test_that("3d-embedded triangle in plane (non-intersection)", {
-  res <- simplex.point.intersection(1, 2, c(1.0, 1.0, 0.0), planar.triangle)
+  res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
 
   expect_that(nrow(res), equals(1))
   expect_equal(as.vector(unlist(res)), rep(NA, 4))
 })
 
 test_that("off-axis triangle - dims 1,2 (intersection)", {
-  res <- simplex.point.intersection(1, 2, c(0.5, 0.5, 0.8), off.axis.triangle.2)
+  res <- simplex.point.intersection(off.axis.triangle.2, c(0.5, 0.5, 0.8), 1, 2)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 2)
   print(res)
   print(res.exp)
@@ -67,7 +67,7 @@ test_that("off-axis triangle - dims 1,2 (intersection)", {
 })
 
 test_that("off-axis triangle - dims 1,3 (intersection)", {
-  res <- simplex.point.intersection(1, 3, c(0.5, 0.5, 0.8), off.axis.triangle.2)
+  res <- simplex.point.intersection(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 3)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 3)
   print(res)
 
@@ -76,7 +76,7 @@ test_that("off-axis triangle - dims 1,3 (intersection)", {
 })
 
 test_that("point inside simplex", {
-  res <- simplex.point.intersection(1, 3, c(0.5, 0.5, 0.5), off.axis.triangle.2)
+  res <- simplex.point.intersection(off.axis.triangle.2, c(0.5,0.5,0.5), 1, 3)
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.5), 1, 3)
   print(res)
 

@@ -1,6 +1,10 @@
 context("test-hyperslice.R")
 
 test.mesh.1 = list(
+  problemSpec = list(
+    dimNames = c("x1", "x2", "x3"),
+    limits = list(x1=c(0,1), x2=c(0,1), x3=c(0,1))
+  ),
   points = data.frame(x1=c(0.0, 0.0, 1.0), x2=c(0.0, 1.0, 0.0), x3=c(0.0, 0.0, 1.0)),
   simplices = rbind(c(1, 2, 3))
 )
@@ -28,5 +32,6 @@ test_that("integer check for n", {
 
 test_that("single slice works", {
   res = hyperslice(test.mesh.1, focus.points=c(0.5, 0.5, 0.5))
+  print(res)
   expect_identical(res, exp.slices.1)
 })
