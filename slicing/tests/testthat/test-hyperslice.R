@@ -9,6 +9,11 @@ test.mesh.1 = list(
   simplices = rbind(c(1, 2, 3))
 )
 
+test.cube.3d = convmesh(data.frame(x1=c(0, 0, 0, 0, 1, 1, 1, 1),
+                                   x2=c(0, 0, 1, 1, 0, 0, 1, 1),
+                                   x3=c(0, 1, 0, 1, 0, 1, 0, 1)),
+                        nice=TRUE)
+
 test_that("function checks for focus points", {
   expect_error(hyperslice(test.mesh.1), "either n or focus.points must be specified", fixed=TRUE)
 })
@@ -34,4 +39,16 @@ test_that("single slice of a single triangle", {
   )
   class(exp.slices.1) = "SliceSet"
   expect_equal(res, exp.slices.1)
+})
+
+test_that("hyperslice correctly combines intersect.simplices", {
+  r.hs = hyperslice(test.cube.3d, focus.points=rep(0.5, 3))
+
+  is.1x2 = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 2) %>% dplyr::filter(!is.na(d1Min))
+  is.1x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 3) %>% dplyr::filter(!is.na(d1Min))
+  is.2x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 2, 3) %>% dplyr::filter(!is.na(d1Min))
+
+  expect_equal(r.hs$slices %>% dplyr::filter(d1==1, d2==2) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.1x2)
+  expect_equal(r.hs$slices %>% dplyr::filter(d1==1, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.1x3)
+  expect_equal(r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.2x3)
 })
