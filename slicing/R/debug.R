@@ -64,9 +64,9 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
   pts = unique(pts[is.finite(pts[,1]),])
   if(nrow(pts) == 0) {
     warning("no intersection")
-    return(data.frame(d1.min=NA, d1.max=NA, d2.min=NA, d2.max=NA))
+    return(data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA))
   }
-  data.frame(d1.min=pts[1,d1], d1.max=pts[2,d1], d2.min=pts[1,d2], d2.max=pts[2,d2])
+  data.frame(d1Min=pts[1,d1], d1Max=pts[2,d1], d2Min=pts[1,d2], d2Max=pts[2,d2])
 }
 
 point.plane.dist = function(pt, plane.pt, plane.n) {
