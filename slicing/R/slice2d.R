@@ -15,7 +15,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # T may not be square so if it is then pad with the intersection point
   if(nrow(T) != ncol(T)) {
     T = cbind(T, c(focus.pt, 1))
-    T[d1,ncol(T)] = T[d2,ncol(T)] = -1
+    #T[d1,ncol(T)] = T[d2,ncol(T)] = -1
     startCheckI = ncol(T) # only consider final lambda value
     n = 1
   }
@@ -50,6 +50,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   for(i in 1:n) { # i is index into intersect.range
     # put y=mx+b into each other lambda formula and try and get a good range
     ranges = common.cross.range(lambda.x, lambda.y, lambda.c, startCheckI+i-1)
+    #ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(ranges$x[1])) {
      # if(min(abs(ranges$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
         intersect.range[i,"d1.min"] = ranges$x[1]
