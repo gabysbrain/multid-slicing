@@ -63,7 +63,7 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
   # only the places of intersection
   pts = unique(pts[is.finite(pts[,1]),])
   if(nrow(pts) == 0) {
-    warning("no intersection")
+    #warning("no intersection")
     return(data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA))
   }
   data.frame(d1Min=pts[1,d1], d1Max=pts[2,d1], d2Min=pts[1,d2], d2Max=pts[2,d2])
