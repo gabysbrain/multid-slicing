@@ -10,7 +10,7 @@ plot.Mesh = function(m) {
 
   base = matrix(c(0,0,0,0,1,0,1,1,0,1,0,0), ncol=3, byrow=TRUE)
   pts = m$points
-  verts = m$simplices
+  verts = t(m$simplices)
 
   rgl::open3d()
   rgl::quads3d(xyz.coords(base), alpha=0.2)
