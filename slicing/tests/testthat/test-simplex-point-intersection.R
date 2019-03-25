@@ -28,25 +28,22 @@ off.axis.triangle.2 = matrix(c(
 
 test_that("tet with 2D plane", {
   res <- simplex.point.intersection(simple.simplex, c(0.0, 1.5, 0.0), 1, 3)
-  # expect_equal(res, data.frame(d1.min=c(NA, 1.5, 2.0, 1.5), # columns
-  #                              d2.min=c(NA, 0.5, 1.5, 0.5),
-  #                              d1.max=c(NA, 2.5, 2.5, 2.0),
-  #                              d2.max=c(NA, 0.5, 0.5, 1.5)))
-  expect_equal(as.vector(res$d1.min), c(NA, 1.5, 2.0, 1.5))
-  expect_equal(as.vector(res$d2.min), c(NA, 0.5, 1.5, 0.5))
-  expect_equal(as.vector(res$d1.max), c(NA, 2.5, 2.5, 2.0))
-  expect_equal(as.vector(res$d2.max), c(NA, 0.5, 0.5, 1.5))
+
+  expect_equal(as.vector(res$d1Min), c(NA, 1.5, 2.0, 1.5))
+  expect_equal(as.vector(res$d2Min), c(NA, 0.5, 1.5, 0.5))
+  expect_equal(as.vector(res$d1Max), c(NA, 2.5, 2.5, 2.0))
+  expect_equal(as.vector(res$d2Max), c(NA, 0.5, 0.5, 1.5))
 })
 
 test_that("3d-embedded triangle in plane (intersection)", {
   res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
-
+  #print(res)
   expect_that(nrow(res), equals(3))
 
-  expect_equal(as.vector(res$d1.min), c(1,1,3))
-  expect_equal(as.vector(res$d1.max), c(3,2,2))
-  expect_equal(as.vector(res$d2.min), c(1,1,1))
-  expect_equal(as.vector(res$d2.max), c(1,2,2))
+  expect_equal(as.vector(res$d1Min), c(1,1,3))
+  expect_equal(as.vector(res$d1Max), c(3,2,2))
+  expect_equal(as.vector(res$d2Min), c(1,1,1))
+  expect_equal(as.vector(res$d2Max), c(1,2,2))
 })
 
 test_that("3d-embedded triangle in plane (non-intersection)", {

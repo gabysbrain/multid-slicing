@@ -31,7 +31,7 @@ test_that("results are in the proper range", {
 test_that("-2 to +2 properly centers the range", {
   ps = createProblemSpec(x1=c(-2, 2), x2=c(-2, 2))
   x = sample.ProblemSpec(ps, 1)
-  print(x)
+  #print(x)
   expect_equal(x[1, 1], 0.0)
   expect_equal(x[1, 2], 0.0)
 })
