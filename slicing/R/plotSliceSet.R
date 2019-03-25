@@ -6,6 +6,7 @@
 #'
 #' @param o The SliceSet to plot
 plot.SliceSet = function(o) {
+  ps = o$problemSpec
   ppts = o$focusPoints
   curves = o$slices
   if(nrow(curves)==0) stop("No plane/simplex intersections found")
@@ -17,8 +18,8 @@ plot.SliceSet = function(o) {
       pd = curves %>% dplyr::filter(d1==i&d2==j) %>% unique()
       p = ggplot2::ggplot(pd, ggplot2::aes(group=fpid)) +
           ggplot2::geom_segment(ggplot2::aes(x=d1Min, xend=d1Max, y=d2Min, yend=d2Max, colour=fpid))
-      p = p + #ggplot2::scale_x_continuous(limits=c(-1,1)) +
-        #ggplot2::scale_y_continuous(limits=c(-1,1)) +
+      p = p + ggplot2::scale_x_continuous(limits=ps$limits[[i]]) +
+        ggplot2::scale_y_continuous(limits=ps$limits[[j]]) +
         ggplot2::theme_bw() +
         ggplot2::theme(axis.title.x=ggplot2::element_blank(),
                        axis.title.y=ggplot2::element_blank())
