@@ -51,6 +51,7 @@ test_that("3d-embedded triangle in plane (intersection)", {
 
 test_that("3d-embedded triangle in plane (non-intersection)", {
   res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
+  #print(res)
 
   expect_that(nrow(res), equals(1))
   expect_equal(as.vector(unlist(res)), rep(NA, 4))

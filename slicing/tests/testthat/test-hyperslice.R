@@ -24,7 +24,7 @@ test_that("integer check for n", {
 
 test_that("single slice of a single triangle", {
   res = hyperslice(test.mesh.1, focus.points=c(0.5, 0.5, 0.8))
-  print(res)
+  #print(res)
   exp.slices.1 = list(
     focusPoints = data.frame(x1=0.5, x2=0.5, x3=0.8),
     slices = data.frame(

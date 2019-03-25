@@ -28,3 +28,10 @@ test_that("results are in the proper range", {
   expect_true(all(x[,"sdgcsd"] <= ps$limits$sdgcsd[2]))
 })
 
+test_that("-2 to +2 properly centers the range", {
+  ps = createProblemSpec(x1=c(-2, 2), x2=c(-2, 2))
+  x = sample.ProblemSpec(ps, 1)
+  print(x)
+  expect_equal(x[1, 1], 0.0)
+  expect_equal(x[1, 2], 0.0)
+})
