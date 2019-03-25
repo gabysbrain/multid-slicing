@@ -15,7 +15,7 @@ convmesh <- function(points, spec=NA, nice=FALSE) {
     spec = problemSpecFromPoints(points)
     if(nice) {
       for(d in spec$dimNames) {
-        spec$limits[[d]] = pretty(spec$limits[[d]], n=1)
+        spec$limits[[d]] = range(pretty(spec$limits[[d]], n=2))
       }
     }
   }
