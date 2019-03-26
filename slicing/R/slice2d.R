@@ -42,7 +42,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   }
   # if T is singluar then the simplex lies in a plane
   if(det(T)==0) {
-    res = data.frame(d1Min=NA, d2Min=NA, d1Max=NA, d2Max=NA)
+    res = data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
     return(res)
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
@@ -70,7 +70,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
         data.frame(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
      # }
     } else {
-      data.frame(d1Min=NA, d2Min=NA, d1Max=NA, d2Max=NA)
+      data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
     }
   })
 
