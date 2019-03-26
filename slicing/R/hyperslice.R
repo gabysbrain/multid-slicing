@@ -20,7 +20,7 @@
 #'                           \item \code{x2} x-coordinate of the slice segment
 #'                           \item \code{y2} y-coordinate of the slice segment
 #'                         \end{enumerate}
-hyperslice <- function(mesh, n, focus.points) {
+hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
   if(missing(n) && missing(focus.points)) {
     stop("either n or focus.points must be specified")
   }
@@ -55,15 +55,15 @@ hyperslice <- function(mesh, n, focus.points) {
   }
 
   dims = t(combn(d,2))
-  curves = plyr::adply(1:n, 1, function(rid) { # go over all focus points
+  slices = purrr::map_dfr(1:n, function(rid) { # go over all focus points
     fp = focus.points[rid,]
-    res = plyr::adply(dims, 1, function(d) { # all pairs of dims
-      res2 = intersect.simplices(mesh, fp, d[1], d[2])
-      # remove all the NA rows
-      res2 = dplyr::filter_all(res2, dplyr::all_vars(!is.na(.)))
+    res = purrr::map_dfr(1:nrow(dims), function(did) { # all pairs of dims
+      dim = dims[did,]
+      res2 = intersect.simplices(mesh, fp, dim[1], dim[2], use.3d.intersection) %>%
+               dplyr::filter_all(dplyr::all_vars(!is.na(.))) # remove all the NA rows
       if(nrow(res2)>0) {
-        res2$d1 = d[1]
-        res2$d2 = d[2]
+        res2$d1 = dim[1]
+        res2$d2 = dim[2]
       }
       res2
     })
@@ -72,8 +72,7 @@ hyperslice <- function(mesh, n, focus.points) {
     }
     res
   })
-  slices = curves[,-1]
-  #names(slices) = c("d1Min", "d2Min", "d1Max", "d2Max", "d1", "d2", "fpid")
+
   createSliceSet(mesh$problemSpec, focus.points, slices)
 }
 
