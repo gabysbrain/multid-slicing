@@ -1,5 +1,29 @@
 context("test-hyperslice.R")
 
+check.slice.row = function(test, exp) {
+  p1.test = c(test$d1Min, test$d2Min)
+  p1.exp = c(exp$d1Min, exp$d2Min)
+  p2.test = c(test$d1Max, test$d2Max)
+  p2.exp = c(exp$d1Max, exp$d2Max)
+  # put test and exp so d1Min is "left" of d1Max
+  if(test$d1Min > test$d1Max || (test$d1Min == test$d1Max && test$d2Min > test$d2Max)) {
+    tmp = p1.test
+    p1.test = p2.test
+    p2.test = tmp
+  }
+  if(exp$d1Min > exp$d1Max || (exp$d1Min == exp$d1Max && exp$d2Min > exp$d2Max)) {
+    tmp = p1.exp
+    p1.exp = p2.exp
+    p2.exp = tmp
+  }
+
+  # check for equality
+  tol = sqrt(.Machine$double.eps)
+  p1.diff = p1.test - p1.exp
+  p2.diff = p2.test - p2.exp
+  sqrt(t(p1.diff) %*% p1.diff) < tol & sqrt(t(p2.diff) %*% p2.diff) < tol
+}
+
 test.mesh.1 = list(
   problemSpec = list(
     dimNames = c("x1", "x2", "x3"),
@@ -51,44 +75,17 @@ test_that("hyperslice correctly combines intersect.simplices", {
   expect_equal(r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.2x3)
 })
 
-# test_that("all 3d slices are the same as standard slicing algo", {
-#   #print(test.cube.3d)
-#   n = 50 # 50 samples should be enough
-#   fps = sample.ProblemSpec(test.cube.3d$problemSpec, n)
-#   dims = t(combn(3,2))
-#   curves.test = plyr::adply(1:n, 1, function(rid) { # go over all focus points
-#     fp = fps[rid,]
-#     res = plyr::adply(dims, 1, function(d) { # all pairs of dims
-#       res2 = intersect.simplices(mesh, fp, d[1], d[2])
-#       # remove all the NA rows
-#       res2 = dplyr::filter_all(res2, dplyr::all_vars(!is.na(.)))
-#       if(nrow(res2)>0) {
-#         res2$d1 = d[1]
-#         res2$d2 = d[2]
-#       }
-#       res2
-#     })
-#     if(nrow(res) > 0) {
-#       res$fpid = rid
-#     }
-#     res
-#   })
-#   curves.exp = plyr::adply(1:n, 1, function(rid) { # go over all focus points
-#     fp = fps[rid,]
-#     res = plyr::adply(dims, 1, function(d) { # all pairs of dims
-#       res2 = intersect.simplices.3dspace(mesh, fp, d[1], d[2])
-#       # remove all the NA rows
-#       res2 = dplyr::filter_all(res2, dplyr::all_vars(!is.na(.)))
-#       if(nrow(res2)>0) {
-#         res2$d1 = d[1]
-#         res2$d2 = d[2]
-#       }
-#       res2
-#     })
-#     if(nrow(res) > 0) {
-#       res$fpid = rid
-#     }
-#     res
-#   })
-#   expect_equal(curves.test, curves.exp)
-# })
+test_that("all 3d slices of a cube are the same as standard slicing algo", {
+  n.slices = 10
+  test.slices = hyperslice(test.cube.3d, n=n.slices, use.3d.intersection = FALSE)$slices
+  exp.slices = hyperslice(test.cube.3d, n=n.slices, use.3d.intersection = TRUE)$slices # use the "true" 3d intersection algo
+  #print(test.slices)
+  #print(exp.slices)
+  #expect_equal(test.slices, exp.slices)
+
+  expect_equal(nrow(test.slices), nrow(exp.slices))
+  for(r in 1:nrow(test.slices)) {
+    expect_true(check.slice.row(test.slices[r,], exp.slices[r,]), info=list(test=test.slices[r,], exp=exp.slices[r,]))
+  }
+})
+

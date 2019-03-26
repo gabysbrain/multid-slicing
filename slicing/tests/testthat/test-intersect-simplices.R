@@ -1,8 +1,6 @@
 context("test-intersect-simplices cube")
 
-test.cube.3d = convmesh(data.frame(x1=c(0, 0, 0, 0, 1, 1, 1, 1),
-                                   x2=c(0, 0, 1, 1, 0, 0, 1, 1),
-                                   x3=c(0, 1, 0, 1, 0, 1, 0, 1)),
+test.cube.3d = convmesh(expand.grid(x1=c(0,1), x2=c(0,1), x3=c(0,1)),
                         nice=TRUE)
 
 test_that("4 simplices have no intersection", {
@@ -24,4 +22,12 @@ test_that("correct intersection points", {
     d2Max = c(0.0, 0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0)
   )
   expect_equal(res, res.exp)
+})
+
+test_that("repeated calls are deterministic", {
+  exp = intersect.simplices(test.cube.3d, c(0.75,0.25,0.75), 2, 3, use.3d.intersection = FALSE) # these dims and fp were less stable
+  for(i in 1:10) {
+    test = intersect.simplices(test.cube.3d, c(0.75,0.25,0.75), 2, 3, use.3d.intersection = FALSE)
+    expect_equal(test, exp)
+  }
 })
