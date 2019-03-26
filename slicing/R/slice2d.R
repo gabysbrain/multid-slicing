@@ -15,7 +15,6 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # T may not be square so if it is then pad with the intersection point
   if(nrow(T) != ncol(T)) {
     T = cbind(T, c(focus.pt, 1))
-    #T[d1,ncol(T)] = T[d2,ncol(T)] = -1
     startCheckI = ncol(T) # only consider final lambda value
     n = 1
   }
@@ -27,7 +26,6 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
     return(res)
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
-  T.inv = solve(T)
 
   # compute lambda as best we can (there will be 3 parts)
   rr = c(unlist(focus.pt), 1)
@@ -36,9 +34,9 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   rr.y = array(0,length(rr))
   rr.x[d1] = rr.y[d2] = 1
   # we are trying to compute T^(-1) . [x-xn,y-yn,...,z-zn]
-  lambda.c = as.vector(T.inv %*% rr) # column vector multiplication
-  lambda.x = as.vector(T.inv %*% rr.x)
-  lambda.y = as.vector(T.inv %*% rr.y)
+  lambda.c = as.vector(solve(T, rr)) # column vector multiplication
+  lambda.x = as.vector(solve(T, rr.x))
+  lambda.y = as.vector(solve(T, rr.y))
 
   # find the d1 and d2 ranges that make each lambda 0
   intersect.range = data.frame(d1.min=array(NA,n),d1.max=array(NA,n),
@@ -63,16 +61,6 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
 
   intersect.range
 }
-
-# common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
-#   f1 = (lambda.c[i]*lambda.y - lambda.y[i]*lambda.c) /
-#     (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
-#   f2 = (lambda.y[i] + lambda.c[i]*lambda.y - lambda.y[i]*lambda.c) /
-#     (lambda.y[i]*lambda.x - lambda.x[i]*lambda.y)
-#   mtx = matrix(cbind(f1,f2), ncol=2)
-#   mtx = mtx[apply(mtx, 1, function(r) all(is.finite(r))),] # remove non-numeric rows
-#   matrix(apply(mtx, 1, sort), ncol=2, byrow=TRUE)
-# }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
   x.rng = c(NA, NA)
