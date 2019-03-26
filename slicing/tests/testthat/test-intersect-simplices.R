@@ -5,7 +5,8 @@ test.cube.3d = convmesh(expand.grid(x1=c(0,1), x2=c(0,1), x3=c(0,1)),
 
 test_that("4 simplices have no intersection", {
   res = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 2)
-  expect_equal(sum(is.na(res)), 16) # 4 rows of all 4 values set to NA
+
+  expect_equal(nrow(res), nrow(test.cube.3d$simplices)-4) # 4 simplices not hit (top and bottom ones)
 })
 
 
