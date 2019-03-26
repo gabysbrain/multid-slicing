@@ -69,6 +69,7 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
     #warning("no intersection")
     return(data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA))
   }
+  #data.frame(d1Min=pts[d1,d1], d1Max=pts[d2,d1], d2Min=pts[d1,d2], d2Max=pts[d2,d2])
   data.frame(d1Min=pts[1,d1], d1Max=pts[2,d1], d2Min=pts[1,d2], d2Max=pts[2,d2])
 }
 
@@ -77,3 +78,21 @@ point.plane.dist = function(pt, plane.pt, plane.n) {
   p.proj = pt + p.dist * plane.n
   dist(rbind(pt, p.proj))[1] * sign(p.dist)
 }
+
+getSimp = function(mesh, i) {
+  mesh$points[mesh$simplices[i,],]
+}
+
+intersect.simplices.3dspace = function(mesh, fp, d1, d2) {
+  n = nrow(mesh$simplices)
+  lim1 = mesh$problemSpec$limits[[mesh$problemSpec$dimNames[d1]]]
+  lim2 = mesh$problemSpec$limits[[mesh$problemSpec$dimNames[d2]]]
+  purrr::map_dfr(1:n,
+                 function(i) intersect.tri(mesh$points[mesh$simplices[i,],], fp, d1, d2))
+}
+
+intersect.by.fpid = function(mesh, fpid, d1, d2) {
+  fps = sample.ProblemSpec(mesh$problemSpec, fpid)
+  intersect.simplices(mesh, fps[fpid,], d1, d2)
+}
+
