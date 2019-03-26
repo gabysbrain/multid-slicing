@@ -16,12 +16,13 @@ test_that("correct intersection points", {
   res = dplyr::filter(res, !is.na(d1Min))
   expect_equal(nrow(res), 8) # 8 intersection segments
   res.exp = data.frame(
-    d1Min = c(1.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.5, 0.5),
-    d1Max = c(0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0),
-    d2Min = c(0.0, 0.0, 0.5, 0.5, 1.0, 0.5, 1.0, 1.0),
-    d2Max = c(0.0, 0.0, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0)
+    d1Min = c(0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.5),
+    d1Max = c(1.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.5, 1.0),
+    d2Min = c(0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 1.0),
+    d2Max = c(0.0, 0.0, 0.5, 1.0, 1.0, 0.5, 1.0, 1.0)
   )
-  expect_equal(res, res.exp)
+
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
 
 test_that("repeated calls are deterministic", {

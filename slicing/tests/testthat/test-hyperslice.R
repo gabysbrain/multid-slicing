@@ -70,9 +70,13 @@ test_that("hyperslice correctly combines intersect.simplices", {
   is.1x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 3) %>% dplyr::filter(!is.na(d1Min))
   is.2x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 2, 3) %>% dplyr::filter(!is.na(d1Min))
 
-  expect_equal(r.hs$slices %>% dplyr::filter(d1==1, d2==2) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.1x2)
-  expect_equal(r.hs$slices %>% dplyr::filter(d1==1, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.1x3)
-  expect_equal(r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max), is.2x3)
+  exp.1x2 = r.hs$slices %>% dplyr::filter(d1==1, d2==2) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
+  exp.1x3 = r.hs$slices %>% dplyr::filter(d1==1, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
+  exp.2x3 = r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
+
+  expect_equal(is.1x2, exp.1x2)
+  expect_equal(is.1x3, exp.1x3)
+  expect_equal(is.2x3, exp.2x3)
 })
 
 test_that("all 3d slices of a cube are the same as standard slicing algo", {
