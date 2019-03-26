@@ -30,10 +30,10 @@ test_that("tet with 2D plane", {
   res <- simplex.point.intersection(simple.simplex, c(0.0, 1.5, 0.0), 1, 3)
 
   exp.res = data.frame(
-    d1Min = c(NA, 1.5, 2.0, 1.5),
-    d2Min = c(NA, 0.5, 1.5, 0.5),
-    d1Max = c(NA, 2.5, 2.5, 2.0),
-    d2Max = c(NA, 0.5, 0.5, 1.5)
+    d1Min = c(1.5, 2.0, 1.5),
+    d2Min = c(0.5, 1.5, 0.5),
+    d1Max = c(2.5, 2.5, 2.0),
+    d2Max = c(0.5, 0.5, 1.5)
   )
 
   expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(exp.res))
@@ -49,17 +49,14 @@ test_that("3d-embedded triangle in plane (intersection)", {
     d2Max = c(1,2,2)
   )
 
-  print(res)
-  print(res.exp)
   expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
 
 test_that("3d-embedded triangle in plane (non-intersection)", {
-  res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
+  res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 0.0), 1, 2)
   #print(res)
 
-  expect_that(nrow(res), equals(1))
-  expect_equal(as.vector(unlist(res)), rep(NA, 4))
+  expect_that(nrow(res), equals(0))
 })
 
 test_that("off-axis triangle - dims 1,2 (intersection)", {

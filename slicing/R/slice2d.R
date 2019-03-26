@@ -1,8 +1,9 @@
 
-EPS = 1e-9
+EPS = sqrt(.Machine$double.eps)
+#EPS = 1e-9
 
 empty.slice = function() {
-  data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
+  data.frame(d1Min=c(), d1Max=c(), d2Min=c(), d2Max=c())
 }
 
 intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
@@ -25,12 +26,17 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # T may not be square so if it is then pad with the intersection point
   if(nrow(T) != ncol(T)) {
     T = cbind(T, c(focus.pt, 1))
+    if(det(T) == 0) {
+      T[-1,ncol(T)] = focus.pt + EPS # add small amount to make matrix non-singular
+    }
     startCheckI = ncol(T) # only consider final lambda value
     n = 1
   }
-  # if T is singluar then the simplex lies in a plane
+  # if T is singluar then the simplex lies in the plane
   if(det(T)==0) {
-    res = empty.slice()
+    rows = t(combn(nrow(simplex), 2))
+    res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
+    names(res) = c("d1Min", "d2Min", "d1Max", "d2Max")
     return(res)
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
