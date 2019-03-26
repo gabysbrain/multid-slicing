@@ -19,7 +19,10 @@ convmesh <- function(points, spec=NA, nice=FALSE) {
       }
     }
   }
-  r = list(problemSpec=spec, points=points, simplices=geometry::convhulln(points))
+  #d = geometry::delaunayn(as.matrix(points))
+  s = geometry::convhulln(as.matrix(points))
+  #r = list(problemSpec=spec, points=points, simplices=geometry::surf.tri(as.matrix(points), d))
+  r = list(problemSpec=spec, points=points, simplices=s)
   class(r) = "Mesh"
   r
 }
