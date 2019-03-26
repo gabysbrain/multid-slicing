@@ -29,21 +29,29 @@ off.axis.triangle.2 = matrix(c(
 test_that("tet with 2D plane", {
   res <- simplex.point.intersection(simple.simplex, c(0.0, 1.5, 0.0), 1, 3)
 
-  expect_equal(as.vector(res$d1Min), c(NA, 1.5, 2.0, 1.5))
-  expect_equal(as.vector(res$d2Min), c(NA, 0.5, 1.5, 0.5))
-  expect_equal(as.vector(res$d1Max), c(NA, 2.5, 2.5, 2.0))
-  expect_equal(as.vector(res$d2Max), c(NA, 0.5, 0.5, 1.5))
+  exp.res = data.frame(
+    d1Min = c(NA, 1.5, 2.0, 1.5),
+    d2Min = c(NA, 0.5, 1.5, 0.5),
+    d1Max = c(NA, 2.5, 2.5, 2.0),
+    d2Max = c(NA, 0.5, 0.5, 1.5)
+  )
+
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(exp.res))
 })
 
 test_that("3d-embedded triangle in plane (intersection)", {
   res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
-  #print(res)
-  expect_that(nrow(res), equals(3))
 
-  expect_equal(as.vector(res$d1Min), c(1,1,3))
-  expect_equal(as.vector(res$d1Max), c(3,2,2))
-  expect_equal(as.vector(res$d2Min), c(1,1,1))
-  expect_equal(as.vector(res$d2Max), c(1,2,2))
+  res.exp = data.frame(
+    d1Min = c(1,1,3),
+    d1Max = c(3,2,2),
+    d2Min = c(1,1,1),
+    d2Max = c(1,2,2)
+  )
+
+  print(res)
+  print(res.exp)
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
 
 test_that("3d-embedded triangle in plane (non-intersection)", {
@@ -60,8 +68,7 @@ test_that("off-axis triangle - dims 1,2 (intersection)", {
   #print(res)
   #print(res.exp)
 
-  expect_that(nrow(res), equals(1))
-  expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
 
 test_that("off-axis triangle - dims 1,3 (intersection)", {
@@ -69,8 +76,7 @@ test_that("off-axis triangle - dims 1,3 (intersection)", {
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.8), 1, 3)
   #print(res)
 
-  expect_that(nrow(res), equals(1))
-  expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
 
 test_that("point inside simplex", {
@@ -78,6 +84,5 @@ test_that("point inside simplex", {
   res.exp <- intersect.tri(off.axis.triangle.2, c(0.5,0.5,0.5), 1, 3)
   #print(res)
 
-  expect_that(nrow(res), equals(1))
-  expect_equal(as.vector(unlist(res[1,])), as.vector(unlist(res.exp[1,])))
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
