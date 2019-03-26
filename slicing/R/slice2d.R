@@ -1,6 +1,10 @@
 
 EPS = 1e-9
 
+empty.slice = function() {
+  data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
+}
+
 intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   n = nrow(mesh$simplices)
   lim1 = mesh$problemSpec$limits[[mesh$problemSpec$dimNames[d1]]]
@@ -11,22 +15,6 @@ intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   } else {
     purrr::map_dfr(1:n,
            function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
-  }
-}
-
-clip_row = function(r, lim1, lim2) {
-  c1 = clip.seg(r$d1Min, r$d1Max, lim1[1], lim1[2])
-  c2 = clip.seg(r$d2Min, r$d2Max, lim2[1], lim2[2])
-  data.frame(d1Min=c1[1], d1Max=c1[2], d2Min=c2[1], d2Max=c2[2])
-}
-
-clip.seg = function(x1, x2, limMin, limMax) {
-  if(x1 < limMin & x2 < limMin) {
-    c(NA, NA)
-  } else if(x1 > limMax & x2 > limMax) {
-    c(NA, NA)
-  } else {
-    c(min(max(x1, limMin), limMax), min(max(x2, limMin), limMax))
   }
 }
 
@@ -42,7 +30,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   }
   # if T is singluar then the simplex lies in a plane
   if(det(T)==0) {
-    res = data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
+    res = empty.slice()
     return(res)
   }
   T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
@@ -70,7 +58,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
         data.frame(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
      # }
     } else {
-      data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA)
+      empty.slice()
     }
   })
 
