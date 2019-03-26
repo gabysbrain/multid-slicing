@@ -53,11 +53,14 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
 
   # figure out the point projection
   i1 = as.vector((n %*% (focus.pt - tri[1,])) / (n %*% (tri[2,] - tri[1,])))
-  p1 = tri[1,] + i1 * (tri[2,] - tri[1,])
+  p1 = if(i1 >=0 & i1 <= 1) tri[1,] + i1 * (tri[2,] - tri[1,])
+       else rep(NA, 3)
   i2 = as.vector((n %*% (focus.pt - tri[1,])) / (n %*% (tri[3,] - tri[1,])))
-  p2 = tri[1,] + i2 * (tri[3,] - tri[1,])
+  p2 = if(i2 >= 0 & i2 <= 1) tri[1,] + i2 * (tri[3,] - tri[1,])
+       else rep(NA, 3)
   i3 = as.vector((n %*% (focus.pt - tri[2,])) / (n %*% (tri[3,] - tri[2,])))
-  p3 = tri[2,] + i3 * (tri[3,] - tri[2,])
+  p3 = if(i3 >= 0 & i3 <= 1) tri[2,] + i3 * (tri[3,] - tri[2,])
+       else rep(NA, 3)
 
   pts = rbind(p1,p2,p3)
   # only the places of intersection
