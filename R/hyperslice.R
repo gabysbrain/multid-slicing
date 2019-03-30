@@ -59,9 +59,10 @@ hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
     fp = focus.points[rid,]
     res = purrr::map_dfr(1:nrow(dims), function(did) { # all pairs of dims
       dim = dims[did,]
-      res2 = intersect.simplices(mesh, fp, dim[1], dim[2], use.3d.intersection) %>%
-               dplyr::filter_all(dplyr::all_vars(!is.na(.))) # remove all the NA rows
+      res2 = intersect.simplices(mesh, fp, dim[1], dim[2], use.3d.intersection)
+
       if(nrow(res2)>0) {
+        res2 = dplyr::filter_all(res2, dplyr::all_vars(!is.na(.))) # remove all the NA rows
         res2$d1 = dim[1]
         res2$d2 = dim[2]
       }
