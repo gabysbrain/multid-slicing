@@ -21,6 +21,9 @@
 #'                           \item \code{y2} y-coordinate of the slice segment
 #'                         \end{enumerate}
 hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
+  if(class(mesh) != "Mesh") {
+    stop("input mesh must be of class Mesh")
+  }
   if(missing(n) && missing(focus.points)) {
     stop("either n or focus.points must be specified")
   }
