@@ -6,6 +6,10 @@ defaults: &steps
 
     ## setup ---------------------------------
     - run:
+        name: Install additional packages
+        command: |
+          sudo apt-get install mesa-common-dev
+    - run:
         name: Set environmental variables
         command: |
           Rscript --vanilla \
@@ -51,7 +55,6 @@ defaults: &steps
         path: /tmp/Rcheck
         when: always
 
-version: 2
 jobs:
   "r-release":
      docker:
