@@ -8,7 +8,8 @@ defaults: &steps
     - run:
         name: Install additional packages
         command: |
-          sudo apt-get install mesa-common-dev
+          sudo apt-get -y install \
+            mesa-common-dev freeglut3 libglu1-mesa-dev libgl1-mesa-dev 
     - run:
         name: Set environmental variables
         command: |
