@@ -15,6 +15,7 @@ Imports: geometry,
     magrittr,
     ggplot2,
     gridExtra,
+    randtoolbox,
     rjson,
     purrr
 Suggests:
