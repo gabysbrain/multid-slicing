@@ -32,6 +32,7 @@ test.mesh.1 = list(
   points = data.frame(x1=c(0.0, 0.0, 1.0), x2=c(0.0, 1.0, 0.0), x3=c(0.0, 0.0, 1.0)),
   simplices = rbind(c(1, 2, 3))
 )
+class(test.mesh.1) = "Mesh"
 
 test.cube.3d = convmesh(expand.grid(x1=c(0,1), x2=c(0,1), x3=c(0,1)), nice=TRUE)
 
