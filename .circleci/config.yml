@@ -14,12 +14,6 @@ defaults: &steps
             -e 'cat(sprintf("export RCHECK_DIR=%s.Rcheck\n", dsc[,"Package"]))' \
             >> ${BASH_ENV}
 
-    - restore_cache:
-        keys:
-          - deps1-{{ .Branch }}-{{ checksum "DESCRIPTION" }}
-          - deps1-{{ .Branch }}
-          - deps1-
-
     - run:
         name: Install additional packages
         command: |
@@ -34,11 +28,6 @@ defaults: &steps
           Rscript \
             -e 'if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")' \
             -e 'devtools::install_deps(dependencies = TRUE)'
-
-    - save_cache:
-        key: deps1-{{ .Branch }}-{{ checksum "DESCRIPTION" }}
-        paths:
-          - "/usr/local/lib/R/site-library"
 
     ## build and test -----------------
 
