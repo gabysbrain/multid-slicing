@@ -2,9 +2,7 @@
 EPS = sqrt(.Machine$double.eps)
 #EPS = 1e-9
 
-empty.slice = function() {
-  data.frame(d1Min=c(), d1Max=c(), d2Min=c(), d2Max=c())
-}
+empty.slice = data.frame(d1Min=c(), d1Max=c(), d2Min=c(), d2Max=c())
 
 intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   n = nrow(mesh$simplices)
@@ -55,20 +53,16 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # find the d1 and d2 ranges that make each lambda 0
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  intersect.range = purrr::map_dfr(1:n, function(i) { # i is the index into intersect.range
+  purrr::map_dfr(1:n, function(i) { # i is the index into intersect.range
     # put y=mx+b into each other lambda formula and try and get a good range
     ranges = common.cross.range(lambda.x, lambda.y, lambda.c, startCheckI+i-1)
     #ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
     if(!is.na(ranges$x[1])) {
-     # if(min(abs(ranges$x-focus.pt[d1])) > EPS) { # only if we don't hit the extra focus point
-        data.frame(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
-     # }
+      list(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
     } else {
-      empty.slice()
+      empty.slice
     }
   })
-
-  intersect.range
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {

@@ -77,6 +77,6 @@ hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
     res
   })
 
-  createSliceSet(mesh$problemSpec, focus.points, slices)
+  createSliceSet(mesh$problemSpec, focus.points, as.data.frame(slices))
 }
 
