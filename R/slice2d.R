@@ -8,17 +8,24 @@ intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   n = nrow(mesh$simplices)
   lim1 = mesh$problemSpec$limits[[mesh$problemSpec$dimNames[d1]]]
   lim2 = mesh$problemSpec$limits[[mesh$problemSpec$dimNames[d2]]]
+  pts = matrix(unlist(mesh$points), nrow=nrow(mesh$points))
+  simpls = matrix(unlist(mesh$simplices), nrow=nrow(mesh$simplices))
   if(use.3d.intersection) {
     purrr::map_dfr(1:n,
            function(i) intersect.tri(mesh$points[mesh$simplices[i,],], fp, d1, d2))
   } else {
     purrr::map_dfr(1:n,
-           function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
+           #function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
+           function(i) simplex.point.intersection(pts[simpls[i,],], fp, d1, d2))
   }
 }
 
 simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
-  n = ncol(simplex)+1 # number of lambdas to check, dimensionality of the space+1
+  n = length(focus.pt)+1 # number of lambdas to check, dimensionality of the space+1
+
+  # This does T = rbind(t(simplex), rep(1,nrow(simplex))) but is sometimes faster
+  #T = matrix(1, ncol=n-1, nrow=n)
+  #T[1:n-1,1:n-1] = t(simplex)
   T = rbind(t(simplex), rep(1,nrow(simplex)))
   startCheckI = 1
   # T may not be square so if it is then pad with the intersection point
