@@ -20,22 +20,18 @@ intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
 }
 
 simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
+  # TODO: do some argument checking
+
   n = length(focus.pt)+1 # number of lambdas to check, dimensionality of the space+1
 
   # This does T = rbind(t(simplex), rep(1,nrow(simplex))) but is sometimes faster
-  T = matrix(1, ncol=n-1, nrow=n)
+  T = matrix(1, ncol=n, nrow=n) # T needs to be square
   T[1:n-1,1:n-1] = t(simplex)
-  #T = rbind(t(simplex), rep(1,nrow(simplex)))
-  startCheckI = 1
-  # T may not be square so if it is then pad with the intersection point
-  if(nrow(T) != ncol(T)) {
-    T = cbind(T, c(focus.pt, 1))
-    if(det(T) == 0) {
-      T[-1,ncol(T)] = focus.pt + EPS # add small amount to make matrix non-singular
-    }
-    startCheckI = ncol(T) # only consider final lambda value
-    n = 1
+  T[,n] = c(focus.pt, 1)
+  if(det(T) == 0) {
+    T[-1,ncol(T)] = focus.pt + EPS # add small amount to make matrix non-singular
   }
+
   # if T is singluar then the simplex lies in the plane
   if(det(T)==0) {
     rows = t(combn(nrow(simplex), 2))
@@ -43,7 +39,6 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
     names(res) = c("d1Min", "d2Min", "d1Max", "d2Max")
     return(res)
   }
-  #T = matrix(unlist(T), ncol=ncol(T)) # need to force T to be a matrix
 
   # compute lambda as best we can (there will be 3 parts)
   rr = c(focus.pt, 1)
@@ -59,16 +54,14 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # find the d1 and d2 ranges that make each lambda 0
   # most indices are based on solving ax + by + c = 0
   # but keeping the other lambdas between 0 and 1
-  purrr::map_dfr(1:n, function(i) { # i is the index into intersect.range
-    # put y=mx+b into each other lambda formula and try and get a good range
-    ranges = common.cross.range(lambda.x, lambda.y, lambda.c, startCheckI+i-1)
-    #ranges = common.cross.range(lambda.x, lambda.y, lambda.c, i)
-    if(!is.na(ranges$x[1])) {
-      list(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
-    } else {
-      empty.slice
-    }
-  })
+
+  # put y=mx+b into each other lambda formula and try and get a good range
+  ranges = common.cross.range(lambda.x, lambda.y, lambda.c, n) # only consider the last lambda
+  if(!is.na(ranges$x[1])) {
+    list(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
+  } else {
+    empty.slice
+  }
 }
 
 common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
