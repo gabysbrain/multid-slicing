@@ -28,12 +28,14 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   T = matrix(1, ncol=n, nrow=n) # T needs to be square
   T[1:n-1,1:n-1] = t(simplex)
   T[,n] = c(focus.pt, 1)
-  if(det(T) == 0) {
-    T[-1,ncol(T)] = focus.pt + EPS # add small amount to make matrix non-singular
+  det.T = det(T)
+  if(det.T == 0) { # extra focus point may be in the simplex
+    T[-1,n] = focus.pt + EPS # add small amount to make matrix non-singular
+    det.T = det(T)
   }
 
-  # if T is singluar then the simplex lies in the plane
-  if(det(T)==0) {
+  # if T is still singluar then the simplex lies in the plane
+  if(det.T==0) {
     rows = t(combn(nrow(simplex), 2))
     res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
     names(res) = c("d1Min", "d2Min", "d1Max", "d2Max")
@@ -47,9 +49,9 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   rr.y = array(0,length(rr))
   rr.x[d1] = rr.y[d2] = 1
   # we are trying to compute T^(-1) . [x-xn,y-yn,...,z-zn]
-  lambda.c = as.vector(solve(T, rr)) # column vector multiplication
-  lambda.x = as.vector(solve(T, rr.x))
-  lambda.y = as.vector(solve(T, rr.y))
+  lambda.c = solve(T, rr) # column vector multiplication
+  lambda.x = solve(T, rr.x)
+  lambda.y = solve(T, rr.y)
 
   # find the d1 and d2 ranges that make each lambda 0
   # most indices are based on solving ax + by + c = 0
