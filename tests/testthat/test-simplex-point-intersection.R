@@ -1,13 +1,6 @@
 context("test-simplex-point-intersection.R")
 
 
-simple.simplex = matrix(c(
-  2,2,1,
-  2,1,2,
-  1,1,0,
-  3,1,0),
-  ncol=3, byrow=TRUE)
-
 planar.triangle = matrix(c(
   1,1,1,
   3,1,1,
@@ -25,19 +18,6 @@ off.axis.triangle.2 = matrix(c(
   0.0, 1.0, 0.0,
   1.0, 0.0, 1.0),
   ncol=3, byrow=TRUE)
-
-test_that("tet with 2D plane", {
-  res <- simplex.point.intersection(simple.simplex, c(0.0, 1.5, 0.0), 1, 3)
-
-  exp.res = data.frame(
-    d1Min = c(1.5, 2.0, 1.5),
-    d2Min = c(0.5, 1.5, 0.5),
-    d1Max = c(2.5, 2.5, 2.0),
-    d2Max = c(0.5, 0.5, 1.5)
-  )
-
-  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(exp.res))
-})
 
 test_that("3d-embedded triangle in plane (intersection)", {
   res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
