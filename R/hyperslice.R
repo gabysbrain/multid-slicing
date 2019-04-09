@@ -65,7 +65,6 @@ hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
       res2 = intersect.simplices(mesh, fp, dim[1], dim[2], use.3d.intersection)
 
       if(nrow(res2)>0) {
-        res2 = dplyr::filter_all(res2, dplyr::all_vars(!is.na(.))) # remove all the NA rows
         res2$d1 = dim[1]
         res2$d2 = dim[2]
       }
@@ -77,6 +76,7 @@ hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
     res
   })
 
+  slices = dplyr::filter_all(slices, dplyr::all_vars(!is.na(.))) # remove all the NA rows
   createSliceSet(mesh$problemSpec, focus.points, as.data.frame(slices))
 }
 
