@@ -1,0 +1,15 @@
+TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
+LIBDIR = rslice2d/target/$(TARGET)/release
+STATLIB = $(LIBDIR)/rslice2d.lib
+PKG_LIBS = -L$(LIBDIR) -lrslice2d -lws2_32 -ladvapi32 -luserenv
+
+all: clean
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	cargo build --release --manifest-path=rslice2d/Cargo.toml
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) rslice2d/target
+

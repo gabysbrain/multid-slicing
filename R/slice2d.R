@@ -15,7 +15,8 @@ intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   } else {
     purrr::map_dfr(1:n,
            #function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
-           function(i) simplex.point.intersection(pts[simpls[i,],], fp.vect, d1, d2))
+           #function(i) simplex.point.intersection(pts[simpls[i,],], fp.vect, d1, d2))
+           function(i) spi2(pts[simpls[i,],], fp.vect, d1, d2))
   }
 }
 
@@ -141,4 +142,16 @@ common.cross.range = function(lambda.x, lambda.y, lambda.c, i) {
   }
 
   list(x=x.rng, y=y.rng)
+}
+
+spi2 = function(simplex, focus.pt, d1, d2) {
+  dd = dim(simplex)
+  n = length(focus.pt)
+  l = .Call("spi_wrapper", simplex, dd[1], dd[2], focus.pt, n, d1, d2)
+  if(length(l) > 0) {
+    names(l) = c("d1Min", "d1Max", "d2Min", "d2Max")
+    l
+  } else {
+    empty.slice
+  }
 }

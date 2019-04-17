@@ -1,0 +1,15 @@
+LIBDIR = rslice2d/target/release
+STATLIB = $(LIBDIR)/librslice2d.a
+PKG_LIBS = -L$(LIBDIR) -lrslice2d -lresolv
+NIX = nix-shell -I ~/.nix-defexpr/channels_root/nixos-unstable -p cargo --run
+
+all: clean
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	$(NIX) "cargo build --release --manifest-path rslice2d/Cargo.toml"
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) rslice2d/target
+
