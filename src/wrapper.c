@@ -20,10 +20,10 @@ SEXP spi_wrapper(SEXP s, SEXP r, SEXP c,
   if(res) {
     //printf("%f %f %f %f\n", res->x1, res->y1, res->x2, res->y2);
     SEXP lst = PROTECT(Rf_allocVector(VECSXP, 4));
-    SET_VECTOR_ELT(lst, 0, Rf_ScalarReal(res->p1_2));
-    SET_VECTOR_ELT(lst, 1, Rf_ScalarReal(res->p1_1));
-    SET_VECTOR_ELT(lst, 2, Rf_ScalarReal(res->p2_2));
-    SET_VECTOR_ELT(lst, 3, Rf_ScalarReal(res->p2_1));
+    SET_VECTOR_ELT(lst, 0, Rf_ScalarReal(res->p1_1));
+    SET_VECTOR_ELT(lst, 1, Rf_ScalarReal(res->p1_2));
+    SET_VECTOR_ELT(lst, 2, Rf_ScalarReal(res->p2_1));
+    SET_VECTOR_ELT(lst, 3, Rf_ScalarReal(res->p2_2));
 
     //free(res);
 

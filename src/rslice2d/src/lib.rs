@@ -43,8 +43,7 @@ fn spi<N: Dim>(simplex: &MatrixN<f64,N>,
                focus_pt: &VectorN<f64,N>, 
                d1: usize, d2: usize)
       -> Option<SliceSeg>
-    where DefaultAllocator: Allocator<f64, N> + Allocator<f64, N, N>
-{
+    where DefaultAllocator: Allocator<f64, N> + Allocator<f64, N, N> {
           //S1: StorageMut<N, R, C>,
           //S2: StorageMut<N, R, U1> {
   let n = focus_pt.shape().0 + 1;
@@ -117,7 +116,7 @@ fn ccr(lx: &VectorN<f64,na::Dynamic>,
        ly: &VectorN<f64,na::Dynamic>, 
        lc: &VectorN<f64,na::Dynamic>, 
        n: usize) -> Option<SliceSeg> {
-  if lx[n] == 0.0 && ly[n] == 0.0 {
+  let res = if lx[n] == 0.0 && ly[n] == 0.0 {
     None
   } else if lx[n] == 0.0 {
     ccr_x0(lx, ly, lc, n)
@@ -125,6 +124,24 @@ fn ccr(lx: &VectorN<f64,na::Dynamic>,
     ccr_y0(lx, ly, lc, n)
   } else {
     ccr_general(lx, ly, lc, n)
+  };
+
+  // FIXME: this is really ugly. There should be a map function for Options
+  // TODO: maybe this should go in the R interface...
+  match res {
+    None => None,
+    Some(seg) => {
+      if seg.p2_1 < seg.p1_1 || (seg.p1_1==seg.p2_1 && seg.p2_2 < seg.p1_2) {
+        Some(SliceSeg {
+          p1_1: seg.p2_1,
+          p1_2: seg.p2_2,
+          p2_1: seg.p1_1,
+          p2_2: seg.p1_2
+        })
+      } else {
+        Some(seg)
+      }
+    },
   }
 }
 
@@ -151,15 +168,16 @@ fn ccr_general(lx: &VectorN<f64,na::Dynamic>,
       }
     }
   }
+
   // Some final intersection checking
   if !min_set || !max_set || min_x - max_x < -1e-8 {
     None
   } else {
     Some(SliceSeg {
-      p1_2: max_x,  // the original R implementation ordered things this way
-      p1_1: min_x, 
+      p1_1: min_x,  
+      p1_2: (-lc[n] - lx[n] * min_x) / ly[n],
+      p2_1: max_x, 
       p2_2: (-lc[n] - lx[n] * max_x) / ly[n],
-      p2_1: (-lc[n] - lx[n] * min_x) / ly[n]
     })
   }
 }
@@ -199,8 +217,8 @@ fn ccr_x0(lx: &VectorN<f64,na::Dynamic>,
     None
   } else {
     Some(SliceSeg {
-      p2_1: max_x, // orig R ordered things this way
       p1_1: min_x, 
+      p2_1: max_x, 
       p1_2: y,
       p2_2: y
     })
@@ -243,9 +261,9 @@ fn ccr_y0(lx: &VectorN<f64,na::Dynamic>,
   } else {
     Some(SliceSeg {
       p1_1: x,
-      p2_1: x,
-      p2_2: max_y, // orig R impl orders things backwards
       p1_2: min_y,
+      p2_1: x,
+      p2_2: max_y,
     })
   }
 }

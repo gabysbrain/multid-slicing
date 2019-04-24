@@ -52,8 +52,8 @@ test_that("single slice of a single triangle", {
     focusPoints = data.frame(x1=0.5, x2=0.5, x3=0.8),
     slices = data.frame(
       d1Min=c(0.8, 0.0, 0.0),
-      d1Max=c(0.8, 0.5, 0.5),
       d2Min=c(0.0, 0.0, 0.5),
+      d1Max=c(0.8, 0.5, 0.5),
       d2Max=c(0.2, 0.5, 0.5),
       d1=c(1, 1, 2),
       d2=c(2, 3, 3),
@@ -71,9 +71,9 @@ test_that("hyperslice correctly combines intersect.simplices", {
   is.1x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 3) %>% dplyr::filter(!is.na(d1Min))
   is.2x3 = intersect.simplices(test.cube.3d, rep(0.5, 3), 2, 3) %>% dplyr::filter(!is.na(d1Min))
 
-  exp.1x2 = r.hs$slices %>% dplyr::filter(d1==1, d2==2) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
-  exp.1x3 = r.hs$slices %>% dplyr::filter(d1==1, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
-  exp.2x3 = r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d1Max, d2Min, d2Max)
+  exp.1x2 = r.hs$slices %>% dplyr::filter(d1==1, d2==2) %>% dplyr::select(d1Min, d2Min, d1Max, d2Max)
+  exp.1x3 = r.hs$slices %>% dplyr::filter(d1==1, d2==3) %>% dplyr::select(d1Min, d2Min, d1Max, d2Max)
+  exp.2x3 = r.hs$slices %>% dplyr::filter(d1==2, d2==3) %>% dplyr::select(d1Min, d2Min, d1Max, d2Max)
 
   expect_equal(is.1x2, exp.1x2)
   expect_equal(is.1x3, exp.1x3)

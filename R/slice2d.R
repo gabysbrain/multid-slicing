@@ -2,7 +2,7 @@
 EPS = sqrt(.Machine$double.eps)
 #EPS = 1e-9
 
-empty.slice = data.frame(d1Min=c(), d1Max=c(), d2Min=c(), d2Max=c())
+empty.slice = data.frame(d1Min=c(), d2Min=c(), d1Max=c(), d2Max=c())
 
 intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   n = nrow(mesh$simplices)
@@ -14,7 +14,6 @@ intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
            function(i) intersect.tri(mesh$points[mesh$simplices[i,],], fp, d1, d2))
   } else {
     purrr::map_dfr(1:n,
-           #function(i) simplex.point.intersection(mesh$points[mesh$simplices[i,],], fp, d1, d2))
            #function(i) simplex.point.intersection(pts[simpls[i,],], fp.vect, d1, d2))
            function(i) spi2(pts[simpls[i,],], fp.vect, d1, d2))
   }
@@ -149,7 +148,7 @@ spi2 = function(simplex, focus.pt, d1, d2) {
   n = length(focus.pt)
   l = .Call("spi_wrapper", simplex, dd[1], dd[2], focus.pt, n, d1, d2)
   if(length(l) > 0) {
-    names(l) = c("d1Min", "d1Max", "d2Min", "d2Max")
+    names(l) = c("d1Min", "d2Min", "d1Max", "d2Max")
     l
   } else {
     empty.slice
