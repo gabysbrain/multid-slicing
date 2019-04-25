@@ -67,10 +67,10 @@ intersect.tri = function(tri, focus.pt, d1, d2) {
   pts = unique(pts[is.finite(pts[,1]),])
   if(nrow(pts) == 0) {
     #warning("no intersection")
-    return(data.frame(d1Min=NA, d1Max=NA, d2Min=NA, d2Max=NA))
+    return(data.frame(p1_1=NA, p2_1=NA, p1_2=NA, p2_2=NA))
   }
-  #data.frame(d1Min=pts[d1,d1], d1Max=pts[d2,d1], d2Min=pts[d1,d2], d2Max=pts[d2,d2])
-  data.frame(d1Min=pts[1,d1], d1Max=pts[2,d1], d2Min=pts[1,d2], d2Max=pts[2,d2])
+  #data.frame(p1_1=pts[d1,d1], p2_1=pts[d2,d1], p1_2=pts[d1,d2], p2_2=pts[d2,d2])
+  data.frame(p1_1=pts[1,d1], p2_1=pts[2,d1], p1_2=pts[1,d2], p2_2=pts[2,d2])
 }
 
 point.plane.dist = function(pt, plane.pt, plane.n) {
@@ -94,5 +94,38 @@ intersect.simplices.3dspace = function(mesh, fp, d1, d2) {
 intersect.by.fpid = function(mesh, fpid, d1, d2) {
   fps = sample.ProblemSpec(mesh$problemSpec, fpid)
   intersect.simplices(mesh, fps[fpid,], d1, d2)
+}
+
+#' Returns statistics about the number of simplices hit by slices
+intersection.stats = function(mesh, n=50) {
+  d = ncol(mesh$points)
+  focus.points = sample.ProblemSpec(mesh$problemSpec, n)
+  dims = t(combn(d,2))
+  nsimps = nrow(mesh$simplices)
+  pts = matrix(unlist(mesh$points), nrow=nrow(mesh$points))
+  simpls = matrix(unlist(mesh$simplices), nrow=nrow(mesh$simplices))
+
+  results = purrr::map_dfr(1:n, function(rid) { # go over all focus points
+    fp = focus.points[rid,]
+    fp.vect = unlist(fp)
+    purrr::map_dfr(1:nrow(dims), function(did) { # all pairs of dims
+      dim = dims[did,]
+      purrr::map_dfr(1:nsimps, function(i) {
+        r = spi2(pts[simpls[i,],], fp.vect, dim[1], dim[2])
+        if(length(r)) {
+          # we don't need the point of intersection just that we hit
+          data.frame(slice_id=i, fp_id=rid, d1=dim[1], d2=dim[2])
+        } else {
+          data.frame(slice_id=c(), fp_id=c(), d1=c(), d2=c())
+        }
+      })
+    })
+  })
+
+  # return the test statistics
+  results %>%
+    dplyr::group_by(slice_id, d1, d2) %>%
+    dplyr::summarize(hits=n()) %>%
+    dplyr::mutate(tries=n)
 }
 
