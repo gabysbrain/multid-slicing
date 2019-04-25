@@ -23,10 +23,10 @@ test_that("3d-embedded triangle in plane (intersection)", {
   res <- simplex.point.intersection(planar.triangle, c(1.0, 1.0, 1.0), 1, 2)
 
   res.exp = data.frame(
-    d1Min = c(1,1,3),
-    d1Max = c(3,2,2),
-    d2Min = c(1,1,1),
-    d2Max = c(1,2,2)
+    p1_1 = c(1,1,3),
+    p2_1 = c(3,2,2),
+    p1_2 = c(1,1,1),
+    p2_2 = c(1,2,2)
   )
 
   expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))

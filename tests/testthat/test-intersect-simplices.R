@@ -14,13 +14,13 @@ test_that("correct intersection points", {
   res = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 2)
 
   # cut NA rows
-  res = dplyr::filter(res, !is.na(d1Min))
+  res = dplyr::filter(res, !is.na(p1_1))
   expect_equal(nrow(res), 8) # 8 intersection segments
   res.exp = data.frame(
-    d1Min = c(0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.5),
-    d1Max = c(1.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.5, 1.0),
-    d2Min = c(0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 1.0),
-    d2Max = c(0.0, 0.0, 0.5, 1.0, 1.0, 0.5, 1.0, 1.0)
+    p1_1 = c(0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.5),
+    p2_1 = c(1.0, 0.5, 1.0, 1.0, 0.0, 0.0, 0.5, 1.0),
+    p1_2 = c(0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 1.0, 1.0),
+    p2_2 = c(0.0, 0.0, 0.5, 1.0, 1.0, 0.5, 1.0, 1.0)
   )
 
   expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))

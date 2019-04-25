@@ -2,7 +2,7 @@
 EPS = sqrt(.Machine$double.eps)
 #EPS = 1e-9
 
-empty.slice = data.frame(d1Min=c(), d2Min=c(), d1Max=c(), d2Max=c())
+empty.slice = data.frame(p1_1=c(), p1_2=c(), p2_1=c(), p2_2=c())
 
 intersect.simplices = function(mesh, fp, d1, d2, use.3d.intersection=FALSE) {
   n = nrow(mesh$simplices)
@@ -38,7 +38,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   if(det.T==0) {
     rows = t(combn(nrow(simplex), 2))
     res = data.frame(cbind(simplex[rows[,1], c(d1,d2)], simplex[rows[,2], c(d1,d2)]))
-    names(res) = c("d1Min", "d2Min", "d1Max", "d2Max")
+    names(res) = c("p1_1", "p1_2", "p2_1", "p2_2")
     return(res)
   }
 
@@ -60,7 +60,7 @@ simplex.point.intersection = function(simplex, focus.pt, d1, d2) {
   # put y=mx+b into each other lambda formula and try and get a good range
   ranges = common.cross.range(lambda.x, lambda.y, lambda.c, n) # only consider the last lambda
   if(!is.na(ranges$x[1])) {
-    list(d1Min=ranges$x[1], d1Max=ranges$x[2], d2Min=ranges$y[1], d2Max=ranges$y[2])
+    list(p1_1=ranges$x[1], p2_1=ranges$x[2], p1_2=ranges$y[1], p2_2=ranges$y[2])
   } else {
     empty.slice
   }
@@ -148,7 +148,7 @@ spi2 = function(simplex, focus.pt, d1, d2) {
   n = length(focus.pt)
   l = .Call("spi_wrapper", simplex, dd[1], dd[2], focus.pt, n, d1, d2)
   if(length(l) > 0) {
-    names(l) = c("d1Min", "d2Min", "d1Max", "d2Max")
+    names(l) = c("p1_1", "p1_2", "p2_1", "p2_2")
     l
   } else {
     empty.slice
