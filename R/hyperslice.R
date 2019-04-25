@@ -42,7 +42,14 @@ hyperslice <- function(mesh, n, focus.points, use.3d.intersection=FALSE) {
     }
     # fill in NAs with random numbers
     m = matrix(rep(focus.points, n), ncol=length(focus.points), byrow=TRUE)
-    m[is.na(m)] = runif(length(m[is.na(m)])) # TODO: make this work with the ranges of the parameters
+    for(c in 1:ncol(m)) {
+      x = runif(length(m[is.na(m[,c]),c]))
+      r = mesh$problemSpec$limits[[c]]
+      # scale the values to the limits of the dimension
+      x = r[1] + (r[2] - r[1]) * x
+      m[is.na(m[,c]),c] = x
+    }
+    #m[is.na(m)] = runif(length(m[is.na(m)])) # TODO: make this work with the ranges of the parameters
     focus.points = data.frame(m)
     names(focus.points) = names(mesh$points)
   } else {

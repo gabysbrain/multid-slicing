@@ -94,3 +94,10 @@ test_that("all 3d slices of a cube are the same as standard slicing algo", {
   }
 })
 
+test_that("filling in focus points respects the bounds of the mesh", {
+  test.cube = convmesh(expand.grid(x1=c(-2,-1), x2=c(-2,-1), x3=c(-2,-1)), nice=TRUE)
+  s = hyperslice(test.cube, focus.points=c(-1.5,-1.5,NA), n=20) # 20 examples should be enough...
+  fps = s$focusPoints$x3
+  expect_true(all(fps <= -1)) # TODO: clean up tests to show which vector values fail the test
+  expect_true(all(fps >= -2))
+})
