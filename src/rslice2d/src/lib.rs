@@ -131,6 +131,7 @@ fn ccr(lx: &VectorN<f64,na::Dynamic>,
   match res {
     None => None,
     Some(seg) => {
+      // R wants the min value in p1
       if seg.p2_1 < seg.p1_1 || (seg.p1_1==seg.p2_1 && seg.p2_2 < seg.p1_2) {
         Some(SliceSeg {
           p1_1: seg.p2_1,
