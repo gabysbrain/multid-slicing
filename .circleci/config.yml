@@ -18,7 +18,8 @@ defaults: &steps
         name: Install additional packages
         command: |
           sudo apt-get -y install \
-            mesa-common-dev freeglut3 libglu1-mesa-dev libgl1-mesa-dev 
+            mesa-common-dev freeglut3 libglu1-mesa-dev libgl1-mesa-dev \
+            cargo
 
     ## install dependencies ------------------
 
