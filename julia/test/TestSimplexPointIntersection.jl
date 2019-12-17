@@ -5,9 +5,9 @@ push!(LOAD_PATH, "src")
 using IntersectTest
 
 planarTriangle = [
-  1 1 1 ;
-  3 1 1 ;
-  2 2 1
+  1.0 1.0 1.0 ;
+  3.0 1.0 1.0 ;
+  2.0 2.0 1.0
 ]
 
 offAxisTriangle = [
@@ -23,44 +23,46 @@ offAxisTriangle2 = [
 ]
 
 @testset "3d-embedded triangle in plane (intersection)" begin
-  res = IntersectTest.simplexPointIntersection(planarTriangle, [1.0 1.0 1.0], 1, 2)
+  res = IntersectTest.simplexPointIntersection(planarTriangle, [1.0, 1.0, 1.0], 1, 2)
 
   resExp = [
-    1 3 1 1 ;
-    1 2 1 2 ;
-    3 2 1 2
+    IntersectTest.Intersect2D(1.0, 1.0, 3.0, 1.0),
+    IntersectTest.Intersect2D(1.0, 1.0, 2.0, 2.0),
+    IntersectTest.Intersect2D(3.0, 1.0, 2.0, 2.0)
   ]
 
-  @test_broken res == resExp
+  @test res == resExp
 end
 
 @testset "3d-embedded triangle in plane (non-intersection)" begin
-  res = IntersectTest.simplexPointIntersection(planarTriangle, [1.0 1.0 0.0], 1, 2)
+  res = IntersectTest.simplexPointIntersection(planarTriangle, [1.0, 1.0, 0.0], 1, 2)
 
   resExp = []
   #expect_that(nrow(res), equals(0))
-  @test_broken res == resExp
+  @test res == resExp
 end
 
 @testset "off-axis triangle - dims 1,2 (intersection)" begin
   res = IntersectTest.simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 2)
   resExp = IntersectTest.intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 2)
 
-  @test res ≈ resExp
+  @test length(res) == 1
+  @test res[1] ≈ resExp[1]
 end
 
 @testset "off-axis triangle - dims 1,3 (intersection)" begin
-  res = IntersectTest.simplexPointIntersection(offAxisTriangle2, [0.5 0.5 0.8], 1, 3)
-  resExp = IntersectTest.intersectTri(offAxisTriangle2, [0.5 0.5 0.8], 1, 3)
+  res = IntersectTest.simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 3)
+  resExp = IntersectTest.intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 3)
   #print(res)
 
-  @test_broken res == resExp
+  @test length(res) == 1
+  @test res[1] ≈ resExp[1]
 end
 
 @testset "point inside simplex" begin
-  res = IntersectTest.simplexPointIntersection(offAxisTriangle2, [0.5 0.5 0.5], 1, 3)
-  resExp = IntersectTest.intersectTri(offAxisTriangle2, [0.5 0.5 0.5], 1, 3)
-  #print(res)
+  res = IntersectTest.simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.5], 1, 3)
+  resExp = IntersectTest.intersectTri(offAxisTriangle2, [0.5, 0.5, 0.5], 1, 3)
 
-  @test_broken res == resExp
+  @test length(res) == 1
+  @test res[1] ≈ resExp[1]
 end

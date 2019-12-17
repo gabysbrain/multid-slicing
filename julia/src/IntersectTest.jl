@@ -3,6 +3,8 @@ export simplexPointIntersection, intersectTri
 
 using LinearAlgebra
 
+const EPS = sqrt(eps())
+
 struct Intersect2D
   p1d1 :: Float64
   p1d2 :: Float64
@@ -10,10 +12,147 @@ struct Intersect2D
   p2d2 :: Float64
 end
 
-PointND = Array{Float64,1}
-
-function simplexPointIntersection(simplex, fp::PointND, d1::Int, d2::Int)
+function Base.isapprox(x::Intersect2D, y::Intersect2D) #; atol::Real=0, rtol::Real=rtoldefault(x,y,atol), nans::Bool=false)
+  # FIXME: easy to break
+  isapprox(x.p1d1, y.p1d1) &&
+  isapprox(x.p1d2, y.p1d2) &&
+  isapprox(x.p2d1, y.p2d1) &&
+  isapprox(x.p2d2, y.p2d2)
 end
+
+PointND = Array{Float64,1}
+LambdaND = Array{Float64,1}
+
+# TODO: simplex type signature
+# TODO: ensure simplex and fp are compatible
+function simplexPointIntersection(simplex, fp::PointND, d1::Int, d2::Int)
+  n = length(fp) + 1 # number of lambdas to check, dimensionality of the space + 1
+
+  # Set up matrix for barycentric computation
+  # Append a set of ones to the simplex and incorporate the focus point
+  # to create a square matrix
+  T = ones(Float64,(n,n)) # TODO: use square matrix type if exists
+  T[1:n-1,1:n-1] = simplex'
+  T[1:n-1,n] = fp
+
+  if det(T) == 0 # extra focus point may be in the plane of the simplex
+    T[d1,n] = fp[d1] .+ 1e-5 # offset slightly to make matrix non-singluar
+  end
+
+  # If T is still singluar then the simplex lies in the plane
+  # so just return the simplex as a 2D projection of line segments
+  if det(T) == 0
+    nrow = size(simplex, 1)
+    # all pairs of vertices in the simplex
+    verts = filter(x -> x[1] != x[2], collect(Iterators.product(1:(nrow-1), 2:nrow)))
+    v2d = [
+      Intersect2D(simplex[pts[1], d1], simplex[pts[1], d2],
+                  simplex[pts[2], d1], simplex[pts[2], d2])
+      for pts = verts
+    ]
+    return v2d
+  end
+
+  # compute lambda as best we can (there will be 3 parts)
+  rr = vcat(fp, 1.)
+  rr[d1] = rr[d2] = 0
+  rrx = zeros(length(rr))
+  rry = zeros(length(rr))
+  rrx[d1] = rry[d2] = 1.
+  # We are trying to compute T^(-1) . [x-xn, y-yn,...,z-zn]
+  Tlu = factorize(T)
+  lc = Tlu \ rr # This way is more stable than inverting once
+  lx = Tlu \ rrx
+  ly = Tlu \ rry
+
+  # find the d1 and d2 ranges that make each lambda 0
+  # most indices are based on solving ax + by + c = 0
+  # but keeping the other lambdas between 0 and 1
+
+  # put y=mx+b into each other lambda formula and try and get a good range
+  ccr(lx, ly, lc, n) # only consider the last lambda
+end
+
+## The common-cross-range functions
+function ccr(lx, ly, lz, i)
+  if lx[i] == 0 && ly[i] == 0
+    return []
+  elseif lx[i] == 0
+    ccrX0(lx, ly, lz, i)
+  elseif ly[i] == 0
+    ccrY0(lx, ly, lz, i)
+  else
+    ccrXY(lx, ly, lz, i)
+  end
+end
+
+function ccrX0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+  # solve ly * y + c = 0
+  y = -lc[i] / ly[i]
+  # replace y in all other formulas and solve lx * x + ly * y + lc >=0 for x
+  xs = lx[1:end .!= i]
+  cs = ly[1:end .!= i] * y + lc[1:end .!= i]
+  res = -cs ./ xs
+
+  if any(xs .== 0) && any(cs[xs .== 0] .< 0) # no intersection
+    return []
+  else
+    xsp = xs[map(isfinite,res)] # for filtering res later
+    res = res[map(isfinite,res)]
+    xrng = (maximum(res[xsp .>= 0]), minimum(res[xsp .< 0]))
+    # some final bounds checking
+    if xrng[2] - xrng[1] < -EPS
+      return []
+    end
+    return [Intersect2D(xrng[1], y, xrng[2], y)]
+  end
+end
+
+function ccrY0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+  # solve ly * y + c = 0
+  x = -lc[i] / lx[i]
+  # replace x in all other formulas and solve lx * x + ly * y + lc >=0 for y
+  ys = ly[1:end .!= i]
+  cs = lx[1:end .!= i] * x + lc[1:end .!= i]
+  res = -cs ./ ys
+
+  if any(ys .== 0) && any(cs[ys .== 0] .< 0) # no intersection
+    return []
+  else
+    ysp = ys[map(isfinite,res)] # for filtering res later
+    res = res[map(isfinite,res)]
+    yrng = (maximum(res[ysp .>= 0]), minimum(res[ysp .< 0]))
+    # some final bounds checking
+    if yrng[2] - yrng[1] < -EPS
+      return []
+    end
+    return [Intersect2D(x, yrng[1], x, yrng[2])]
+  end
+end
+
+# assumes lx[i] and ly[i] are non-zero
+function ccrXY(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+  # solve lx * x + ly * y + c = 0 and substitute
+  xs = lx[1:end .!= i] - ly[1:end .!= i] .* lx[i] ./ ly[i]
+  cs = lc[1:end .!= i] - ly[1:end .!= i] .* lc[i] ./ ly[i]
+  res = -cs ./ xs # solving for xs + cs >= 0
+
+  if any(xs .== 0) && any(cs[xs .== 0] .< 0) # no intersection
+    return []
+  else
+    xsp = xs[map(isfinite,res)] # for filtering res later
+    res = res[map(isfinite,res)]
+    xrng = (maximum(res[xsp .>= 0]), minimum(res[xsp .< 0]))
+    yrng = -lc[i] .- lx[i] .* xrng ./ ly[i]
+    # some final bounds checking
+    if xrng[2] - xrng[1] < -EPS
+      return []
+    end
+    return [Intersect2D(xrng[1], yrng[1], xrng[2], yrng[2])]
+  end
+end
+
+
 
 # TODO: force triangle to be a triangle in 3D space
 function intersectTri(triangle, fp::PointND, d1::Int, d2::Int)
@@ -31,9 +170,9 @@ function intersectTri(triangle, fp::PointND, d1::Int, d2::Int)
 
   pts = filter(x -> isfinite(x[1]), [p1, p2, p3])
   if length(pts) == 0
-    return nothing
+    return []
   else
-    return Intersect2D(pts[1][d1], pts[1][d2], pts[2][d1], pts[2][d2])
+    return [Intersect2D(pts[1][d1], pts[1][d2], pts[2][d1], pts[2][d2])]
   end
 end
 
