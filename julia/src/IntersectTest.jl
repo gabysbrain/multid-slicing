@@ -2,30 +2,10 @@ module IntersectTest
 export simplexPointIntersection, intersectTri
 
 using LinearAlgebra
+include("types.jl")
 
-const EPS = sqrt(eps())
-
-struct Intersect2D
-  p1d1 :: Float64
-  p1d2 :: Float64
-  p2d1 :: Float64
-  p2d2 :: Float64
-end
-
-function Base.isapprox(x::Intersect2D, y::Intersect2D) #; atol::Real=0, rtol::Real=rtoldefault(x,y,atol), nans::Bool=false)
-  # FIXME: easy to break
-  isapprox(x.p1d1, y.p1d1) &&
-  isapprox(x.p1d2, y.p1d2) &&
-  isapprox(x.p2d1, y.p2d1) &&
-  isapprox(x.p2d2, y.p2d2)
-end
-
-PointND = Array{Float64,1}
-LambdaND = Array{Float64,1}
-
-# TODO: simplex type signature
 # TODO: ensure simplex and fp are compatible
-function simplexPointIntersection(simplex, fp::PointND, d1::Int, d2::Int)
+function simplexPointIntersection(simplex::Simplex, fp::PointND, d1::Dim, d2::Dim)
   n = length(fp) + 1 # number of lambdas to check, dimensionality of the space + 1
 
   # Set up matrix for barycentric computation
@@ -74,7 +54,7 @@ function simplexPointIntersection(simplex, fp::PointND, d1::Int, d2::Int)
 end
 
 ## The common-cross-range functions
-function ccr(lx, ly, lz, i)
+function ccr(lx::LambdaND, ly::LambdaND, lz::LambdaND, i::Dim)
   if lx[i] == 0 && ly[i] == 0
     return []
   elseif lx[i] == 0
@@ -86,7 +66,7 @@ function ccr(lx, ly, lz, i)
   end
 end
 
-function ccrX0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+function ccrX0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Dim)
   # solve ly * y + c = 0
   y = -lc[i] / ly[i]
   # replace y in all other formulas and solve lx * x + ly * y + lc >=0 for x
@@ -108,7 +88,7 @@ function ccrX0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
   end
 end
 
-function ccrY0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+function ccrY0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Dim)
   # solve ly * y + c = 0
   x = -lc[i] / lx[i]
   # replace x in all other formulas and solve lx * x + ly * y + lc >=0 for y
@@ -131,7 +111,7 @@ function ccrY0(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
 end
 
 # assumes lx[i] and ly[i] are non-zero
-function ccrXY(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Int)
+function ccrXY(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Dim)
   # solve lx * x + ly * y + c = 0 and substitute
   xs = lx[1:end .!= i] - ly[1:end .!= i] .* lx[i] ./ ly[i]
   cs = lc[1:end .!= i] - ly[1:end .!= i] .* lc[i] ./ ly[i]
@@ -155,7 +135,7 @@ end
 
 
 # TODO: force triangle to be a triangle in 3D space
-function intersectTri(triangle, fp::PointND, d1::Int, d2::Int)
+function intersectTri(triangle, fp::PointND, d1::Dim, d2::Dim)
   # compute the normal to the slicing plane
   n = ones(3)
   n[d1] = n[d2] = 0.0
