@@ -17,7 +17,8 @@ Imports: geometry,
     gridExtra,
     randtoolbox,
     rjson,
-    purrr
+    purrr,
+    hdf5r
 Suggests:
     testthat,
     rgl
