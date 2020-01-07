@@ -1,4 +1,5 @@
 module HypersliceSet
+export savejson, readjson
 
 @include("types.jl")
 

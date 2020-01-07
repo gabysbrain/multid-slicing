@@ -1,5 +1,3 @@
-module IntersectTest
-export simplexPointIntersection, intersectTri
 
 using LinearAlgebra
 include("types.jl")
@@ -154,6 +152,4 @@ function intersectTri(triangle, fp::PointND, d1::Dim, d2::Dim)
   else
     return [Intersect2D(pts[1][d1], pts[1][d2], pts[2][d1], pts[2][d2])]
   end
-end
-
 end

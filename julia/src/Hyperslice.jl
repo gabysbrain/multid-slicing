@@ -1,7 +1,9 @@
 module Hyperslice
+export hyperslice
 
 include("types.jl")
 include("util.jl")
+include("IntersectTest.jl")
 
 using Sobol: SobolSeq, next!
 

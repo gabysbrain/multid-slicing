@@ -1,8 +1,6 @@
 using Test
 
-push!(LOAD_PATH, "src")
-
-using IntersectTest
+include("../src/IntersectTest.jl")
 
 include("../src/types.jl")
 
@@ -25,7 +23,7 @@ offAxisTriangle2 = [
 ]
 
 @testset "3d-embedded triangle in plane (intersection)" begin
-  res = simplexPointIntersection(planarTriangle, [1.0, 1.0, 1.0], 1, 2)
+  res = simplexPointIntersection(planarTriangle, [1.0, 1.0, 1.0], Dim(1), Dim(2))
 
   resExp = [
     Intersect2D(1.0, 1.0, 3.0, 1.0),
@@ -37,7 +35,7 @@ offAxisTriangle2 = [
 end
 
 @testset "3d-embedded triangle in plane (non-intersection)" begin
-  res = simplexPointIntersection(planarTriangle, [1.0, 1.0, 0.0], 1, 2)
+  res = simplexPointIntersection(planarTriangle, [1.0, 1.0, 0.0], Dim(1), Dim(2))
 
   resExp = []
   #expect_that(nrow(res), equals(0))
@@ -45,16 +43,16 @@ end
 end
 
 @testset "off-axis triangle - dims 1,2 (intersection)" begin
-  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 2)
-  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 2)
+  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], Dim(1), Dim(2))
+  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], Dim(1), Dim(2))
 
   @test length(res) == 1
   @test res[1] ≈ resExp[1]
 end
 
 @testset "off-axis triangle - dims 1,3 (intersection)" begin
-  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 3)
-  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], 1, 3)
+  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.8], Dim(1), Dim(3))
+  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.8], Dim(1), Dim(3))
   #print(res)
 
   @test length(res) == 1
@@ -62,8 +60,8 @@ end
 end
 
 @testset "point inside simplex" begin
-  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.5], 1, 3)
-  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.5], 1, 3)
+  res = simplexPointIntersection(offAxisTriangle2, [0.5, 0.5, 0.5], Dim(1), Dim(3))
+  resExp = intersectTri(offAxisTriangle2, [0.5, 0.5, 0.5], Dim(1), Dim(3))
 
   @test length(res) == 1
   @test res[1] ≈ resExp[1]

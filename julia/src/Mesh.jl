@@ -1,4 +1,5 @@
 module Mesh
+export savehdf5, readhdf5
 
 include("types.jl")
 
