@@ -23,7 +23,7 @@ function readhdf5(filename::String)
     points = read(file, "points")
     simplIdxs = read(file, "simplices")
 
-    ps = ProblemSpec(x[1] => Tuple(x[2]) for x=zip(dimnames, support))
+    ps = ProblemSpec(x[1] => Tuple(x[2]) for x in zip(dimnames, support))
     Mesh(ps, points, simplIdxs)
   end
 end

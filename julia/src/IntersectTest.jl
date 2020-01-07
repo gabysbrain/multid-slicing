@@ -6,7 +6,7 @@ include("types.jl")
 
 # TODO: ensure simplex and fp are compatible
 function simplexPointIntersection(simplex::Simplex, fp::PointND, d1::Dim, d2::Dim)
-  n = length(fp) + 1 # number of lambdas to check, dimensionality of the space + 1
+  n = Dim(length(fp) + 1) # number of lambdas to check, dimensionality of the space + 1
 
   # Set up matrix for barycentric computation
   # Append a set of ones to the simplex and incorporate the focus point

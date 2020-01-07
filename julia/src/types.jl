@@ -2,6 +2,7 @@
 # Types for use in the rest of the package
 
 using DataStructures: OrderedDict
+using JSON
 
 const EPS = sqrt(eps())
 
@@ -41,11 +42,11 @@ function Base.iterate(m :: Mesh, state=1)
     return nothing
   end
 
-  i = simplIdx[state,:]
-  (points[i,:], state+1)
+  i = m.simplIdx[state,:]
+  (m.points[i,:], state+1)
 end
 
-# Size of the mesh is the number of simplices
+# Size of the mesh is the number of simplices and dimensions
 function Base.size(m :: Mesh)
   (size(m.simplIdx)[1], size(m.points)[2])
 end
@@ -53,9 +54,25 @@ end
 struct HypersliceSegment
   fp   :: PointND
   d1   :: Dim
-  d1   :: Dim
+  d2   :: Dim
   p1d1 :: Float64
   p1d2 :: Float64
   p2d1 :: Float64
   p2d2 :: Float64
+end
+
+function JSON.lower(hs::HypersliceSegment)
+  Dict("focusPoint" => hs.fp,
+       "d1" => hs.d1,
+       "d2" => hs.d2,
+       "p1d1" => hs.p1d1,
+       "p1d2" => hs.p1d2,
+       "p2d1" => hs.p2d1,
+       "p2d2" => hs.p2d2
+  )
+end
+
+struct HypersliceSet
+  problemSpec :: ProblemSpec
+  slices :: Array{HypersliceSegment}
 end

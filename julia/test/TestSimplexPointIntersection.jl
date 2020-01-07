@@ -4,7 +4,7 @@ push!(LOAD_PATH, "src")
 
 using IntersectTest
 
-include("types.jl")
+include("../src/types.jl")
 
 planarTriangle = [
   1.0 1.0 1.0 ;
