@@ -1,7 +1,7 @@
-module HypersliceSet
+module HypersliceSets
 export HypersliceSegment, HypersliceSet, savejson, readjson
 
-#include("types.jl")
+include("types.jl")
 
 using JSON
 

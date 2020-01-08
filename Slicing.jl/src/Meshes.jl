@@ -1,4 +1,4 @@
-module Mesh
+module Meshes
 export ConvexMesh, savehdf5, readhdf5
 
 include("types.jl")

@@ -2,7 +2,8 @@ module Slicing
 export fillfps, hyperslice
 
 include("types.jl")
-include("Mesh.jl")
+include("Meshes.jl")
+include("HypersliceSets.jl")
 include("Hyperslice.jl")
 
 hyperslice = Hyperslice.hyperslice
