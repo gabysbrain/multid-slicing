@@ -1,11 +1,32 @@
 module Mesh
-export savehdf5, readhdf5
+export ConvexMesh, savehdf5, readhdf5
 
 include("types.jl")
 
 using HDF5
 
-function savehdf5(filename::String, m::Mesh)
+struct ConvexMesh
+  problemSpec :: ProblemSpec
+  points :: Array{Float64}
+  simplIdx :: Array{UInt64}
+end
+
+# Loop through simplices
+function Base.iterate(m :: ConvexMesh, state=1)
+  if state > size(m)[1]
+    return nothing
+  end
+
+  i = m.simplIdx[state,:]
+  (m.points[i,:], state+1)
+end
+
+# Size of the mesh is the number of simplices and dimensions
+function Base.size(m :: ConvexMesh)
+  (size(m.simplIdx)[1], size(m.points)[2])
+end
+
+function savehdf5(filename::String, m::ConvexMesh)
   dimnames = keys(m.problemSpec)
   dimranges = values(m.problemSpec)
 
@@ -25,7 +46,7 @@ function readhdf5(filename::String)
     simplIdxs = read(file, "simplices")
 
     ps = ProblemSpec(x[1] => Tuple(x[2]) for x in zip(dimnames, support))
-    Mesh(ps, points, simplIdxs)
+    ConvexMesh(ps, points, simplIdxs)
   end
 end
 

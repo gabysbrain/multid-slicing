@@ -1,7 +1,11 @@
 module Slicing
+export fillfps, hyperslice
 
 include("types.jl")
+include("Mesh.jl")
 include("Hyperslice.jl")
+
+hyperslice = Hyperslice.hyperslice
 
 #function fillfps(ps::ProblemSpec, fp::Array{Union{Missing,Float64},1}, n::Int = 50)
 function fillfps(ps, fp, n = 50)

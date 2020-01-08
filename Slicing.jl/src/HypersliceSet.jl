@@ -1,9 +1,35 @@
 module HypersliceSet
-export savejson, readjson
+export HypersliceSegment, HypersliceSet, savejson, readjson
 
-@include("types.jl")
+#include("types.jl")
 
 using JSON
+
+struct HypersliceSegment
+  fp   :: PointND
+  d1   :: Dim
+  d2   :: Dim
+  p1d1 :: Float64
+  p1d2 :: Float64
+  p2d1 :: Float64
+  p2d2 :: Float64
+end
+
+function JSON.lower(hs::HypersliceSegment)
+  Dict("focusPoint" => hs.fp,
+       "d1" => hs.d1,
+       "d2" => hs.d2,
+       "p1d1" => hs.p1d1,
+       "p1d2" => hs.p1d2,
+       "p2d1" => hs.p2d1,
+       "p2d2" => hs.p2d2
+  )
+end
+
+struct HypersliceSet
+  problemSpec :: ProblemSpec
+  slices :: Array{HypersliceSegment}
+end
 
 function savejson(filename::String, hs::HypersliceSet)
   open(filename, "w") do io
