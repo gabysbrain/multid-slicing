@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 if [ $(command -v nix-shell) ]; then
-  CARGO_CMD='nix-shell -I ~/.nix-defexpr/channels_root/nixos-unstable -p cargo --run \"cargo build --release --manifest-path rslice2d/Cargo.toml\"'
+  CARGO_CMD='nix-shell -p cargo --run \"cargo build --release --manifest-path rslice2d/Cargo.toml\"'
 elif [ $(command -v cargo) ]; then
   #cargo --version
   CARGO_CMD='cargo build --release --manifest-path rslice2d/Cargo.toml'
