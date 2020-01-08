@@ -17,7 +17,7 @@ plot.SliceSet = function(o) {
     for(j in (i+1):d) {
       pd = curves %>% dplyr::filter(d1==i&d2==j) %>% unique()
       p = ggplot2::ggplot(pd, ggplot2::aes(group=fpid)) +
-          ggplot2::geom_segment(ggplot2::aes(x=d1Min, xend=d1Max, y=d2Min, yend=d2Max), alpha=0.4)
+          ggplot2::geom_segment(ggplot2::aes(x=p1_1, xend=p2_1, y=p1_2, yend=p2_2), alpha=0.4)
       p = p + ggplot2::scale_x_continuous(limits=ps$limits[[i]]) +
         ggplot2::scale_y_continuous(limits=ps$limits[[j]]) +
         ggplot2::theme_bw() +
