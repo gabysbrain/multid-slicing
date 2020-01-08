@@ -3,6 +3,28 @@ context("test-intersect-simplices cube")
 test.cube.3d = convmesh(expand.grid(x1=c(0,1), x2=c(0,1), x3=c(0,1)),
                         nice=TRUE)
 
+declared.cube = list(
+  problemSpec = list(
+    dimNames = c("x1", "x2", "x3"),
+    limits = list(x1=c(-1,1), x2=c(-1,1), x3=c(-1, 1))
+  ),
+  points = data.frame(x1=c(-1, 1, -1, 1, -1, 1, -1, 1), x2=c(1, 1, -1, -1, 1, 1, -1, -1), x3=c(1, 1, 1, 1, -1, -1, -1, -1)),
+  simplices = matrix(c(
+    1, 2, 3,
+    2, 4, 3,
+    5, 6, 7,
+    6, 7, 8,
+    1, 3, 7,
+    3, 5, 7,
+    3, 4, 7,
+    4, 7, 8,
+    2, 4, 8,
+    2, 6, 8,
+    1, 2, 5,
+    2, 5, 6), ncol=3, byrow=TRUE)
+)
+class(test.cube.3d.2) = "Mesh"
+
 test_that("4 simplices have no intersection", {
   res = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 2)
 
@@ -32,4 +54,16 @@ test_that("repeated calls are deterministic", {
     test = intersect.simplices(test.cube.3d, c(0.75,0.25,0.75), 2, 3, use.3d.intersection = FALSE)
     expect_equal(test, exp)
   }
+})
+
+test_that("declared cube (from python port testing) matches with 3d intersection", {
+  res = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = TRUE)
+  res.exp = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = FALSE)
+
+  # cut NA rows
+  res = dplyr::filter(res, !is.na(p1_1))
+  res.exp = dplyr::filter(res.exp, !is.na(p1_1))
+  expect_equal(nrow(res), 8) # 8 intersection segments
+
+  expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))
 })
