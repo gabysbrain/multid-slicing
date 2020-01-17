@@ -23,7 +23,7 @@ declared.cube = list(
     1, 2, 5,
     2, 5, 6), ncol=3, byrow=TRUE)
 )
-class(test.cube.3d.2) = "Mesh"
+class(declared.cube) = "Mesh"
 
 test_that("4 simplices have no intersection", {
   res = intersect.simplices(test.cube.3d, rep(0.5, 3), 1, 2)
@@ -57,12 +57,14 @@ test_that("repeated calls are deterministic", {
 })
 
 test_that("declared cube (from python port testing) matches with 3d intersection", {
-  res = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = TRUE)
-  res.exp = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = FALSE)
+  res = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = FALSE)
+  res.exp = intersect.simplices(declared.cube, c(0, 0, 0), 1, 2, use.3d.intersection = TRUE)
 
   # cut NA rows
   res = dplyr::filter(res, !is.na(p1_1))
   res.exp = dplyr::filter(res.exp, !is.na(p1_1))
+  print(res)
+  print(res.exp)
   expect_equal(nrow(res), 8) # 8 intersection segments
 
   expect_equal(dplyr::tbl_df(res), dplyr::tbl_df(res.exp))

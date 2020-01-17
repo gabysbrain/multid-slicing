@@ -61,6 +61,8 @@ test_that("single slice of a single triangle", {
     )
   )
   class(exp.slices.1) = "SliceSet"
+  print(res$slices)
+  print(exp.slices.1$slices)
   expect_equal(res, exp.slices.1)
 })
 
