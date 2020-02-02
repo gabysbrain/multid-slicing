@@ -15,6 +15,18 @@ struct HypersliceSegment
   p2d2 :: Float64
 end
 
+function Base.isapprox(x::HypersliceSegment, y::HypersliceSegment)
+  all([
+    x.fp ≈ y.fp,
+    x.d1 == y.d1,
+    x.d2 == y.d2,
+    x.p1d1 ≈ y.p1d1,
+    x.p1d2 ≈ y.p1d2,
+    x.p2d1 ≈ y.p2d1,
+    x.p2d2 ≈ y.p2d2
+  ])
+end
+
 function JSON.lower(hs::HypersliceSegment)
   Dict("focusPoint" => hs.fp,
        "d1" => hs.d1,
