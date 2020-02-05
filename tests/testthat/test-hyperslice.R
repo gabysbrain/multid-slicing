@@ -44,6 +44,12 @@ test_that("integer check for n", {
   expect_error(hyperslice(test.mesh.1, n="bc"), "n must be an integer", fixed=TRUE)
 })
 
+test_that("focus point outside triangle returns nothing", {
+  res = hyperslice(test.mesh.1, focus.points=c(1.5, 1.5, 1.5))
+
+  expect_equal(nrow(res$slices), 0)
+})
+
 test_that("single slice of a single triangle", {
   res = hyperslice(test.mesh.1, focus.points=c(0.5, 0.5, 0.8))
   #print(res)
