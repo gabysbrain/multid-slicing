@@ -21,6 +21,10 @@ function Base.iterate(m :: ConvexMesh, state=1)
   (m.points[i,:], state+1)
 end
 
+# Length of the mesh is the number of simplices
+# Needed for many iteration utilities
+Base.length(m :: ConvexMesh) = Base.size(m)[1]
+
 # Size of the mesh is the number of simplices and dimensions
 function Base.size(m :: ConvexMesh)
   (size(m.simplIdx)[1], size(m.points)[2])
