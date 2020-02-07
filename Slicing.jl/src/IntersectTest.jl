@@ -128,7 +128,7 @@ function ccrXY(lx::LambdaND, ly::LambdaND, lc::LambdaND, i::Dim)
     xsp = xs[map(isfinite,res)] # for filtering res later
     res = res[map(isfinite,res)]
     xrng = (maximum(res[xsp .>= 0]), minimum(res[xsp .< 0]))
-    yrng = -lc[i] .- lx[i] .* xrng ./ ly[i]
+    yrng = (-lc[i] .- lx[i] .* xrng) ./ ly[i]
     # some final bounds checking
     if xrng[2] - xrng[1] < -EPS
       return []
