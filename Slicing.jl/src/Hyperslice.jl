@@ -36,16 +36,17 @@ function sliceDims(mesh::ConvexMesh, fp::PointND)
   slices = []
   for dd in dimComb(UInt64(size(mesh)[2]))
     ss = slice(mesh, fp, dd[1], dd[2])
-    hss = [HypersliceSegment(fp, dd[1], dd[2], s.p1d1, s.p1d2, s.p2d1, s.p2d2) for s in ss]
+    hss = [HypersliceSegment(fp, simp, dd[1], dd[2], s.p1d1, s.p1d2, s.p2d1, s.p2d2) for (simp,s) in ss]
     append!(slices, hss)
   end
   return slices
 end
 
 function slice(mesh::ConvexMesh, fp::PointND, d1::Dim, d2::Dim)
-  slices = Intersect2D[]
+  slices = Tuple{Simplex,Intersect2D}[]
   for s in mesh
-    append!(slices, simplexPointIntersection(s, fp, d1, d2))
+    ts = [(s,t) for t in simplexPointIntersection(s, fp, d1, d2)]
+    append!(slices, ts)
   end
   return slices
 end
