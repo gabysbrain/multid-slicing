@@ -43,7 +43,7 @@ function sliceDims(mesh::ConvexMesh, fp::PointND)
 end
 
 function slice(mesh::ConvexMesh, fp::PointND, d1::Dim, d2::Dim)
-  slices::Vector{Intersect2D} = []
+  slices = Intersect2D[]
   for s in mesh
     append!(slices, simplexPointIntersection(s, fp, d1, d2))
   end

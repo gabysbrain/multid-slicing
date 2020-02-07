@@ -2,6 +2,12 @@
 using LinearAlgebra
 include("types.jl")
 
+function isplanar(simplex::Simplex, fp::PointND, d1::Dim, d2::Dim)
+  checkdims = [x for x in 1:length(fp) if x!=d1 && x!=d2]
+  # need to check if the remaining dims are equal to the focus point
+  all([all(simplex[:,d] .== fp[d]) for d in checkdims])
+end
+
 # TODO: ensure simplex and fp are compatible
 function simplexPointIntersection(simplex::Simplex, fp::PointND, d1::Dim, d2::Dim)
   n = Dim(length(fp) + 1) # number of lambdas to check, dimensionality of the space + 1
@@ -13,29 +19,30 @@ function simplexPointIntersection(simplex::Simplex, fp::PointND, d1::Dim, d2::Di
   T[1:n-1,1:n-1] = simplex'
   T[1:n-1,n] = fp
 
-  if det(T) == 0 # extra focus point may be in the plane of the simplex
-    T[d1,n] = fp[d1] .+ 1e-5 # offset slightly to make matrix non-singluar
-  end
-
-  # If T is still singluar then the simplex lies in the plane
-  # so just return the simplex as a 2D projection of line segments
-  if det(T) == 0
-    nrow = size(simplex, 1)
-    # all pairs of vertices in the simplex
-    verts = filter(x -> x[1] != x[2], collect(Iterators.product(1:(nrow-1), 2:nrow)))
-    v2d = [
-      Intersect2D(simplex[pts[1], d1], simplex[pts[1], d2],
-                  simplex[pts[2], d1], simplex[pts[2], d2])
-      for pts = verts
-    ]
-    return v2d
+  if det(T) == 0 # extra focus point may be in the plane of the
+                 # simplex or might be numerical problems
+    if isplanar(simplex, fp, d1, d2)
+      # if the simplex lies in the plane then just return the simplex as
+      # a 2D projection of line segments
+      nrow = size(simplex, 1)
+      # all pairs of vertices in the simplex
+      verts = filter(x -> x[1] != x[2], collect(Iterators.product(1:(nrow-1), 2:nrow)))
+      v2d = [
+        Intersect2D(simplex[pts[1], d1], simplex[pts[1], d2],
+                    simplex[pts[2], d1], simplex[pts[2], d2])
+        for pts = verts
+      ]
+      return v2d
+    else
+      T[1:n-1,n] = fp .+ (rand(n-1)*1e-9) # offset slightly to make matrix non-singluar
+    end
   end
 
   # compute lambda as best we can (there will be 3 parts)
   rr = vcat(fp, 1.)
   rr[d1] = rr[d2] = 0
-  rrx = zeros(length(rr))
   rry = zeros(length(rr))
+  rrx = zeros(length(rr))
   rrx[d1] = rry[d2] = 1.
   # We are trying to compute T^(-1) . [x-xn, y-yn,...,z-zn]
   Tlu = factorize(T)

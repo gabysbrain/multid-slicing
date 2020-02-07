@@ -87,14 +87,15 @@ checksegs(hyperslice(trimesh, [[1.5, 1.5, 1.5]]), QHypersliceSeg[])
 checksegs(hyperslice(trimesh, [[0.5, 0.5, 0.5]]),
   [ ([0.5, 0.5, 0.5], 1, 2, (0.5, 0.0), (0.5, 0.5)),
     ([0.5, 0.5, 0.5], 1, 3, (0.0, 0.0), (0.5, 0.5)),
-    ([0.5, 0.5, 0.5], 2, 3, (0.0, 0.0), (1.0, 0.0)),
-    ([0.5, 0.5, 0.5], 2, 3, (0.0, 0.0), (0.0, 1.0)),
-    ([0.5, 0.5, 0.5], 2, 3, (1.0, 0.0), (0.0, 1.0)) ])
+    ([0.5, 0.5, 0.5], 2, 3, (0.0, 0.5), (0.5, 0.5)) ])
 checksegs(hyperslice(trimesh, [[0.5, 0.5, 0.8]]),
   [ ([0.5, 0.5, 0.8], 1, 2, (0.8, 0.0), (0.8, 0.2)),
     ([0.5, 0.5, 0.8], 1, 3, (0.0, 0.0), (0.5, 0.5)),
     ([0.5, 0.5, 0.8], 2, 3, (0.0, 0.5), (0.5, 0.5)) ])
 
+  checksegs(Hyperslice.slice(trimesh, [1.5, 1.5, 1.5], Dim(1), Dim(2)), QHypersliceSeg[])
+  checksegs(Hyperslice.slice(trimesh, [1.5, 1.5, 1.5], Dim(1), Dim(3)), QHypersliceSeg[])
+  checksegs(Hyperslice.slice(trimesh, [1.5, 1.5, 1.5], Dim(2), Dim(3)), QHypersliceSeg[])
 end
 
 @testset "3D cube" begin
