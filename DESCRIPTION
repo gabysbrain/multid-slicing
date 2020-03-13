@@ -1,4 +1,4 @@
-Package: multid_slicing
+Package: multidslicing
 Type: Package
 Title: A library for computing 1D and 2D slices through multi-dimensional datasets
 Version: 0.1.1
