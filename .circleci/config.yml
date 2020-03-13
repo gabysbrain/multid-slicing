@@ -1,5 +1,6 @@
 # from https://yutani.rbind.io/post/2017-10-18-circleci/
-version: 2
+version: 2.1
+
 defaults: &steps
   steps:
     - checkout
