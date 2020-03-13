@@ -19,7 +19,8 @@ defaults: &steps
     - run:
         name: Install required packages/libraries
         command: |
-          sudo apt-get -y install libhdf5-dev
+          sudo apt-get update
+          sudo apt-get -y install libhdf5-dev libgl1-mesa-dev libglu1-mesa-dev
 
     - run:
         name: Install devtools and dependencies
