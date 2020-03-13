@@ -14,13 +14,6 @@ defaults: &steps
             -e 'cat(sprintf("export RCHECK_DIR=%s.Rcheck\n", dsc[,"Package"]))' \
             >> ${BASH_ENV}
 
-    - run:
-        name: Install additional packages
-        command: |
-          sudo apt-get -y install \
-            mesa-common-dev freeglut3 libglu1-mesa-dev libgl1-mesa-dev \
-            cargo
-
     ## install dependencies ------------------
 
     - run:
