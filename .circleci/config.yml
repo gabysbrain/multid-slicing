@@ -17,6 +17,11 @@ defaults: &steps
     ## install dependencies ------------------
 
     - run:
+        name: Install required packages/libraries
+        command: |
+          sudo apt-get -y install libhdf5-dev
+
+    - run:
         name: Install devtools and dependencies
         command: |
           Rscript \
