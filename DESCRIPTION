@@ -1,9 +1,9 @@
-Package: slicing
+Package: multid_slicing
 Type: Package
-Title: What the Package Does (Title Case)
+Title: A library for computing 1D and 2D slices through multi-dimensional datasets
 Version: 0.1.1
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Author: Thomas Torsney-Weir
+Maintainer: Thomas Torsney-Weir <t.d.torsney-weir@swansea.ac.uk>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under?
