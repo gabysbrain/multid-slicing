@@ -2,7 +2,7 @@ using Test
 
 include("../src/types.jl")
 
-using Slicing
+using MdSlicing
 
 @testset "random values are within problem spec range" begin
   ps = ProblemSpec("x1" => (-2., 2.), "x2" => (0., 1.), "x3" => (25., 50.))

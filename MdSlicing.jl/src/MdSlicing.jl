@@ -1,4 +1,4 @@
-module Slicing
+module MdSlicing
 export fillfps, hyperslice
 
 include("types.jl")

@@ -1,4 +1,4 @@
-name = "Slicing"
+name = "MdSlicing"
 uuid = "ea43dda8-2323-11ea-075b-2f8f975dbf73"
 authors = ["Thomas Torsney-Weir <torsneyt@gmail.com>"]
 version = "0.1.0"

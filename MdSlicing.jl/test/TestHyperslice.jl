@@ -2,10 +2,10 @@ using Test
 
 include("../src/types.jl")
 
-using Slicing.Meshes: ConvexMesh
-using Slicing: hyperslice
-import Slicing.HypersliceSets
-import Slicing.Hyperslice
+using MdSlicing.Meshes: ConvexMesh
+using MdSlicing: hyperslice
+import MdSlicing.HypersliceSets
+import MdSlicing.Hyperslice
 
 QHypersliceSeg = Tuple{Array{Float64,1}, Int64, Int64, Tuple{Float64,Float64}, Tuple{Float64,Float64}}
 
