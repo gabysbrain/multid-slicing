@@ -1,11 +1,6 @@
 
-.PHONY: test test-cov clean
+.PHONY: test
 
 test:
-	julia -e 'using Pkg; Pkg.build("MdSlicing"); Pkg.test("MdSlicing")'
+	julia --project -e 'using Pkg; Pkg.test(coverage=true);'
 
-test-cov:
-	julia -e 'using Pkg; Pkg.build("MdSlicing"); Pkg.test("MdSlicing", coverage=true)'
-
-clean:
-	find . -name '*.cov' -exec rm '{}' \;
