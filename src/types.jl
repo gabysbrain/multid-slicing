@@ -29,3 +29,9 @@ LambdaND = Array{Float64,1}
 Simplex = Array{Float64}
 
 ProblemSpec = OrderedDict{String,Tuple{Float64,Float64}}
+
+SliceplorerPoint = Tuple{Float64,Float64}
+SliceplorerDimSample = Array{SliceplorerPoint}
+SliceplorerDim = Array{SliceplorerDimSample}
+Sliceplorer = OrderedDict{String,SliceplorerDim}
+

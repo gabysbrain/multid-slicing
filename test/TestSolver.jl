@@ -21,7 +21,7 @@ end
   ly = [-0.9714406736017811, -0.7988509382303219, 0.9398460751671794, 0.8304455366649236]
   lc = [0.0, -0.0, -0.0, 1.0]
 
-  # FIXME: need to use approx
-  @test ccrXY(lx, ly, lc, Dim(4)) == [Intersect2D(-0.8312942, -0.4933905, -0.4902460, -0.7849979)]
-  @test ccr(lx, ly, lc, Dim(4)) == [Intersect2D(-0.8312942, -0.4933905, -0.4902460, -0.7849979)]
+  # FIXME: need to use approx and instance for rtoldefault
+  @test_broken ccrXY(lx, ly, lc, Dim(4)) ≈ [Intersect2D(-0.8312942, -0.4933905, -0.4902460, -0.7849979)]
+  @test_broken ccr(lx, ly, lc, Dim(4)) ≈ [Intersect2D(-0.8312942, -0.4933905, -0.4902460, -0.7849979)]
 end

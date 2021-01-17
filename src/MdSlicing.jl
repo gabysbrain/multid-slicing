@@ -8,6 +8,7 @@ include("Hyperslice.jl")
 
 hyperslice = Hyperslice.hyperslice
 
+# FIXME: put types back in
 #function fillfps(ps::ProblemSpec, fp::Array{Union{Missing,Float64},1}, n::Int = 50)
 function fillfps(ps, fp, n = 50)
   if !any(map(ismissing, fp)) # special case
