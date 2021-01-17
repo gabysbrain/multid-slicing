@@ -1,3 +1,5 @@
+module Sliceplorer
+export sliceplorer
 
 include("types.jl")
 
@@ -23,7 +25,7 @@ function sample_dim(f, rng, fps, d)
 end
 
 # TODO: add type signature
-function sliceplorer_samps(f, spec, n=50)
+function sliceplorer(f, spec, n=50)
   # Create focus points for slicing
   dmins = [x[1] for (_,x) in spec]
   dmaxs = [x[2] for (_,x) in spec]
@@ -36,4 +38,6 @@ function sliceplorer_samps(f, spec, n=50)
   end
   output
 end
+
+end # module
 
