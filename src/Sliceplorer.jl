@@ -23,18 +23,17 @@ function sample_dim(f, rng, fps, d)
 end
 
 # TODO: add type signature
-function sliceplorer_samps(f, spec, n=500, ranges=spec)
+function sliceplorer_samps(f, spec, n=50)
   # Create focus points for slicing
-  dmins = [x[1] for (_,x) in ranges]
-  dmaxs = [x[2] for (_,x) in ranges]
+  dmins = [x[1] for (_,x) in spec]
+  dmaxs = [x[2] for (_,x) in spec]
   seq = SobolSeq(dmins, dmaxs)
   focuspoints = hcat([next!(seq) for i = 1:n])
 
   output = Sliceplorer()
-  for (i,d) in enumerate(keys(ranges))
-    output[d] = sample_dim(f, ranges[d], focuspoints, i)
+  for (i,d) in enumerate(keys(spec))
+    output[d] = sample_dim(f, spec[d], focuspoints, i)
   end
-  #[sample_dim(f, ranges[d], focuspoints, i) for (i,d) in enumerate(keys(ranges))]
   output
 end
 
