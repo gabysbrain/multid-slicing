@@ -1,3 +1,5 @@
+
+**Please use [MdSlicing.jl](https://github.com/gabysbrain/MdSlicing.jl) now.**
  
 # Multi-dimensional Slicing
 
